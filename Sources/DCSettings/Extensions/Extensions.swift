@@ -7,6 +7,14 @@
 import Foundation
 import SwiftUI
 
+extension String {
+    var sentenceCapitalized: String {
+        let firstLetter = self.prefix(1).capitalized
+        let remainingLetters = self.dropFirst().lowercased()
+        return firstLetter + remainingLetters
+    }
+}
+
 extension Collection {
     func get(_ index: Index) -> Element? {
         if indices.contains(index) {
@@ -15,13 +23,6 @@ extension Collection {
         else {
             return nil
         }
-    }
-}
-
-extension Sequence where Iterator.Element: Hashable {
-    func unique() -> [Iterator.Element] {
-        var seen: Set<Iterator.Element> = []
-        return filter { seen.insert($0).inserted }
     }
 }
 

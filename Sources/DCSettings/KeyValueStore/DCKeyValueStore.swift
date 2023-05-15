@@ -5,10 +5,11 @@
 //
 
 import Foundation
+import Combine
 
 public protocol DCKeyValueStore {
     
-    var changeNotificationName: NSNotification.Name { get }
+    func publisher(forKey key: String) -> AnyPublisher<Any?, Never>
     
     func set(_ value: Any?, forKey: String)
     
@@ -27,8 +28,6 @@ public protocol DCKeyValueStore {
     func double(forKey: String) -> Double
     
     func string(forKey: String) -> String?
-    
-    func synchronize() -> Bool
 }
 
 public enum DCSettingStore {
@@ -51,8 +50,8 @@ public enum DCSettingStore {
         }
     }
     
-    public var changeNotificationName: NSNotification.Name {
-        return backingStore.changeNotificationName
+    public func publisher(forKey key: String) -> AnyPublisher<Any?, Never> {
+        return backingStore.publisher(forKey: key)
     }
     
     public func set<ValueType>(_ value: ValueType?, forKey key: String) {
@@ -104,19 +103,17 @@ public enum DCSettingStore {
         return backingStore.string(forKey: key)
     }
     
-    @discardableResult public func synchronize() -> Bool {
-        backingStore.synchronize()
-    }
-    
     private func isStandardType<T>(_ type: T.Type) -> Bool {
         return type == Bool.self || type == Int.self || type == Double.self || type == String.self || type == Date.self
     }
 }
 
 extension UserDefaults: DCKeyValueStore {
-    
-    public var changeNotificationName: NSNotification.Name {
-        return UserDefaults.didChangeNotification
+    public func publisher(forKey key: String) -> AnyPublisher<Any?, Never> {
+        let notificationPublisher = NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification, object: self)
+            .map { _ in self.object(forKey: key) }
+        let initialValuePublisher = Just(self.object(forKey: key))
+        return initialValuePublisher.merge(with: notificationPublisher).eraseToAnyPublisher()
     }
 }
 
@@ -132,5 +129,12 @@ extension NSUbiquitousKeyValueStore: DCKeyValueStore {
     
     public func integer(forKey defaultName: String) -> Int {
         return Int(longLong(forKey: defaultName))
+    }
+    
+    public func publisher(forKey key: String) -> AnyPublisher<Any?, Never> {
+        let notificationPublisher = NotificationCenter.default.publisher(for: NSUbiquitousKeyValueStore.didChangeExternallyNotification, object: self)
+            .map { _ in self.object(forKey: key) }
+        let initialValuePublisher = Just(self.object(forKey: key))
+        return initialValuePublisher.merge(with: notificationPublisher).eraseToAnyPublisher()
     }
 }

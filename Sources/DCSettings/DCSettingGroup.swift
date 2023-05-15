@@ -6,6 +6,15 @@
 
 import Foundation
 
+/**
+ `DCSettingGroup` represents a group of related settings.
+ 
+ Each `DCSettingGroup` has a key that uniquely identifies it. The key is used to store and retrieve the values of the settings within the group.
+ 
+ In addition to its key, a `DCSettingGroup` can also have several other properties that affect how it is displayed and used. These properties include a label that provides a human-readable name for the group and an array of `DCSetting` instances that represent the settings within the group.
+ 
+ You can create `DCSettingGroup` instances directly using their initializer, or you can use result builder syntax to create them when configuring your settings using the `DCSettingsManager.shared.configure` method.
+ */
 public struct DCSettingGroup: Identifiable {
     let key: String
     let label: String?

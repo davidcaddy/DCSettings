@@ -8,6 +8,15 @@ import Foundation
 import SwiftUI
 import Combine
 
+/**
+ `DCSettingsManager` is a class that manages the configuration and storage of your app's settings.
+ 
+ You can use the shared instance of `DCSettingsManager` to configure your settings using the `configure` method. This method takes a closure that uses result builder syntax to create your setting groups and settings.
+ 
+ Once you've configured your settings, you can use the `DCSettingsManager` instance to access their values. The `value(for:)` method allows you to retrieve the value of a setting by its key, while the `setValue(_:for:)` method allows you to set the value of a setting by its key.
+ 
+ `DCSettingsManager` also provides several properties that allow you to access your setting groups and settings directly. These properties include the `groups` property, which returns an array of all your setting groups, and the `setting(for:)` method, which returns a `DCSettable` instance for a given key.
+ */
 public class DCSettingsManager {
     
     public static let shared = DCSettingsManager()
@@ -26,20 +35,6 @@ public class DCSettingsManager {
                 setting.store = store
                 setting.refresh()
             }
-        }
-        
-        for changeNotificationName in groups.flatMap({ $0.settings }).compactMap({ $0.store?.changeNotificationName }).unique() {
-            NotificationCenter.default.publisher(for: changeNotificationName)
-                .receive(on: RunLoop.main)
-                .sink(receiveValue: { [weak self] notification in
-                    guard let self = self else { return }
-                    for group in self.groups {
-                        for setting in group.settings {
-                            setting.refresh()
-                        }
-                    }
-                })
-                .store(in: &cancellables)
         }
     }
     
@@ -97,5 +92,9 @@ public class DCSettingsManager {
     
     public func date(forKey key: KeyRepresentable) -> Date {
         return value(forKey: key) ?? .distantPast
+    }
+    
+    public func color(forKey key: KeyRepresentable) -> Color {
+        return value(forKey: key) ?? .gray
     }
 }

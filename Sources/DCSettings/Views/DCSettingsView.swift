@@ -8,12 +8,11 @@ import SwiftUI
 
 extension DCSetting {
     var displayLabel: String {
-        return label ?? key
+        return label ?? key.replacingOccurrences(of: "_", with: " ").sentenceCapitalized
     }
 }
 
 extension DCSettingOption {
-    
     @available(iOS 14.0, *)
     public func labelView() -> some View {
         return HStack {
@@ -206,13 +205,11 @@ struct DCDateSettingView: View {
             DatePicker(selection: $setting.value, in: bounds.upperBound...bounds.upperBound, displayedComponents: .date) {
                 Text(setting.displayLabel)
             }
-            .animation(nil)
         }
         else {
             DatePicker(selection: $setting.value, in: ...Date.now, displayedComponents: .date) {
                 Text(setting.displayLabel)
             }
-            .animation(nil)
         }
     }
 }
@@ -273,33 +270,44 @@ public extension DCSettingViewProviding {
 
 public struct DCDefaultViewProvider: DCSettingViewProviding {}
 
+/**
+ `DCSettingsView` is a SwiftUI view that displays a list of your app's settings.
+ 
+ You can create an instance of `DCSettingsView` and add it to your app's view hierarchy like any other SwiftUI view. When displayed, the view will show a list of all the setting groups and settings that you've configured using the `DCSettingsManager.shared.configure` method.
+ 
+ `DCSettingsView` has several customization options available. For example, you can specify an array of hidden keys to hide certain setting groups or individual settings. You can also provide a custom content provider to control how each setting is displayed.
+ */
 @available(iOS 15.0, *)
 public struct DCSettingsView<Provider: DCSettingViewProviding>: View {
     
     private let settingsManager: DCSettingsManager
     
-    private let contentProvider: Provider?
+    private var includeSettingsWithoutLabels: Bool
     
-    private var hiddenKeys: [KeyRepresentable]
+    private var hiddenKeys: [String]
+    
+    private let contentProvider: Provider?
 
-    public init(settingsManager: DCSettingsManager = .shared, hiddenKeys: [KeyRepresentable] = [], contentProvider: Provider? = DCDefaultViewProvider()) {
+    public init(settingsManager: DCSettingsManager = .shared, includeSettingsWithoutLabels: Bool = false, hiddenKeys: [KeyRepresentable] = [], contentProvider: Provider? = DCDefaultViewProvider()) {
         self.settingsManager = settingsManager
-        self.hiddenKeys = hiddenKeys
+        self.includeSettingsWithoutLabels = includeSettingsWithoutLabels
+        self.hiddenKeys = hiddenKeys.map({ $0.keyValue })
         self.contentProvider = contentProvider
     }
     
     public var body: some View {
-        Self._printChanges()
-        return List(settingsManager.groups) { section in
-            if !hiddenKeys.contains(where: { $0.keyValue == section.key.keyValue }) {
-                Section(section.label ?? "") {
-                    ForEach(section.settings, id: \.key) { setting in
-                        if !hiddenKeys.contains(where: { $0.keyValue == setting.key.keyValue }) {
+        List(settingsManager.groups) { group in
+            if !hiddenKeys.contains(group.key.keyValue) {
+                Section(group.label ?? "") {
+                    ForEach(group.settings, id: \.key) { setting in
+                        if ((setting.label != nil) || includeSettingsWithoutLabels) && !hiddenKeys.contains(setting.key.keyValue) {
                             if let content = contentProvider?.content(for: setting), !(content is EmptyView) {
                                 content
+                                    .animation(nil)
                             }
                             else {
                                 DCSettingView(setting)
+                                    .animation(nil)
                             }
                         }
                     }
