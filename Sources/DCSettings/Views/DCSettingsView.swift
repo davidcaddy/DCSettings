@@ -18,20 +18,24 @@ extension DCSettingOption {
         return HStack {
             if let string = label {
                 if let imageName = image {
-                    Label(string, image: imageName)
-                }
-                else if let imageName = systemImage {
-                    Label(string, systemImage: imageName)
+                    switch imageName {
+                    case .custom(let name):
+                        Label(string, image: name)
+                    case .system(let name):
+                        Label(string, systemImage: name)
+                    }
                 }
                 else {
                     Text(string)
                 }
             }
             else if let imageName = image {
-                Image(imageName)
-            }
-            else if let imageName = systemImage {
-                Image(systemName: imageName)
+                switch imageName {
+                case .custom(let name):
+                    Image(name)
+                case .system(let name):
+                    Image(systemName: name)
+                }
             }
         }
     }
@@ -52,16 +56,15 @@ struct DCIntSettingView: View {
     
     var body: some View {
         if let options = setting.configuation?.options {
-            if options.count > 3 {
+            if options.count > 2 {
                 HStack {
                     Text(setting.displayLabel)
                     Spacer()
                     Menu {
-                        ForEach(options, id: \.label) { option in
-                            Button {
-                                setting.value = option.value
-                            } label: {
+                        Picker(setting.displayLabel, selection: $setting.value) {
+                            ForEach(options, id:\.label) { option in
                                 option.labelView()
+                                    .tag(option.value)
                             }
                         }
                     } label: {
@@ -83,6 +86,7 @@ struct DCIntSettingView: View {
                         }
                     }
                     .pickerStyle(SegmentedPickerStyle())
+                    .frame(maxWidth: 160.0)
                 }
             }
         }
@@ -156,16 +160,15 @@ struct DCStringSettingView: View {
     
     var body: some View {
         if let options = setting.configuation?.options {
-            if options.count > 3 {
+            if options.count > 2 {
                 HStack {
                     Text(setting.displayLabel)
                     Spacer()
                     Menu {
-                        ForEach(options, id: \.value) { option in
-                            Button {
-                                setting.value = option.value
-                            } label: {
+                        Picker(setting.displayLabel, selection: $setting.value) {
+                            ForEach(options, id:\.label) { option in
                                 option.labelView()
+                                    .tag(option.value)
                             }
                         }
                     } label: {
@@ -187,6 +190,7 @@ struct DCStringSettingView: View {
                         }
                     }
                     .pickerStyle(SegmentedPickerStyle())
+                    .frame(maxWidth: 160.0)
                 }
             }
         }

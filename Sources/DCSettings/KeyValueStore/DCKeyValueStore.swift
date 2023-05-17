@@ -104,7 +104,7 @@ public enum DCSettingStore {
     }
     
     private func isStandardType<T>(_ type: T.Type) -> Bool {
-        return type == Bool.self || type == Int.self || type == Double.self || type == String.self || type == Date.self
+        return type == Bool.self || type == Int.self || type == Double.self || type == String.self || type == Date.self || type == Data.self
     }
 }
 

@@ -8,69 +8,6 @@ import Foundation
 import Combine
 import SwiftUI
 
-///  A `struct` that represents a setting option.
-///
-///  Parameters:
-///  - label: The label of the option.
-///  - mage: The image of the option.
-///  - systemImage: The system image of the option.
-///  - value: The value of the option.
-///  - isDefault: Whether the option is the default option.
-///
-///  Note: The value type must be equatable.
-public struct DCSettingOption<ValueType>: Equatable where ValueType: Equatable {
-    public let label: String?
-    public let image: String?
-    public let systemImage: String?
-    public let value: ValueType
-    public let isDefault: Bool
-    
-    private init(value: ValueType, label: String?, image: String?, systemImage: String?, default isDefault: Bool = false) {
-        self.value = value
-        self.label = label
-        self.image = image
-        self.systemImage = systemImage
-        self.isDefault = isDefault
-    }
-    
-    public init(value: ValueType, default isDefault: Bool = false) where ValueType: LosslessStringConvertible {
-        self.init(value: value, label: String(value), image: nil, systemImage: nil, default: isDefault)
-    }
-    
-    public init(value: ValueType, label: String, default isDefault: Bool = false) {
-        self.init(value: value, label: label, image: nil, systemImage: nil, default: isDefault)
-    }
-    
-    public init(value: ValueType, image: String, default isDefault: Bool = false) {
-        self.init(value: value, label: nil, image: image, systemImage: nil, default: isDefault)
-    }
-    
-    public init(value: ValueType, systemImage: String, default isDefault: Bool = false) {
-        self.init(value: value, label: nil, image: nil, systemImage: systemImage, default: isDefault)
-    }
-    
-    public init(value: ValueType, label: String, image: String, default isDefault: Bool = false) {
-        self.init(value: value, label: label, image: image, systemImage: nil, default: isDefault)
-    }
-    
-    public init(value: ValueType, label: String, systemImage: String, default isDefault: Bool = false) {
-        self.init(value: value, label: label, image: nil, systemImage: systemImage, default: isDefault)
-    }
-}
-
-@resultBuilder
-public struct DCSettingOptionsBuilder {
-    public static func buildBlock<T>(_ settings: DCSettingOption<T>...) -> [DCSettingOption<T>] {
-        settings
-    }
-}
-
-/// A `struct` that represents the value bounds.
-public struct DCValueBounds<ValueType>: Equatable where ValueType: Equatable {
-    public let lowerBound: ValueType
-    public let upperBound: ValueType
-}
-
 /**
  `DCSettingConfiguration` represents the configuration options for a `DCSetting`.
  
@@ -116,10 +53,17 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     
     public let key: String
     public let label: String?
+    private var _value: ValueType
     public var value: ValueType {
-        didSet {
-            objectWillChange.send()
-            save()
+        get {
+            _value
+        }
+        set {
+            if _value != newValue {
+                _value = newValue
+                objectWillChange.send()
+                save()
+            }
         }
     }
     public var store: DCSettingStore?
@@ -129,7 +73,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     
     init(key: KeyRepresentable, value: ValueType, label: String?, configuation: DCSettingConfiguration<ValueType>?, store: DCSettingStore?) {
         self.key = key.keyValue
-        self.value = value
+        self._value = value
         self.label = label
         self.store = store
         self.configuation = configuation
@@ -138,18 +82,18 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     public convenience init(key: KeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = .standard) {
         self.init(key: key.keyValue, value: defaultValue, label: label, configuation: nil, store: store)
     }
-    
+
     public convenience init?(key: KeyRepresentable, label: String? = nil, store: DCSettingStore? = .standard, options: [ValueType], defaultIndex: Int) where ValueType: LosslessStringConvertible {
         if let defaultValue = options.get(defaultIndex) {
-            let configuredOptions = options.map { DCSettingOption(value: $0) }
+            let configuredOptions = options.map { DCSettingOption(value: $0, label: String($0)) }
             self.init(key: key, value: defaultValue, label: label, configuation: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
         }
         else {
             return nil
         }
     }
-    
-    public convenience init?(key: KeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = .standard, lowerBound: ValueType, upperBound: ValueType, step: ValueType? = nil) where ValueType: Numeric {
+
+    public convenience init(key: KeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = .standard, lowerBound: ValueType, upperBound: ValueType, step: ValueType? = nil) where ValueType: Numeric {
         self.init(key: key, value: defaultValue, label: label, configuation: DCSettingConfiguration<ValueType>(options: nil, bounds: DCValueBounds(lowerBound: lowerBound, upperBound: upperBound), step: step), store: store)
     }
     
@@ -164,13 +108,10 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     }
     
     public func refresh() {
-        if let newValue: ValueType = store?.object(forKey: key) {
-            if value != newValue {
-                value = newValue
-                objectWillChange.send()
-            }
-            setUpListener()
+        if let newValue: ValueType = store?.object(forKey: key), value != newValue {
+            _value = newValue
         }
+        setUpListener()
     }
     
     private func save() {
