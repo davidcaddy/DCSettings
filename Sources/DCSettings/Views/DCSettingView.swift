@@ -235,30 +235,25 @@ struct DCColorSettingView: View {
 
 /// A view that displays a user interface for changing a setting.
 ///
-/// The `DCSettingView` struct is a view that displays a user interface for changing a setting. The view takes a `DCSettable` instance as an argument and displays the appropriate user interface for the value type of the setting.
+/// `DCSettingView` is a view that displays a user interface for changing a setting. The view takes a `DCSettable` instance as an argument and displays the appropriate user interface for the value type of the setting,  if the setting's value is a supported type.
 ///
 /// The view uses type casting to determine the value type of the setting and displays the appropriate view for that type. If no specific view is available for the value type, the view will be empty.
 ///
-/// - Parameters:
-///   - setting: A `DCSettable` instance representing the setting to be changed.
+/// Supported types are: `Bool`, `Int`,  `Double`, `String`, `Date` and `Color`.
 @available(iOS 15.0, *)
 public struct DCSettingView: View {
     
-    /// The `DCSettable` instance representing the setting to be changed.
-    let setting: any DCSettable
+    private let setting: any DCSettable
     
     /// Initializes a new `DCSettingView` instance with the specified setting.
     ///
     /// This initializer creates a new instance of `DCSettingView` with the specified setting. The setting must be an instance of `DCSettable`.
     ///
-    /// - Parameter setting: A `DCSettable` instance representing the setting to be changed.
+    /// - Parameter setting: A `DCSettable` instance representing the setting to be managed.
     public init(_ setting: any DCSettable) {
         self.setting = setting
     }
     
-    /// The body of the view.
-    ///
-    /// The body of the view uses type casting to determine the value type of the setting and displays the appropriate view for that type. If no specific view is available for the value type, the view will be empty.
     public var body: some View {
         if let concreteSetting = setting as? DCSetting<Bool> {
             DCBoolSettingView(setting: concreteSetting)

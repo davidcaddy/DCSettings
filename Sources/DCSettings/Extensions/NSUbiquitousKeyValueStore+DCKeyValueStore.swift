@@ -9,27 +9,27 @@ import Combine
 
 extension NSUbiquitousKeyValueStore: DCKeyValueStore {
     
-    /// Sets the value of the specified default key in the key-value store.
+    /// Sets the value of the specified key in the key-value store.
     ///
     /// - Parameters:
     ///   - value: The integer value to store in the key-value store.
-    ///   - defaultName: The key with which to associate with the value.
-    public func set(_ value: Int, forKey defaultName: String) {
-        setValue(Int64(value), forKey: defaultName)
+    ///   - key: The key with which to associate with the value.
+    public func set(_ value: Int, forKey key: String) {
+        setValue(Int64(value), forKey: key)
     }
     
     /// Returns the integer value associated with the specified key.
     ///
-    /// - Parameter defaultName: A key in the current key-value store.
+    /// - Parameter key: A key in the current key-value store.
     ///
-    /// - Returns: The integer value associated with the specified key. If the specified key does not exist, this method returns 0.
-    public func integer(forKey defaultName: String) -> Int {
-        return Int(longLong(forKey: defaultName))
+    /// - Returns: The integer value associated with the specified key. If the specified key does not exist, this method returns `0`.
+    public func integer(forKey key: String) -> Int {
+        return Int(exactly: longLong(forKey: key)) ?? 0
     }
     
     /// Returns a publisher that emits the value associated with the specified key whenever it changes.
     ///
-    /// - Parameter key: The key whose value to observe.
+    /// - Parameter key: The key for the value to observe.
     ///
     /// - Returns: A publisher that emits the value associated with the specified key whenever it changes.
     public func publisher(forKey key: String) -> AnyPublisher<Any?, Never> {

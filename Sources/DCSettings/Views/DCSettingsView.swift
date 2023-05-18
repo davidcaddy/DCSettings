@@ -6,30 +6,21 @@
 
 import SwiftUI
 
-/// A view that displays a list of settings grouped by category.
+/// A view that displays a list of grouped settings.
 ///
-/// The `DCSettingsView` struct is a view that displays a list of settings grouped by category. The view takes a `DCSettingsManager` instance as an argument and displays a list of all settings managed by that instance.
+/// `DCSettingsView` is a view that displays a list of grouped settings. The view takes a `DCSettingsManager` instance as an argument and displays a list of all settings managed by that instance.
 ///
-/// The view uses a `DCSettingViewProviding` instance to provide custom views for individual settings. If no custom view is available for a specific setting, a default view will be used.
-///
-/// - Parameters:
-///   - settingsManager: A `DCSettingsManager` instance used to manage the settings. The default value is `.shared`.
-///   - includeSettingsWithoutLabels: A boolean value indicating whether to include settings without labels in the list. The default value is `false`.
-///   - hiddenKeys: An array of keys representing settings that should be hidden from the list. The default value is an empty array.
-///   - contentProvider: A `DCSettingViewProviding` instance used to provide custom views for individual settings. The default value is an instance of `DCDefaultViewProvider`.
+/// The view uses a `DCSettingViewProviding` instance to provide custom views for individual settings. If no custom view is available for a specific setting, a default view will be used if the setting's value is a supported type.
+/// Supported types as standard are: `Bool`, `Int`,  `Double`, `String`, `Date` and `Color`.
 @available(iOS 15.0, *)
 public struct DCSettingsView<Provider: DCSettingViewProviding>: View {
     
-    /// A private property used to store the `DCSettingsManager` instance used to manage the settings.
     private let settingsManager: DCSettingsManager
     
-    /// A private property used to store whether to include settings without labels in the list.
     private var includeSettingsWithoutLabels: Bool
     
-    /// A private property used to store an array of keys representing settings that should be hidden from the list.
     private var hiddenKeys: [String]
     
-    /// A private property used to store the `DCSettingViewProviding` instance used to provide custom views for individual settings.
     private let contentProvider: Provider?
 
     /// Initializes a new `DCSettingsView` instance with the specified settings manager, inclusion flag, hidden keys, and content provider.
@@ -37,7 +28,7 @@ public struct DCSettingsView<Provider: DCSettingViewProviding>: View {
     /// This initializer creates a new instance of `DCSettingsView` with the specified settings manager, inclusion flag, hidden keys, and content provider. The settings manager is required, while the inclusion flag, hidden keys, and content provider are optional.
     ///
     /// - Parameters:
-    ///   - settingsManager: A `DCSettingsManager` instance used to manage the settings. The default value is `.shared`.
+    ///   - settingsManager: A `DCSettingsManager` instance used to manage the settings. The default value is the `.shared` singleton instance.
     ///   - includeSettingsWithoutLabels: A boolean value indicating whether to include settings without labels in the list. The default value is `false`.
     ///   - hiddenKeys: An array of keys representing settings that should be hidden from the list. The default value is an empty array.
     ///   - contentProvider: A `DCSettingViewProviding` instance used to provide custom views for individual settings. The default value is an instance of `DCDefaultViewProvider`.
@@ -48,9 +39,6 @@ public struct DCSettingsView<Provider: DCSettingViewProviding>: View {
         self.contentProvider = contentProvider
     }
     
-    /// The body of the view.
-    ///
-    /// The body of the view displays a list of all settings managed by the `DCSettingsManager` instance. The settings are grouped by category and displayed in sections. If a custom view is available for a specific setting, it will be used. Otherwise, a default view will be used.
     public var body: some View {
         List(settingsManager.groups) { group in
             if !hiddenKeys.contains(group.key.keyValue) {

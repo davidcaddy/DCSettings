@@ -11,7 +11,7 @@ extension UserDefaults: DCKeyValueStore {
     
     /// Returns a publisher that emits the value associated with the specified key whenever it changes.
     ///
-    /// - Parameter key: The key whose value to observe.
+    /// - Parameter key: The key for the value to observe.
     ///
     /// - Returns: A publisher that emits the value associated with the specified key whenever it changes.
     public func publisher(forKey key: String) -> AnyPublisher<Any?, Never> {
