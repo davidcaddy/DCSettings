@@ -6,299 +6,51 @@
 
 import SwiftUI
 
-extension DCSetting {
-    var displayLabel: String {
-        return label ?? key.replacingOccurrences(of: "_", with: " ").sentenceCapitalized
-    }
-}
-
-extension DCSettingOption {
-    @available(iOS 14.0, *)
-    public func labelView() -> some View {
-        return HStack {
-            if let string = label {
-                if let imageName = image {
-                    switch imageName {
-                    case .custom(let name):
-                        Label(string, image: name)
-                    case .system(let name):
-                        Label(string, systemImage: name)
-                    }
-                }
-                else {
-                    Text(string)
-                }
-            }
-            else if let imageName = image {
-                switch imageName {
-                case .custom(let name):
-                    Image(name)
-                case .system(let name):
-                    Image(systemName: name)
-                }
-            }
-        }
-    }
-}
-
-@available(iOS 15.0, *)
-struct DCBoolSettingView: View {
-    @ObservedObject var setting: DCSetting<Bool>
-    
-    var body: some View {
-        Toggle(setting.displayLabel, isOn: $setting.value)
-    }
-}
-
-@available(iOS 15.0, *)
-struct DCIntSettingView: View {
-    @ObservedObject var setting: DCSetting<Int>
-    
-    var body: some View {
-        if let options = setting.configuation?.options {
-            if options.count > 2 {
-                HStack {
-                    Text(setting.displayLabel)
-                    Spacer()
-                    Menu {
-                        Picker(setting.displayLabel, selection: $setting.value) {
-                            ForEach(options, id:\.label) { option in
-                                option.labelView()
-                                    .tag(option.value)
-                            }
-                        }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text(String(setting.value))
-                        }
-                    }
-                }
-            }
-            else {
-                HStack {
-                    Text(setting.displayLabel)
-                    Spacer(minLength: 16.0)
-                    Picker(setting.displayLabel, selection: $setting.value) {
-                        ForEach(options, id:\.label) { option in
-                            option.labelView()
-                                .tag(option.value)
-                        }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .frame(maxWidth: 160.0)
-                }
-            }
-        }
-        else if let bounds = setting.configuation?.bounds {
-            VStack {
-                HStack {
-                    Text(setting.displayLabel)
-                    Spacer()
-                    Text(String(setting.value))
-                        .monospacedDigit()
-                }
-                if let step = setting.configuation?.step {
-                    Slider(value: Binding(get: {
-                        Double(setting.value)
-                    }, set: { newValue in
-                        setting.value = Int(newValue)
-                    }), in: Double(bounds.lowerBound)...Double(bounds.upperBound), step: Double(step))
-                }
-                else {
-                    Slider(value: Binding(get: {
-                        Double(setting.value)
-                    }, set: { newValue in
-                        setting.value = Int(newValue)
-                    }), in: Double(bounds.lowerBound)...Double(bounds.upperBound))
-                }
-            }
-        }
-        else {
-            HStack {
-                Text(setting.displayLabel)
-                Spacer()
-                Text(String(setting.value))
-                    .padding(.trailing, 8.0)
-                Stepper(setting.displayLabel, value: $setting.value)
-                    .labelsHidden()
-            }
-        }
-    }
-}
-
-@available(iOS 15.0, *)
-struct DCDoubleSettingView: View {
-    @ObservedObject var setting: DCSetting<Double>
-    
-    var body: some View {
-        VStack {
-            HStack {
-                Text(setting.displayLabel)
-                Spacer()
-                Text("\(setting.value, specifier: "%.2f")")
-                    .monospacedDigit()
-            }
-            if let bounds = setting.configuation?.bounds {
-                if let step = setting.configuation?.step {
-                    Slider(value: $setting.value, in: bounds.lowerBound...bounds.upperBound, step: step)
-                }
-                else {
-                    Slider(value: $setting.value, in: bounds.lowerBound...bounds.upperBound)
-                }
-            }
-            else {
-                Slider(value: $setting.value)
-            }
-        }
-    }
-}
-
-@available(iOS 15.0, *)
-struct DCStringSettingView: View {
-    @ObservedObject var setting: DCSetting<String>
-    
-    var body: some View {
-        if let options = setting.configuation?.options {
-            if options.count > 2 {
-                HStack {
-                    Text(setting.displayLabel)
-                    Spacer()
-                    Menu {
-                        Picker(setting.displayLabel, selection: $setting.value) {
-                            ForEach(options, id:\.label) { option in
-                                option.labelView()
-                                    .tag(option.value)
-                            }
-                        }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text(setting.value)
-                        }
-                    }
-                }
-            }
-            else {
-                HStack {
-                    Text(setting.displayLabel)
-                    Spacer(minLength: 16.0)
-                    Picker(setting.displayLabel, selection: $setting.value) {
-                        ForEach(options, id:\.label) { option in
-                            option.labelView()
-                                .tag(option.value)
-                        }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .frame(maxWidth: 160.0)
-                }
-            }
-        }
-        else {
-            TextField(setting.displayLabel, text: $setting.value)
-        }
-    }
-}
-
-@available(iOS 15.0, *)
-struct DCDateSettingView: View {
-    @ObservedObject var setting: DCSetting<Date>
-    
-    var body: some View {
-        if let bounds = setting.configuation?.bounds {
-            DatePicker(selection: $setting.value, in: bounds.upperBound...bounds.upperBound, displayedComponents: .date) {
-                Text(setting.displayLabel)
-            }
-        }
-        else {
-            DatePicker(selection: $setting.value, in: ...Date.now, displayedComponents: .date) {
-                Text(setting.displayLabel)
-            }
-        }
-    }
-}
-
-@available(iOS 15.0, *)
-struct DCColorSettingView: View {
-    @ObservedObject var setting: DCSetting<Color>
-    
-    private var label: String {
-        return setting.label ?? setting.key
-    }
-    
-    var body: some View {
-        ColorPicker(label, selection: $setting.value)
-    }
-}
-
-@available(iOS 15.0, *)
-public struct DCSettingView: View {
-    let setting: any DCSettable
-    
-    public init(_ setting: any DCSettable) {
-        self.setting = setting
-    }
-    
-    public var body: some View {
-        if let concreteSetting = setting as? DCSetting<Bool> {
-            DCBoolSettingView(setting: concreteSetting)
-        }
-        else if let concreteSetting = setting as? DCSetting<Int> {
-            DCIntSettingView(setting: concreteSetting)
-        }
-        else if let concreteSetting = setting as? DCSetting<Double> {
-            DCDoubleSettingView(setting: concreteSetting)
-        }
-        else if let concreteSetting = setting as? DCSetting<String> {
-            DCStringSettingView(setting: concreteSetting)
-        }
-        else if let concreteSetting = setting as? DCSetting<Date> {
-            DCDateSettingView(setting: concreteSetting)
-        }
-        else if let concreteSetting = setting as? DCSetting<Color> {
-            DCColorSettingView(setting: concreteSetting)
-        }
-    }
-}
-
-
-public protocol DCSettingViewProviding {
-    associatedtype Content: View
-    
-    func content(for setting: any DCSettable) -> Content?
-}
-
-public extension DCSettingViewProviding {
-    @ViewBuilder func content(for setting: any DCSettable) -> (some View)? {}
-}
-
-public struct DCDefaultViewProvider: DCSettingViewProviding {}
-
-/**
- `DCSettingsView` is a SwiftUI view that displays a list of your app's settings.
- 
- You can create an instance of `DCSettingsView` and add it to your app's view hierarchy like any other SwiftUI view. When displayed, the view will show a list of all the setting groups and settings that you've configured using the `DCSettingsManager.shared.configure` method.
- 
- `DCSettingsView` has several customization options available. For example, you can specify an array of hidden keys to hide certain setting groups or individual settings. You can also provide a custom content provider to control how each setting is displayed.
- */
+/// A view that displays a list of settings grouped by category.
+///
+/// The `DCSettingsView` struct is a view that displays a list of settings grouped by category. The view takes a `DCSettingsManager` instance as an argument and displays a list of all settings managed by that instance.
+///
+/// The view uses a `DCSettingViewProviding` instance to provide custom views for individual settings. If no custom view is available for a specific setting, a default view will be used.
+///
+/// - Parameters:
+///   - settingsManager: A `DCSettingsManager` instance used to manage the settings. The default value is `.shared`.
+///   - includeSettingsWithoutLabels: A boolean value indicating whether to include settings without labels in the list. The default value is `false`.
+///   - hiddenKeys: An array of keys representing settings that should be hidden from the list. The default value is an empty array.
+///   - contentProvider: A `DCSettingViewProviding` instance used to provide custom views for individual settings. The default value is an instance of `DCDefaultViewProvider`.
 @available(iOS 15.0, *)
 public struct DCSettingsView<Provider: DCSettingViewProviding>: View {
     
+    /// A private property used to store the `DCSettingsManager` instance used to manage the settings.
     private let settingsManager: DCSettingsManager
     
+    /// A private property used to store whether to include settings without labels in the list.
     private var includeSettingsWithoutLabels: Bool
     
+    /// A private property used to store an array of keys representing settings that should be hidden from the list.
     private var hiddenKeys: [String]
     
+    /// A private property used to store the `DCSettingViewProviding` instance used to provide custom views for individual settings.
     private let contentProvider: Provider?
 
-    public init(settingsManager: DCSettingsManager = .shared, includeSettingsWithoutLabels: Bool = false, hiddenKeys: [KeyRepresentable] = [], contentProvider: Provider? = DCDefaultViewProvider()) {
+    /// Initializes a new `DCSettingsView` instance with the specified settings manager, inclusion flag, hidden keys, and content provider.
+    ///
+    /// This initializer creates a new instance of `DCSettingsView` with the specified settings manager, inclusion flag, hidden keys, and content provider. The settings manager is required, while the inclusion flag, hidden keys, and content provider are optional.
+    ///
+    /// - Parameters:
+    ///   - settingsManager: A `DCSettingsManager` instance used to manage the settings. The default value is `.shared`.
+    ///   - includeSettingsWithoutLabels: A boolean value indicating whether to include settings without labels in the list. The default value is `false`.
+    ///   - hiddenKeys: An array of keys representing settings that should be hidden from the list. The default value is an empty array.
+    ///   - contentProvider: A `DCSettingViewProviding` instance used to provide custom views for individual settings. The default value is an instance of `DCDefaultViewProvider`.
+    public init(settingsManager: DCSettingsManager = .shared, includeSettingsWithoutLabels: Bool = false, hiddenKeys: [DCKeyRepresentable] = [], contentProvider: Provider? = DCDefaultViewProvider()) {
         self.settingsManager = settingsManager
         self.includeSettingsWithoutLabels = includeSettingsWithoutLabels
         self.hiddenKeys = hiddenKeys.map({ $0.keyValue })
         self.contentProvider = contentProvider
     }
     
+    /// The body of the view.
+    ///
+    /// The body of the view displays a list of all settings managed by the `DCSettingsManager` instance. The settings are grouped by category and displayed in sections. If a custom view is available for a specific setting, it will be used. Otherwise, a default view will be used.
     public var body: some View {
         List(settingsManager.groups) { group in
             if !hiddenKeys.contains(group.key.keyValue) {

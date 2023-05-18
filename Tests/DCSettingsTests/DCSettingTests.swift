@@ -1,8 +1,7 @@
 //
-//  File.swift
-//  
+//  DCSettingTests.swift
 //
-//  Created by Dave Caddy on 13/5/2023.
+//  Created by Davif Caddy on 13/5/2023.
 //
 
 import XCTest
@@ -10,74 +9,67 @@ import XCTest
 
 final class DCSettingTests: XCTestCase {
 
-    func testInit() {
-        let setting = DCSetting(key: "key", value: 1, label: "label", configuation: nil, store: nil)
-
-        XCTAssertEqual(setting.key, "key")
-        XCTAssertEqual(setting.value, 1)
-        XCTAssertEqual(setting.label, "label")
+    var store: DCSettingStore!
+    var backingStore: MockStore!
+    var setting: DCSetting<String>!
+    
+    override func setUp() {
+        super.setUp()
+        backingStore = MockStore()
+        store = .custom(backingStore: backingStore)
+        setting = DCSetting(key: "testKey", defaultValue: "defaultValue", store: store)
     }
-
+    
+    override func tearDown() {
+        super.tearDown()
+        UserDefaults.standard.removeObject(forKey: "testKey")
+    }
+    
     func testInitWithDefaultValue() {
-        let setting = DCSetting(key: "key", defaultValue: 2, label: "label", store: nil)
-
-        XCTAssertEqual(setting.value, 2)
+        XCTAssertEqual(setting.value, "defaultValue")
     }
-
+    
+    func testValueChange() {
+        setting.value = "newValue"
+        XCTAssertEqual(setting.value, "newValue")
+    }
+    
+    func testValuePersistence() {
+        setting.value = "newValue"
+        XCTAssertEqual(setting.value, "newValue")
+    }
+    
+    func testRefresh() {
+        backingStore.set("anotherValue", forKey: "testKey")
+        setting.refresh()
+        XCTAssertEqual(setting.value, "anotherValue")
+    }
+    
     func testInitWithOptions() {
-        let options = [
-            DCSettingOption(value: 1, label: "1"),
-            DCSettingOption(value: 2, label: "2"),
-            DCSettingOption(value: 3, label: "3")
-        ]
-
-        let setting = DCSetting(key: "key", value: 1, label: "label", configuation: .init(options: options, bounds: nil, step: nil), store: nil)
-
-        XCTAssertEqual(setting.configuation?.options, options)
+        let options = ["option1", "option2", "option3"]
+        let setting = DCSetting(key: "testKey", store: store, options: options, defaultIndex: 1)
+        XCTAssertEqual(setting?.value, "option2")
     }
 
     func testInitWithBounds() {
-        let bounds = DCValueBounds(lowerBound: 1, upperBound: 3)
-
-        let setting = DCSetting(key: "key", value: 1, label: "label", configuation: .init(options: nil, bounds: bounds, step: nil), store: nil)
-
-        XCTAssertEqual(setting.configuation?.bounds, bounds)
-    }
-
-    func testInitWithStep() {
-        let step = 1
-
-        let setting = DCSetting(key: "key", value: 1, label: "label", configuation: .init(options: nil, bounds: nil, step: step), store: nil)
-
-        XCTAssertEqual(setting.configuation?.step, step)
-    }
-
-    func testRefresh() {
-        let setting = DCSetting(key: "key", value: 1, label: "label", configuation: nil, store: nil)
-
-        setting.refresh()
-
-        XCTAssertEqual(setting.value, 1)
-    }
-
-    func testSet() {
-        let setting = DCSetting(key: "key", value: 1, label: "label", configuation: nil, store: .standard)
-        
-        setting.value = 2
-
-        XCTAssertEqual(setting.store?.object(forKey: "key"), 2)
+        let setting = DCSetting(key: "testKey", defaultValue: 5, store: store, lowerBound: 0, upperBound: 10)
+        XCTAssertEqual(setting.value, 5)
     }
 
     func testValueBinding() {
-        let setting = DCSetting(key: "key", value: 1, label: "label", configuation: nil, store: nil)
-
         let binding = setting.valueBinding()
-
-        XCTAssertEqual(binding.wrappedValue, 1)
-
-        binding.wrappedValue = 2
-
-        XCTAssertEqual(setting.value, 2)
+        binding.wrappedValue = "newValue"
+        XCTAssertEqual(setting.value, "newValue")
+    }
+    
+    func testStoreSet() {
+        setting.value = "newValue"
+        XCTAssertEqual(backingStore?.storage["testKey"] as? String, setting.value)
     }
 
+    func testStoreRefresh() {
+        backingStore?.storage["testKey"] = "anotherValue"
+        setting.refresh()
+        XCTAssertEqual(setting.value, "anotherValue")
+    }
 }
