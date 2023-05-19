@@ -127,7 +127,8 @@ public enum DCSettingStore {
     /// Returns a double-precision floating-point value associated with the specified key.
     ///
     /// - Parameter key:  A key in the key-value store.
-    /// - Returns: The double-precision floating-point value associated with the specified key, or `0.0` if the key does not exist or its value is not a double-precision floating-point number.
+    /// - Returns: The double-precision floating-point value associated with the specified key,
+    /// or `0.0` if the key does not exist or its value is not a double-precision floating-point number.
     public func double(forKey key: String) -> Double {
         return backingStore.double(forKey: key)
     }

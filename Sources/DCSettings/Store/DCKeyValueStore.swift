@@ -64,7 +64,8 @@ public protocol DCKeyValueStore {
     /// Returns a double-precision floating-point value associated with the specified key.
     ///
     /// - Parameter key: A key in the key-value store.
-    /// - Returns: The double-precision floating-point value associated with the specified key, or `0.0` if the key does not exist or its value is not a double-precision floating-point number.
+    /// - Returns: The double-precision floating-point value associated with the specified key,
+    /// or `0.0` if the key does not exist or its value is not a double-precision floating-point number.
     func double(forKey key: String) -> Double
     
     /// Returns a string associated with the specified key.

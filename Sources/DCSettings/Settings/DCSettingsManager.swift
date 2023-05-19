@@ -44,8 +44,8 @@ public class DCSettingsManager {
     
     /// Configures the manager with an array of setting groups.
     ///
-    /// - Parameter settingGroups: An array of `DCSettingGroup` values representing the setting groups to be managed by the manager.
-    public func configure(_ settingGroups: [DCSettingGroup]) {
+    /// - Parameter groups: An array of `DCSettingGroup` values representing the setting groups to be managed by the manager.
+    public func configure(groups settingGroups: [DCSettingGroup]) {
         groups = settingGroups
         for group in groups {
             for setting in group.settings {
@@ -58,16 +58,17 @@ public class DCSettingsManager {
     
     /// Configures the manager with a result builder that produces an array of setting groups.
     ///
-    /// - Parameter builder: A result builder that produces an array of `DCSettingGroup` values representing the setting groups to be managed by the manager.
+    /// - Parameter builder: A result builder that produces an array of `DCSettingGroup` values
+    /// representing the setting groups to be managed by the manager.
     public func configure(@DCSettingGroupsBuilder _ builder: () -> [DCSettingGroup]) {
-        configure(builder())
+        configure(groups: builder())
     }
     
     /// Sets the value for a setting with the specified key.
     ///
     /// - Parameters:
     ///   - value: The value to set for the setting.
-    ///   - key: The key of the setting to set the value for.
+    ///   - key: The key for a setting that has been configured by the manager.
     ///
     /// - Returns: A boolean value indicating whether or not the value was successfully set. Returns `true` if successful, otherwise returns `false`.
     @discardableResult public func set<ValueType>(_ value: ValueType, forKey key: DCKeyRepresentable) -> Bool where ValueType: Equatable {
@@ -82,7 +83,7 @@ public class DCSettingsManager {
     ///
     /// - Parameter key: The key of the desired setting.
     ///
-    /// - Returns: The desired `(any DCSettable)` if it exists, otherwise returns `nil`.
+    /// - Returns: The desired `(any DCSettable)` if it has been configured by the manager, otherwise returns `nil`.
     public func setting(forKey key: DCKeyRepresentable) -> (any DCSettable)? {
         let existingSettings = groups.flatMap({ $0.settings })
         return existingSettings.first(where: { $0.key == key.keyValue })
@@ -92,7 +93,7 @@ public class DCSettingsManager {
     ///
     /// - Parameter key: The key of the desired setting value.
     ///
-    /// - Returns: The desired value if it exists, otherwise returns `nil`.
+    /// - Returns: The desired value if it has been configured by the manager, otherwise returns `nil`.
     public func value<ValueType>(forKey key: DCKeyRepresentable) -> ValueType? where ValueType: Equatable {
         let setting = setting(forKey: key) as? DCSetting<ValueType>
         return setting?.value
@@ -105,7 +106,7 @@ public class DCSettingsManager {
     ///
     /// - Parameter key: The key of the desired setting value.
     ///
-    /// - Returns: The desired represented value if it exists and can be converted, otherwise returns `nil`.
+    /// - Returns: The desired represented value has been configured by the manager and can be converted, otherwise returns `nil`.
     public func representedValue<ValueType>(forKey key: DCKeyRepresentable) -> ValueType? where ValueType: RawRepresentable, ValueType.RawValue: Equatable {
         if let settingRawValue: ValueType.RawValue = value(forKey: key), let option = ValueType(rawValue: settingRawValue)  {
             return option
@@ -117,7 +118,7 @@ public class DCSettingsManager {
     ///
     /// - Parameter key: The key of the desired setting value.
     ///
-    /// - Returns: A binding to the desired value if it exists, otherwise returns `nil`.
+    /// - Returns: A binding to the desired value if it has been configured by the manager, otherwise returns `nil`.
     public func valueBinding<ValueType>(forKey key: DCKeyRepresentable) -> Binding<ValueType>? where ValueType: Equatable {
         if let setting = setting(forKey: key) as? DCSetting<ValueType> {
             return Binding {
@@ -129,56 +130,56 @@ public class DCSettingsManager {
         return nil
     }
     
-    /// Returns a boolean value for a setting with the specified key.
+    /// Returns a boolean value for the setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
     ///
-    /// - Returns: The desired boolean value if it exists, otherwise returns `false`.
+    /// - Returns: The desired boolean value if has been configured by the manager, otherwise returns `false`.
     public func bool(forKey key: DCKeyRepresentable) -> Bool {
         return value(forKey: key) ?? false
     }
     
-    /// Returns an integer value for a setting with the specified key.
+    /// Returns an integer value for the setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
     ///
-    /// - Returns: The desired integer value if it exists, otherwise returns `0`.
+    /// - Returns: The desired integer value if it has been configured by the manager, otherwise returns `0`.
     public func int(forKey key: DCKeyRepresentable) -> Int {
         return value(forKey: key) ?? 0
     }
     
-    /// Returns a double value for a setting with the specified key.
+    /// Returns a double value for the setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
     ///
-    /// - Returns: The desired double value if it exists, otherwise returns `0.0`.
+    /// - Returns: The desired double value if it has been configured by the manager, otherwise returns `0.0`.
     public func double(forKey key: DCKeyRepresentable) -> Double {
         return value(forKey: key) ?? 0.0
     }
     
-    /// Returns a string value for a setting with the specified key.
+    /// Returns a string value for the setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
     ///
-    /// - Returns: The desired string value if it exists, otherwise returns an empty string.
+    /// - Returns: The desired string value if it has been configured by the manager, otherwise returns an empty string.
     public func string(forKey key: DCKeyRepresentable) -> String {
         return value(forKey: key) ?? ""
     }
     
-    /// Returns a date value for a setting with the specified key.
+    /// Returns a date value for the setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
     ///
-    /// - Returns: The desired date value if it exists, otherwise returns a distant past date.
+    /// - Returns: The desired date value if it has been configured by the manager, otherwise returns a distant past date.
     public func date(forKey key: DCKeyRepresentable) -> Date {
         return value(forKey: key) ?? .distantPast
     }
     
-    /// Returns a color value for a setting with the specified key.
+    /// Returns a color value for the setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
     ///
-    /// - Returns: The desired color value if it exists, otherwise returns gray.
+    /// - Returns: The desired color value if it has been configured by the manager, otherwise returns `gray`.
     public func color(forKey key: DCKeyRepresentable) -> Color {
         return value(forKey: key) ?? .gray
     }

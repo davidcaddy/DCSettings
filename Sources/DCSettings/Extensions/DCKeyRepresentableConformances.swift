@@ -18,9 +18,9 @@ extension String: DCKeyRepresentable {
 
 extension UUID: DCKeyRepresentable {
     
-    /// The key value of the UUID.
+    /// The key value of the `UUID`.
     ///
-    /// This property returns the string representation of the UUID.
+    /// This property returns the string representation of the `UUID`.
     public var keyValue: String {
         return self.uuidString
     }

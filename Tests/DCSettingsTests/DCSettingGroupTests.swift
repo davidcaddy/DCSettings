@@ -9,32 +9,23 @@ import XCTest
 
 class DCSettingGroupTests: XCTestCase {
     
-    var store: DCSettingStore!
-    var setting1: DCSetting<String>!
-    var setting2: DCSetting<Int>!
-    var group: DCSettingGroup!
+    private var store: DCSettingStore!
+    private var setting1: DCSetting<String>!
+    private var setting2: DCSetting<Int>!
+    private var group: DCSettingGroup!
     
     override func setUp() {
         super.setUp()
         store = .custom(backingStore: MockStore())
-        setting1 = DCSetting(key: "testKey1", defaultValue: "defaultValue1", store: store)
-        setting2 = DCSetting(key: "testKey2", defaultValue: 0, store: store)
-        group = DCSettingGroup {
+        setting1 = DCSetting(key: "testKey1", defaultValue: "defaultValue1")
+        setting2 = DCSetting(key: "testKey2", defaultValue: 0)
+        group = DCSettingGroup(store: store) {
             setting1
             setting2
         }
     }
     
-    override func tearDown() {
-        super.tearDown()
-    }
-    
-    func testInitWithSettings() {
+    func testSettings() {
         XCTAssertEqual(group.settings.count, 2)
-    }
-    
-    func testLabel() {
-        let newGroup = group.label("newLabel")
-        XCTAssertEqual(newGroup.label, "newLabel")
     }
 }

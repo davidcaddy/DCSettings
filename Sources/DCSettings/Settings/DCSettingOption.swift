@@ -10,20 +10,15 @@ import Foundation
 ///
 /// The `DCSettingOption` struct is used to represent a setting option with an associated value of a specific type.
 ///
-/// The `struct` also includes an optional label and image, as well as a boolean property to indicate whether the option is the default option.
+/// The `struct` also includes optional label and image information, as well as a boolean property to indicate whether the option is the default option.
 ///
-/// - Parameters:
-///   - value: The value associated with the setting option.
-///   - label: An optional label for the setting option.
-///   - image: An optional image for the setting option.
-///   - isDefault: A boolean value indicating whether the option is the default option.
-///
-///  Note: The value type must be equatable.
+/// - Note: The value type must conform to the `Equatable` protocol.
 public struct DCSettingOption<ValueType>: Equatable where ValueType: Equatable {
     
     /// An enumeration representing the name of an image for a setting option.
     ///
-    /// The `ImageName` enumeration includes two cases: `system` and `custom`. The `system` case represents a system-provided image, while the `custom` case represents a custom image provided by the developer.
+    /// The `ImageName` enumeration includes two cases: `system` and `custom`. The `system` case represents a system-provided image,
+    /// while the `custom` case represents any other image available within the project.
     public enum ImageName: Equatable {
         case system(String)
         case custom(String)
@@ -73,7 +68,7 @@ public struct DCSettingOption<ValueType>: Equatable where ValueType: Equatable {
     ///
     /// - Parameters:
     ///   - value: The value associated with the setting option.
-    ///   - image: A string representing the name of a custom image for the setting option.
+    ///   - image: A string representing the name of an image for the setting option.
     ///   - isDefault: A boolean value indicating whether the option is the default option. The default value is `false`.
     public init(value: ValueType, image: String, isDefault: Bool = false) {
         self.init(value: value, label: nil, image: .custom(image), isDefault: isDefault)
@@ -94,7 +89,7 @@ public struct DCSettingOption<ValueType>: Equatable where ValueType: Equatable {
     /// - Parameters:
     ///   - value: The value associated with the setting option.
     ///   - label: A string representing the label for the setting option.
-    ///   - image: A string representing the name of a custom image for the setting option.
+    ///   - image: A string representing the name of an image for the setting option.
     ///   - isDefault: A boolean value indicating whether the option is the default option. The default value is `false`.
     public init(value: ValueType, label: String, image: String, isDefault: Bool = false) {
         self.init(value: value, label: label, image: .custom(image), isDefault: isDefault)
@@ -114,7 +109,8 @@ public struct DCSettingOption<ValueType>: Equatable where ValueType: Equatable {
 
 /// A result builder that constructs an array of `DCSettingOption` instances.
 ///
-/// The `DCSettingOptionsBuilder` struct is a result builder that can be used to construct an array of `DCSettingOption` instances using a closure with multiple `DCSettingOption` expressions.
+/// The `DCSettingOptionsBuilder` struct is a result builder that can be used to construct an array of `DCSettingOption` instances
+/// using a closure with multiple `DCSettingOption` expressions.
 ///
 /// ```swift
 /// let options: [DCSettingOption<Int>] = DCSettingOptionsBuilder {
@@ -128,7 +124,8 @@ public struct DCSettingOptionsBuilder {
     
     /// Constructs an array of `DCSettingOption` instances from the provided expressions.
     ///
-    /// This method is called by the result builder to construct the final result from the provided expressions. The expressions must be instances of `DCSettingOption`.
+    /// This method is called by the result builder to construct the final result from the provided expressions.
+    /// The expressions must be instances of `DCSettingOption`.
     ///
     /// - Parameters:
     ///     - settings: A variadic list of `DCSettingOption` instances.

@@ -235,9 +235,11 @@ struct DCColorSettingView: View {
 
 /// A view that displays a user interface for changing a setting.
 ///
-/// `DCSettingView` is a view that displays a user interface for changing a setting. The view takes a `DCSettable` instance as an argument and displays the appropriate user interface for the value type of the setting,  if the setting's value is a supported type.
+/// `DCSettingView` is a view that displays a user interface for changing a setting. The view takes a `DCSettable` instance as an argument
+/// and displays the appropriate user interface for the value type of the setting,  if the setting's value is a supported type.
 ///
-/// The view uses type casting to determine the value type of the setting and displays the appropriate view for that type. If no specific view is available for the value type, the view will be empty.
+/// The view uses type casting to determine the value type of the setting and displays the appropriate view for that type.
+/// If no specific view is available for the value type, the view will be empty.
 ///
 /// Supported types are: `Bool`, `Int`,  `Double`, `String`, `Date` and `Color`.
 @available(iOS 15.0, *)

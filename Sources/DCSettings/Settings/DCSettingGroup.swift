@@ -8,7 +8,8 @@ import Foundation
 
 /// A group of settings that can be displayed together.
 ///
-/// A `DCSettingGroup` is a collection of settings that can be displayed together in a user interface. Each setting group has a key, a label, and an array of settings.
+/// A `DCSettingGroup` is a collection of settings that can be displayed together in a user interface.
+/// Each setting group has a key, a label, and an array of settings.
 ///
 /// You can create a `DCSettingGroup` using one of its initializers or by using the `@DCSettingsBuilder` result builder to build an array of settings.
 ///
@@ -35,7 +36,7 @@ public struct DCSettingGroup: Identifiable {
     /// Creates a new setting group with the specified key, label, store, and settings.
     ///
     /// - Parameters:
-    ///   - key: The key for the setting group. If not specified, a new UUID will be used as the key.
+    ///   - key: The key for the setting group. If not specified, a new `UUID` will be used as the key.
     ///   - label: The label for the setting group. Defaults to `nil`.
     ///   - store: The store for the setting group. Defaults to `.standard`.
     ///   - settings: An array of settings to include in the setting group.
@@ -48,6 +49,8 @@ public struct DCSettingGroup: Identifiable {
     
     /// Creates a new setting group with the specified label, store, and settings.
     ///
+    /// A new `UUID` will be used as the group's key.
+    ///
     /// - Parameters:
     ///   - label: The label for the setting group. Defaults to `nil`.
     ///   - store: The store for the setting group. Defaults to `.standard`.
@@ -59,7 +62,7 @@ public struct DCSettingGroup: Identifiable {
     /// Creates a new setting group with the specified key, label, store, and settings.
     ///
     /// - Parameters:
-    ///   - key: The key for the setting group. If not specified, a new UUID will be used as the key.
+    ///   - key: The key for the setting group. If not specified, a new `UUID` will be used as the key.
     ///   - label: The label for the setting group. Defaults to `nil`.
     ///   - store: The store for the setting group. Defaults to `.standard`.
     ///   - builder: A closure that builds an array of settings using the `@DCSettingsBuilder` result builder.
@@ -68,6 +71,8 @@ public struct DCSettingGroup: Identifiable {
     }
     
     /// Creates a new setting group with the specified label, store, and settings.
+    ///
+    /// A new `UUID` will be used as the group's key.
     ///
     /// - Parameters:
     ///   - label: The label for the setting group. Defaults to `nil`.
@@ -80,14 +85,7 @@ public struct DCSettingGroup: Identifiable {
 
 extension DCSettingGroup {
     
-    /// Returns a new setting group with the specified label.
-    ///
-    /// - Parameter label: The new label for the setting group.
-    public func label(_ label: String) -> DCSettingGroup {
-        return DCSettingGroup(key: key, label: label, store: store, settings: settings)
-    }
-    
-    /// Returns a new setting group with the specified store.
+    /// Returns a copy of the setting group with the specified store.
     ///
     /// - Parameter store: The new store for the setting group.
     public func store(_ store: DCSettingStore) -> DCSettingGroup {
@@ -97,7 +95,8 @@ extension DCSettingGroup {
 
 /// A result builder that builds an array of setting groups.
 ///
-/// The `DCSettingGroupsBuilder` is a result builder that you can use to build an array of `DCSettingGroup` instances. You can use this result builder when configuring a `DCSettingsManager` instance.
+/// The `DCSettingGroupsBuilder` is a result builder that you can use to build an array of `DCSettingGroup` instances.
+/// You can use this result builder when configuring a `DCSettingsManager` instance.
 ///
 /// Here's an example of how you can use the `DCSettingGroupsBuilder` to build an array of setting groups:
 ///

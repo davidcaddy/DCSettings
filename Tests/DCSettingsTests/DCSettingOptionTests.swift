@@ -18,6 +18,16 @@ final class DCSettingOptionTests: XCTestCase {
         XCTAssertNotEqual(option1, option3)
     }
     
+    func testLabel() {
+        let option = DCSettingOption(value: "Value", label: "Label", image: "Image")
+        XCTAssertEqual(option.label, "Label")
+    }
+    
+    func testValue() {
+        let option = DCSettingOption(value: "Value", label: "Label", image: "Image")
+        XCTAssertEqual(option.value, "Value")
+    }
+    
     func testCustomImage() {
         let option = DCSettingOption(value: "Value", label: "Label", image: "Image")
         XCTAssertEqual(option.image, .custom("Image"))
