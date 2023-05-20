@@ -59,28 +59,7 @@ struct DCIntSettingView: View {
     var body: some View {
         if let options = setting.configuation?.options {
             if options.count > 2 {
-                HStack {
-                    Text(setting.displayLabel)
-                    Spacer()
-                    Menu {
-                        Picker(setting.displayLabel, selection: $setting.value) {
-                            ForEach(options, id:\.value) { option in
-                                option.labelView()
-                                    .tag(option.value)
-                            }
-                        }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            if let selectedOptionLabel = options.first(where: { $0.value == setting.value })?.label {
-                                Text(selectedOptionLabel)
-                            }
-                            else {
-                                Text(String(setting.value))
-                            }
-                        }
-                    }
-                }
+                DCMenuPickerView(label: setting.displayLabel, options: options, value: $setting.value)
             }
             else {
                 HStack {
@@ -140,29 +119,7 @@ struct DCDoubleSettingView: View {
     
     var body: some View {
         if let options = setting.configuation?.options, options.count > 2 {
-            HStack {
-                Text(setting.displayLabel)
-                Spacer()
-                Menu {
-                    Picker(setting.displayLabel, selection: $setting.value) {
-                        ForEach(options, id:\.value) { option in
-                            option.labelView()
-                                .tag(option.value)
-                        }
-                    }
-                } label: {
-                    HStack {
-                        Spacer()
-                        if let selectedOptionLabel = options.first(where: { $0.value == setting.value })?.label {
-                            Text(selectedOptionLabel)
-                        }
-                        else {
-                            Text("\(setting.value, specifier: "%.2f")")
-                                .monospacedDigit()
-                        }
-                    }
-                }
-            }
+            DCMenuPickerView(label: setting.displayLabel, options: options, value: $setting.value)
         }
         else {
             VStack {
@@ -195,28 +152,7 @@ struct DCStringSettingView: View {
     var body: some View {
         if let options = setting.configuation?.options {
             if options.count > 2 {
-                HStack {
-                    Text(setting.displayLabel)
-                    Spacer()
-                    Menu {
-                        Picker(setting.displayLabel, selection: $setting.value) {
-                            ForEach(options, id:\.value) { option in
-                                option.labelView()
-                                    .tag(option.value)
-                            }
-                        }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            if let selectedOptionLabel = options.first(where: { $0.value == setting.value })?.label {
-                                Text(selectedOptionLabel)
-                            }
-                            else {
-                                Text(setting.value)
-                            }
-                        }
-                    }
-                }
+                DCMenuPickerView(label: setting.displayLabel, options: options, value: $setting.value)
             }
             else {
                 HStack {
@@ -265,6 +201,50 @@ struct DCColorSettingView: View {
         ColorPicker(setting.displayLabel, selection: $setting.value)
     }
 }
+
+@available(iOS 15.0, *)
+struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
+    let label: String
+    let options: [DCSettingOption<ValueType>]
+    @Binding var value: ValueType
+    
+    var body: some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Menu {
+                Picker(label, selection: $value) {
+                    ForEach(options, id:\.value) { option in
+                        option.labelView()
+                            .tag(option.value)
+                    }
+                }
+            } label: {
+                HStack {
+                    Spacer()
+                    if let selectedOptionLabel = options.first(where: { $0.value == value })?.label {
+                        Text(selectedOptionLabel)
+                    } else {
+                        if let doubleValue = value as? Double {
+                            Text("\(doubleValue, specifier: "%.2f")")
+                                .monospacedDigit()
+                        }
+                        else if let intValue = value as? Int {
+                            Text(String(intValue))
+                        }
+                        else if let stringValue = value as? String {
+                            Text(stringValue)
+                        }
+                        else {
+                            Text(String(describing: value))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 /// A view that displays a user interface for changing a setting.
 ///
