@@ -13,7 +13,43 @@
     </a>
 </p>
 
-Welcome to **DCSettings**, a Swift package designed to help manage user preferences. It provides an interface that allows you to easily configure settings for your app.
+Welcome to **DCSettings**, a Swift package designed to help manage user preferences and provide a simple drop-in user interface.
+
+<table>
+  <tr>
+    <td>
+      <pre><code>
+        DCSettingsManager.shared.configure {
+            DCSettingGroup("general") {
+                DCSetting(key: "refreshInterval") {
+                    DCSettingOption(value: 5, label: "5 mins")
+                    DCSettingOption(value: 10, label: "10 mins")
+                    DCSettingOption(value: 15, label: "15 mins")
+                    DCSettingOption(value: 30, label: "30 mins", isDefault: true)
+                    DCSettingOption(value: 60, label: "60 mins")
+                }
+                DCSetting(key: "articleListLayout", label: "Article List Layout") {
+                    DCSettingOption(value: "List", label: "List", systemImage: "list.bullet")
+                    DCSettingOption(value: "Grid", label: "Grid", systemImage: "square.grid.2x2")
+                }
+                DCSetting(key: "showImages", defaultValue: true)
+                DCSetting(key: "showFullContent", defaultValue: false)
+                DCSetting(key: "markAsReadOnScroll", defaultValue: true)
+            }
+            DCSettingGroup("appearance") {
+                DCSetting(key: "theme", label: "Theme", options: ["Light", "Dark"], defaultIndex: 0)
+                DCSetting(key: "fontSize", label: "Font Size", options: [12, 14, 16, 18, 20], defaultIndex: 2)
+                DCSetting(key: "lineSpacing", defaultValue: 1.2, label: "Line Spacing", lowerBound: 1.0, upperBound: 1.6, step: 0.1)
+                DCSetting(key: "highlightColor", defaultValue: Color.blue)
+            }
+        }
+    </code></pre>
+    </td>
+    <td>
+      <img src="ScreenShot.png" alt="Settings View Screenshot">
+    </td>
+  </tr>
+</table>
 
 ## Installation
 
