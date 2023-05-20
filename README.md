@@ -1,6 +1,19 @@
-# DCSettings
+<p align="center">
+    <img src="Logo.png" width="190" max-width="20%" alt="DCSettings" />
+</p>
 
-DCSettings is a Swift package designed to help manage user preferences. It provides an interface that allows you to easily configure settings for your app.
+<p align="center">
+    <img src="https://img.shields.io/badge/Swift-5-orange.svg" />
+    <a href="https://swift.org/package-manager">
+        <img src="https://img.shields.io/badge/swiftpm-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
+    </a>
+     <img src="https://img.shields.io/badge/platforms-ios+mac-brightgreen.svg?style=flat" alt="iOS + Mac" />
+    <a href="mastodon.social/@caddy">
+        <img src="https://img.shields.io/badge/Mastodon-@caddy-blue.svg?style=flat" alt="Mastodon: @caddy" />
+    </a>
+</p>
+
+Welcome to **DCSettings**, a Swift package designed to help manage user preferences. It provides an interface that allows you to easily configure settings for your app.
 
 ## Installation
 
