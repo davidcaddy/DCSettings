@@ -1,7 +1,7 @@
 //
-//  DCKeyRepresentable.swift
-//
-//  Created by David Caddy on 17/5/2023.
+//  DCSettings
+//  Copyright (c) David Caddy 2023
+//  MIT license, see LICENSE file for details
 //
 
 import Foundation

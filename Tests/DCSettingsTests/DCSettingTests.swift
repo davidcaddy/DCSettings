@@ -1,7 +1,7 @@
 //
-//  DCSettingTests.swift
-//
-//  Created by Davif Caddy on 13/5/2023.
+//  DCSettings
+//  Copyright (c) David Caddy 2023
+//  MIT license, see LICENSE file for details
 //
 
 import XCTest

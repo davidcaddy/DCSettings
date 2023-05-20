@@ -1,7 +1,7 @@
 //
-//  DCSetting.swift
-//
-//  Created by David Caddy on 25/4/2023.
+//  DCSettings
+//  Copyright (c) David Caddy 2023
+//  MIT license, see LICENSE file for details
 //
 
 import Combine
