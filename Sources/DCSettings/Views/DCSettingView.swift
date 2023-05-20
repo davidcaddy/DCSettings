@@ -9,7 +9,7 @@ import SwiftUI
 extension DCSetting {
     
     var displayLabel: String {
-        return label ?? key.replacingOccurrences(of: "_", with: " ").sentenceCapitalized
+        return label ?? key.sentenceFormatted
     }
 }
 
@@ -64,7 +64,7 @@ struct DCIntSettingView: View {
                     Spacer()
                     Menu {
                         Picker(setting.displayLabel, selection: $setting.value) {
-                            ForEach(options, id:\.label) { option in
+                            ForEach(options, id:\.value) { option in
                                 option.labelView()
                                     .tag(option.value)
                             }
@@ -72,7 +72,12 @@ struct DCIntSettingView: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Text(String(setting.value))
+                            if let selectedOptionLabel = options.first(where: { $0.value == setting.value })?.label {
+                                Text(selectedOptionLabel)
+                            }
+                            else {
+                                Text(String(setting.value))
+                            }
                         }
                     }
                 }
@@ -82,7 +87,7 @@ struct DCIntSettingView: View {
                     Text(setting.displayLabel)
                     Spacer(minLength: 16.0)
                     Picker(setting.displayLabel, selection: $setting.value) {
-                        ForEach(options, id:\.label) { option in
+                        ForEach(options, id:\.value) { option in
                             option.labelView()
                                 .tag(option.value)
                         }
@@ -134,23 +139,50 @@ struct DCDoubleSettingView: View {
     @ObservedObject var setting: DCSetting<Double>
     
     var body: some View {
-        VStack {
+        if let options = setting.configuation?.options, options.count > 2 {
             HStack {
                 Text(setting.displayLabel)
                 Spacer()
-                Text("\(setting.value, specifier: "%.2f")")
-                    .monospacedDigit()
+                Menu {
+                    Picker(setting.displayLabel, selection: $setting.value) {
+                        ForEach(options, id:\.value) { option in
+                            option.labelView()
+                                .tag(option.value)
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Spacer()
+                        if let selectedOptionLabel = options.first(where: { $0.value == setting.value })?.label {
+                            Text(selectedOptionLabel)
+                        }
+                        else {
+                            Text("\(setting.value, specifier: "%.2f")")
+                                .monospacedDigit()
+                        }
+                    }
+                }
             }
-            if let bounds = setting.configuation?.bounds {
-                if let step = setting.configuation?.step {
-                    Slider(value: $setting.value, in: bounds.lowerBound...bounds.upperBound, step: step)
+        }
+        else {
+            VStack {
+                HStack {
+                    Text(setting.displayLabel)
+                    Spacer()
+                    Text("\(setting.value, specifier: "%.2f")")
+                        .monospacedDigit()
+                }
+                if let bounds = setting.configuation?.bounds {
+                    if let step = setting.configuation?.step {
+                        Slider(value: $setting.value, in: bounds.lowerBound...bounds.upperBound, step: step)
+                    }
+                    else {
+                        Slider(value: $setting.value, in: bounds.lowerBound...bounds.upperBound)
+                    }
                 }
                 else {
-                    Slider(value: $setting.value, in: bounds.lowerBound...bounds.upperBound)
+                    Slider(value: $setting.value)
                 }
-            }
-            else {
-                Slider(value: $setting.value)
             }
         }
     }
@@ -168,7 +200,7 @@ struct DCStringSettingView: View {
                     Spacer()
                     Menu {
                         Picker(setting.displayLabel, selection: $setting.value) {
-                            ForEach(options, id:\.label) { option in
+                            ForEach(options, id:\.value) { option in
                                 option.labelView()
                                     .tag(option.value)
                             }
@@ -176,7 +208,12 @@ struct DCStringSettingView: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Text(setting.value)
+                            if let selectedOptionLabel = options.first(where: { $0.value == setting.value })?.label {
+                                Text(selectedOptionLabel)
+                            }
+                            else {
+                                Text(setting.value)
+                            }
                         }
                     }
                 }
@@ -186,7 +223,7 @@ struct DCStringSettingView: View {
                     Text(setting.displayLabel)
                     Spacer(minLength: 16.0)
                     Picker(setting.displayLabel, selection: $setting.value) {
-                        ForEach(options, id:\.label) { option in
+                        ForEach(options, id:\.value) { option in
                             option.labelView()
                                 .tag(option.value)
                         }
@@ -224,12 +261,8 @@ struct DCDateSettingView: View {
 struct DCColorSettingView: View {
     @ObservedObject var setting: DCSetting<Color>
     
-    private var label: String {
-        return setting.label ?? setting.key
-    }
-    
     var body: some View {
-        ColorPicker(label, selection: $setting.value)
+        ColorPicker(setting.displayLabel, selection: $setting.value)
     }
 }
 

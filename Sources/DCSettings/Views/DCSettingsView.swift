@@ -47,7 +47,7 @@ public struct DCSettingsView<Provider: DCSettingViewProviding>: View {
     public var body: some View {
         List(settingsManager.groups) { group in
             if !hiddenKeys.contains(group.key.keyValue) {
-                Section(group.label ?? "") {
+                Section(group.label?.sentenceFormatted ?? "") {
                     ForEach(group.settings, id: \.key) { setting in
                         if ((setting.label != nil) || includeSettingsWithoutLabels) && !hiddenKeys.contains(setting.key.keyValue) {
                             if let content = contentProvider?.content(for: setting), !(content is EmptyView) {
