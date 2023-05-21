@@ -15,7 +15,7 @@ extension DCSetting {
 
 extension DCSettingOption {
     
-    @available(iOS 14.0, *)
+    @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
     public func labelView() -> some View {
         return HStack {
             if let string = label {
@@ -43,16 +43,20 @@ extension DCSettingOption {
     }
 }
 
-@available(iOS 15.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCBoolSettingView: View {
     @ObservedObject var setting: DCSetting<Bool>
     
     var body: some View {
         Toggle(setting.displayLabel, isOn: $setting.value)
+            .toggleStyle(SwitchToggleStyle())
+            #if os(macOS)
+                .controlSize(.mini)
+            #endif
     }
 }
 
-@available(iOS 15.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCIntSettingView: View {
     @ObservedObject var setting: DCSetting<Int>
     
@@ -71,34 +75,23 @@ struct DCIntSettingView: View {
                                 .tag(option.value)
                         }
                     }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .frame(maxWidth: 160.0)
+                    .labelsHidden()
+                    #if os(macOS)
+                        .pickerStyle(RadioGroupPickerStyle())
+                        .horizontalRadioGroupLayout()
+                    #elseif !os(watchOS)
+                        .pickerStyle(SegmentedPickerStyle())
+                        .frame(maxWidth: 160.0)
+                    #endif
                 }
             }
         }
         else if let bounds = setting.configuation?.bounds {
-            VStack {
-                HStack {
-                    Text(setting.displayLabel)
-                    Spacer()
-                    Text(String(setting.value))
-                        .monospacedDigit()
-                }
-                if let step = setting.configuation?.step {
-                    Slider(value: Binding(get: {
-                        Double(setting.value)
-                    }, set: { newValue in
-                        setting.value = Int(newValue)
-                    }), in: Double(bounds.lowerBound)...Double(bounds.upperBound), step: Double(step))
-                }
-                else {
-                    Slider(value: Binding(get: {
-                        Double(setting.value)
-                    }, set: { newValue in
-                        setting.value = Int(newValue)
-                    }), in: Double(bounds.lowerBound)...Double(bounds.upperBound))
-                }
-            }
+            DCSliderView(label: setting.displayLabel, value: Binding(get: {
+                Double(setting.value)
+            }, set: { newValue in
+                setting.value = Int(newValue)
+            }), bounds: DCValueBounds(lowerBound: Double(bounds.lowerBound), upperBound: Double(bounds.upperBound)), step: Double(setting.configuation?.step ?? 0), specifier: "%.0f")
         }
         else {
             HStack {
@@ -113,7 +106,7 @@ struct DCIntSettingView: View {
     }
 }
 
-@available(iOS 15.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCDoubleSettingView: View {
     @ObservedObject var setting: DCSetting<Double>
     
@@ -122,30 +115,12 @@ struct DCDoubleSettingView: View {
             DCMenuPickerView(label: setting.displayLabel, options: options, value: $setting.value)
         }
         else {
-            VStack {
-                HStack {
-                    Text(setting.displayLabel)
-                    Spacer()
-                    Text("\(setting.value, specifier: "%.2f")")
-                        .monospacedDigit()
-                }
-                if let bounds = setting.configuation?.bounds {
-                    if let step = setting.configuation?.step {
-                        Slider(value: $setting.value, in: bounds.lowerBound...bounds.upperBound, step: step)
-                    }
-                    else {
-                        Slider(value: $setting.value, in: bounds.lowerBound...bounds.upperBound)
-                    }
-                }
-                else {
-                    Slider(value: $setting.value)
-                }
-            }
+            DCSliderView(label: setting.displayLabel, value: $setting.value, bounds: setting.configuation?.bounds, step: setting.configuation?.step, specifier: "%.2f")
         }
     }
 }
 
-@available(iOS 15.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCStringSettingView: View {
     @ObservedObject var setting: DCSetting<String>
     
@@ -164,8 +139,14 @@ struct DCStringSettingView: View {
                                 .tag(option.value)
                         }
                     }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .frame(maxWidth: 160.0)
+                    .labelsHidden()
+                    #if os(macOS)
+                        .pickerStyle(RadioGroupPickerStyle())
+                        .horizontalRadioGroupLayout()
+                    #elseif os(iOS)
+                        .pickerStyle(SegmentedPickerStyle())
+                        .frame(maxWidth: 160.0)
+                    #endif
                 }
             }
         }
@@ -175,34 +156,102 @@ struct DCStringSettingView: View {
     }
 }
 
-@available(iOS 15.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCDateSettingView: View {
     @ObservedObject var setting: DCSetting<Date>
     
     var body: some View {
-        if let bounds = setting.configuation?.bounds {
-            DatePicker(selection: $setting.value, in: bounds.upperBound...bounds.upperBound, displayedComponents: .date) {
-                Text(setting.displayLabel)
+        #if os(watchOS)
+            // TODO: watchOS implementation
+            Text(setting.displayLabel)
+        #else
+            if let bounds = setting.configuation?.bounds {
+                DatePicker(selection: $setting.value, in: bounds.upperBound...bounds.upperBound, displayedComponents: .date) {
+                    Text(setting.displayLabel)
+                }
             }
-        }
-        else {
-            DatePicker(selection: $setting.value, in: ...Date.now, displayedComponents: .date) {
-                Text(setting.displayLabel)
+            else {
+                DatePicker(selection: $setting.value, in: ...Date.now, displayedComponents: .date) {
+                    Text(setting.displayLabel)
+                }
             }
-        }
+        #endif
     }
 }
 
-@available(iOS 15.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCColorSettingView: View {
     @ObservedObject var setting: DCSetting<Color>
     
     var body: some View {
-        ColorPicker(setting.displayLabel, selection: $setting.value)
+        #if os(watchOS)
+                // TODO: watchOS implementation
+                Text(setting.displayLabel)
+        #else
+                ColorPicker(setting.displayLabel, selection: $setting.value)
+        #endif
     }
 }
 
-@available(iOS 15.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
+struct DCSliderView: View {
+    let label: String
+    @Binding var value: Double
+    let bounds: DCValueBounds<Double>?
+    let step: Double?
+    let specifier: String
+    
+    var body: some View {
+        VStack {
+            HStack {
+                Text(label)
+                Spacer()
+                Text("\(value, specifier: specifier)")
+                    .monospacedDigit()
+            }
+            if let valueBounds = bounds {
+                if let valueStep = step {
+                    Slider(value: $value, in: valueBounds.lowerBound...valueBounds.upperBound, step: valueStep) {
+                        Text(label)
+                    } minimumValueLabel: {
+                        Text("\(valueBounds.lowerBound, specifier: specifier)")
+                            .monospacedDigit()
+                            .foregroundColor(.secondary)
+                            .font(.footnote)
+                    } maximumValueLabel: {
+                        Text("\(valueBounds.upperBound, specifier: specifier)")
+                            .monospacedDigit()
+                            .foregroundColor(.secondary)
+                            .font(.footnote)
+                    }
+                    .labelsHidden()
+                }
+                else {
+                    Slider(value: $value, in: valueBounds.lowerBound...valueBounds.upperBound) {
+                        Text(label)
+                    } minimumValueLabel: {
+                        Text("\(valueBounds.lowerBound, specifier: specifier)")
+                            .monospacedDigit()
+                            .foregroundColor(.secondary)
+                            .font(.footnote)
+                    } maximumValueLabel: {
+                        Text("\(valueBounds.upperBound, specifier: specifier)")
+                            .monospacedDigit()
+                            .foregroundColor(.secondary)
+                            .font(.footnote)
+                    }
+                    .labelsHidden()
+                }
+            }
+            else {
+                Slider(value: $value)
+            }
+        }
+    }
+}
+
+
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
     let label: String
     let options: [DCSettingOption<ValueType>]
@@ -212,35 +261,46 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
         HStack {
             Text(label)
             Spacer()
-            Menu {
+            #if os(macOS) || os(watchOS)
                 Picker(label, selection: $value) {
                     ForEach(options, id:\.value) { option in
                         option.labelView()
                             .tag(option.value)
                     }
                 }
-            } label: {
-                HStack {
-                    Spacer()
-                    if let selectedOptionLabel = options.first(where: { $0.value == value })?.label {
-                        Text(selectedOptionLabel)
-                    } else {
-                        if let doubleValue = value as? Double {
-                            Text("\(doubleValue, specifier: "%.2f")")
-                                .monospacedDigit()
+                .labelsHidden()
+                .fixedSize()
+            #else
+                Menu {
+                    Picker(label, selection: $value) {
+                        ForEach(options, id:\.value) { option in
+                            option.labelView()
+                                .tag(option.value)
                         }
-                        else if let intValue = value as? Int {
-                            Text(String(intValue))
-                        }
-                        else if let stringValue = value as? String {
-                            Text(stringValue)
-                        }
-                        else {
-                            Text(String(describing: value))
+                    }
+                } label: {
+                    HStack {
+                        Spacer()
+                        if let selectedOptionLabel = options.first(where: { $0.value == value })?.label {
+                            Text(selectedOptionLabel)
+                        } else {
+                            if let doubleValue = value as? Double {
+                                Text("\(doubleValue, specifier: "%.2f")")
+                                    .monospacedDigit()
+                            }
+                            else if let intValue = value as? Int {
+                                Text(String(intValue))
+                            }
+                            else if let stringValue = value as? String {
+                                Text(stringValue)
+                            }
+                            else {
+                                Text(String(describing: value))
+                            }
                         }
                     }
                 }
-            }
+            #endif
         }
     }
 }
@@ -255,7 +315,7 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
 /// If no specific view is available for the value type, the view will be empty.
 ///
 /// Supported types are: `Bool`, `Int`,  `Double`, `String`, `Date` and `Color`.
-@available(iOS 15.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 public struct DCSettingView: View {
     
     private let setting: any DCSettable
@@ -291,7 +351,7 @@ public struct DCSettingView: View {
     }
 }
 
-@available(iOS 15.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCSettingView_Previews: PreviewProvider {
 
     static var previews: some View {

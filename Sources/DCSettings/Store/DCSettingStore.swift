@@ -33,7 +33,15 @@ public enum DCSettingStore {
         case .userDefaults(let suiteName):
             return UserDefaults.init(suiteName: suiteName) ?? .standard
         case .ubiquitous:
-            return NSUbiquitousKeyValueStore.default
+            #if os(watchOS)
+                if #available(watchOS 9.0, *) {
+                    return NSUbiquitousKeyValueStore.default
+                } else {
+                    fatalError("[DCSettingStore] 'NSUbiquitousKeyValueStore' is only available in watchOS 9.0 or newer")
+                }
+            #else
+                return NSUbiquitousKeyValueStore.default
+            #endif
         case .custom(let backingStore):
             return backingStore
         }

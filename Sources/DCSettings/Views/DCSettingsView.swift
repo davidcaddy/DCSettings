@@ -13,7 +13,7 @@ import SwiftUI
 /// The view uses a `DCSettingViewProviding` instance to provide custom views for individual settings.
 /// If no custom view is available for a specific setting, a default view will be used if the setting's value is a supported type.
 /// Supported types as standard are: `Bool`, `Int`,  `Double`, `String`, `Date` and `Color`.
-@available(iOS 15.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 public struct DCSettingsView<Provider: DCSettingViewProviding>: View {
     
     private let settingsManager: DCSettingsManager
@@ -52,22 +52,24 @@ public struct DCSettingsView<Provider: DCSettingViewProviding>: View {
                         if ((setting.label != nil) || includeSettingsWithoutLabels) && !hiddenKeys.contains(setting.key.keyValue) {
                             if let content = contentProvider?.content(for: setting), !(content is EmptyView) {
                                 content
-                                    .animation(nil)
                             }
                             else {
                                 DCSettingView(setting)
-                                    .animation(nil)
                             }
                         }
                     }
                 }
             }
         }
-        .animation(.default)
+        #if os(macOS)
+        .listStyle(SidebarListStyle())
+        #elseif os(iOS)
+        .listStyle(InsetGroupedListStyle())
+        #endif
     }
 }
 
-@available(iOS 15.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCSettingsView_Previews: PreviewProvider {
 
     static var previews: some View {

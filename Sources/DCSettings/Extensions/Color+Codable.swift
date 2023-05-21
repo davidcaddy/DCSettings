@@ -13,7 +13,7 @@ import UIKit
 import AppKit
 #endif
 
-@available(iOS 14.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 extension Color: Codable {
     
     #if canImport(UIKit)

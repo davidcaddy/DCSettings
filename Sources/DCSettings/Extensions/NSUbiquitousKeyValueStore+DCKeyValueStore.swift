@@ -7,6 +7,7 @@
 import Foundation
 import Combine
 
+@available(watchOS 9.0, *)
 extension NSUbiquitousKeyValueStore: DCKeyValueStore {
     
     /// Sets the value of the specified key in the key-value store.

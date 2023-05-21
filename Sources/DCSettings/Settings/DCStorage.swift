@@ -20,7 +20,7 @@ import SwiftUI
 ///
 /// @DCStorage("key3") var value3: Bool
 /// ```
-@available(iOS 14.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 @propertyWrapper
 public struct DCStorage<ValueType>: DynamicProperty where ValueType: Equatable {
     
