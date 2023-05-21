@@ -17,7 +17,7 @@ Welcome to **DCSettings**, a Swift package designed to help manage user preferen
 
 ```swift
 DCSettingsManager.shared.configure {
-    DCSettingGroup("general") {
+    DCSettingGroup("General") {
         DCSetting(key: "refreshInterval") {
             DCSettingOption(value: 5, label: "5 mins")
             DCSettingOption(value: 10, label: "10 mins")
@@ -34,7 +34,7 @@ DCSettingsManager.shared.configure {
         DCSetting(key: "markAsReadOnScroll", defaultValue: true)
         DCSetting(key: "maxSyncItems", defaultValue: 1000)
     }
-    DCSettingGroup("appearance") {
+    DCSettingGroup("Appearance") {
         DCSetting(key: "theme", label: "Theme", options: ["Light", "Dark"], defaultIndex: 0)
         DCSetting(key: "fontSize", options: [12, 14, 16, 18, 20], defaultIndex: 2)
         DCSetting(key: "lineSpacing", defaultValue: 1.2, lowerBound: 1.0, upperBound: 1.6, step: 0.1)
