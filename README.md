@@ -3,11 +3,11 @@
 </p>
 
 <p align="center">
-    <img src="https://img.shields.io/badge/Swift-5-orange.svg" />
+    <img src="https://img.shields.io/badge/Swift-5.7-orange.svg" />
     <a href="https://swift.org/package-manager">
         <img src="https://img.shields.io/badge/swiftpm-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
     </a>
-     <img src="https://img.shields.io/badge/platforms-ios+mac-brightgreen.svg?style=flat" alt="iOS + Mac" />
+     <img src="https://img.shields.io/badge/platforms-iOS+macOS+watchOS-brightgreen.svg?style=flat" alt="iOS | Mac" />
     <a href="mastodon.social/@caddy">
         <img src="https://img.shields.io/badge/Mastodon-@caddy-blue.svg?style=flat" alt="Mastodon: @caddy" />
     </a>
@@ -15,41 +15,35 @@
 
 Welcome to **DCSettings**, a Swift package designed to help manage user preferences and provide a simple drop-in user interface.
 
-<table>
-  <tr>
-    <td>
-      <pre><code>
-        DCSettingsManager.shared.configure {
-            DCSettingGroup("general") {
-                DCSetting(key: "refreshInterval") {
-                    DCSettingOption(value: 5, label: "5 mins")
-                    DCSettingOption(value: 10, label: "10 mins")
-                    DCSettingOption(value: 15, label: "15 mins")
-                    DCSettingOption(value: 30, label: "30 mins", isDefault: true)
-                    DCSettingOption(value: 60, label: "60 mins")
-                }
-                DCSetting(key: "articleListLayout", label: "Article List Layout") {
-                    DCSettingOption(value: "List", label: "List", systemImage: "list.bullet")
-                    DCSettingOption(value: "Grid", label: "Grid", systemImage: "square.grid.2x2")
-                }
-                DCSetting(key: "showImages", defaultValue: true)
-                DCSetting(key: "showFullContent", defaultValue: false)
-                DCSetting(key: "markAsReadOnScroll", defaultValue: true)
-            }
-            DCSettingGroup("appearance") {
-                DCSetting(key: "theme", label: "Theme", options: ["Light", "Dark"], defaultIndex: 0)
-                DCSetting(key: "fontSize", label: "Font Size", options: [12, 14, 16, 18, 20], defaultIndex: 2)
-                DCSetting(key: "lineSpacing", defaultValue: 1.2, label: "Line Spacing", lowerBound: 1.0, upperBound: 1.6, step: 0.1)
-                DCSetting(key: "highlightColor", defaultValue: Color.blue)
-            }
+```swift
+DCSettingsManager.shared.configure {
+    DCSettingGroup("general") {
+        DCSetting(key: "refreshInterval") {
+            DCSettingOption(value: 5, label: "5 mins")
+            DCSettingOption(value: 10, label: "10 mins")
+            DCSettingOption(value: 15, label: "15 mins")
+            DCSettingOption(value: 30, label: "30 mins", isDefault: true)
+            DCSettingOption(value: 60, label: "60 mins")
         }
-    </code></pre>
-    </td>
-    <td>
-      <img src="ScreenShot.png" alt="Settings View Screenshot">
-    </td>
-  </tr>
-</table>
+        DCSetting(key: "articleListLayout") {
+            DCSettingOption(value: "List", label: "List", systemImage: "list.bullet")
+            DCSettingOption(value: "Grid", label: "Grid", systemImage: "square.grid.2x2")
+        }
+        DCSetting(key: "showImages", defaultValue: true)
+        DCSetting(key: "showFullContent", defaultValue: false)
+        DCSetting(key: "markAsReadOnScroll", defaultValue: true)
+        DCSetting(key: "maxSyncItems", defaultValue: 1000)
+    }
+    DCSettingGroup("appearance") {
+        DCSetting(key: "theme", label: "Theme", options: ["Light", "Dark"], defaultIndex: 0)
+        DCSetting(key: "fontSize", options: [12, 14, 16, 18, 20], defaultIndex: 2)
+        DCSetting(key: "lineSpacing", defaultValue: 1.2, lowerBound: 1.0, upperBound: 1.6, step: 0.1)
+        DCSetting(key: "highlightColor", defaultValue: Color.blue)
+    }
+}
+```
+
+![](ScreenShot.png)
 
 ## Installation
 
