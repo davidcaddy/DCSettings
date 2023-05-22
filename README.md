@@ -37,7 +37,7 @@ DCSettingsManager.shared.configure {
         DCSetting(key: "maxSyncItems", defaultValue: 1000)
     }
     DCSettingGroup("Appearance") {
-        DCSetting(key: "theme", label: "Theme", options: ["Light", "Dark"], defaultIndex: 0)
+        DCSetting(key: "theme", label: "Theme", options: ["Light", "Dark"])
         DCSetting(key: "fontSize", options: [12, 14, 16, 18, 20], defaultIndex: 2)
         DCSetting(key: "lineSpacing", defaultValue: 1.2, lowerBound: 1.0, upperBound: 1.6, step: 0.1)
         DCSetting(key: "highlightColor", defaultValue: Color.blue)
