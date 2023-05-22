@@ -8,7 +8,7 @@
         <img src="https://img.shields.io/badge/swiftpm-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
     </a>
      <img src="https://img.shields.io/badge/platforms-iOS+macOS-brightgreen.svg?style=flat" alt="iOS | Mac" />
-    <a href="mastodon.social/@caddy">
+    <a href="https://mastodon.social/@caddy">
         <img src="https://img.shields.io/badge/Mastodon-@caddy-blue.svg?style=flat" alt="Mastodon: @caddy" />
     </a>
 </p>
