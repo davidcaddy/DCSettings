@@ -17,7 +17,7 @@ DCSettingsManager.shared.configure {
             DCSettingOption(value: 5, label: "5 mins")
             DCSettingOption(value: 10, label: "10 mins")
             DCSettingOption(value: 15, label: "15 mins")
-            DCSettingOption(value: 30, label: "30 mins", isDefault: true)
+            DCSettingOption(value: 30, label: "30 mins").default()
             DCSettingOption(value: 60, label: "60 mins")
         }
         DCSetting(key: "articleListLayout") {

@@ -36,7 +36,7 @@ public struct DCSettingOption<ValueType>: Equatable where ValueType: Equatable {
     /// A boolean value indicating whether the option is the default option.
     public let isDefault: Bool
     
-    private init(value: ValueType, label: String?, image: ImageName?, isDefault: Bool = false) {
+    init(value: ValueType, label: String?, image: ImageName?, isDefault: Bool = false) {
         self.value = value
         self.label = label
         self.image = image
@@ -104,6 +104,14 @@ public struct DCSettingOption<ValueType>: Equatable where ValueType: Equatable {
     ///   - isDefault: A boolean value indicating whether the option is the default option. The default value is `false`.
     public init(value: ValueType, label: String, systemImage: String, isDefault: Bool = false) {
         self.init(value: value, label: label, image: .system(systemImage), isDefault: isDefault)
+    }
+}
+
+extension DCSettingOption {
+    
+    /// Returns a new `DCSettingOption` instance with default status `true`.
+    public func `default`() -> DCSettingOption {
+        return DCSettingOption(value: value, label: label, image: image, isDefault: true)
     }
 }
 
