@@ -36,7 +36,8 @@ public enum DCSettingStore {
             #if os(watchOS)
                 if #available(watchOS 9.0, *) {
                     return NSUbiquitousKeyValueStore.default
-                } else {
+                }
+                else {
                     fatalError("[DCSettingStore] 'NSUbiquitousKeyValueStore' is only available in watchOS 9.0 or newer")
                 }
             #else
@@ -74,7 +75,7 @@ public enum DCSettingStore {
     /// - Parameter key: A key in the key-value store.
     /// - Returns: The value associated with the specified key, or `nil` if the key does not exist.
     public func object<ValueType>(forKey key: String) -> ValueType? {
-        if case .custom(_) = self {
+        if case .custom = self {
             return backingStore.object(forKey: key) as? ValueType
         }
         

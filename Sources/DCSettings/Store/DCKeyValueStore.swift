@@ -74,4 +74,3 @@ public protocol DCKeyValueStore {
     /// - Returns: The string associated with the specified key, or `nil` if the key does not exist or its value is not a string.
     func string(forKey key: String) -> String?
 }
-

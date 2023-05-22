@@ -108,7 +108,7 @@ public class DCSettingsManager {
     ///
     /// - Returns: The desired represented value has been configured by the manager and can be converted, otherwise returns `nil`.
     public func representedValue<ValueType>(forKey key: DCKeyRepresentable) -> ValueType? where ValueType: RawRepresentable, ValueType.RawValue: Equatable {
-        if let settingRawValue: ValueType.RawValue = value(forKey: key), let option = ValueType(rawValue: settingRawValue)  {
+        if let settingRawValue: ValueType.RawValue = value(forKey: key), let option = ValueType(rawValue: settingRawValue) {
             return option
         }
         return nil

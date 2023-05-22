@@ -70,7 +70,7 @@ struct DCIntSettingView: View {
                     Text(setting.displayLabel)
                     Spacer(minLength: 16.0)
                     Picker(setting.displayLabel, selection: $setting.value) {
-                        ForEach(options, id:\.value) { option in
+                        ForEach(options, id: \.value) { option in
                             option.labelView()
                                 .tag(option.value)
                         }
@@ -134,7 +134,7 @@ struct DCStringSettingView: View {
                     Text(setting.displayLabel)
                     Spacer(minLength: 16.0)
                     Picker(setting.displayLabel, selection: $setting.value) {
-                        ForEach(options, id:\.value) { option in
+                        ForEach(options, id: \.value) { option in
                             option.labelView()
                                 .tag(option.value)
                         }
@@ -250,7 +250,6 @@ struct DCSliderView: View {
     }
 }
 
-
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
     let label: String
@@ -263,7 +262,7 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
             Spacer()
             #if os(macOS) || os(watchOS)
                 Picker(label, selection: $value) {
-                    ForEach(options, id:\.value) { option in
+                    ForEach(options, id: \.value) { option in
                         option.labelView()
                             .tag(option.value)
                     }
@@ -273,7 +272,7 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
             #else
                 Menu {
                     Picker(label, selection: $value) {
-                        ForEach(options, id:\.value) { option in
+                        ForEach(options, id: \.value) { option in
                             option.labelView()
                                 .tag(option.value)
                         }
@@ -283,7 +282,8 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
                         Spacer()
                         if let selectedOptionLabel = options.first(where: { $0.value == value })?.label {
                             Text(selectedOptionLabel)
-                        } else {
+                        }
+                        else {
                             if let doubleValue = value as? Double {
                                 Text("\(doubleValue, specifier: "%.2f")")
                                     .monospacedDigit()
@@ -304,7 +304,6 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
         }
     }
 }
-
 
 /// A view that displays a user interface for changing a setting.
 ///

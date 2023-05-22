@@ -182,7 +182,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     ///   - store: An optional `DCSettingStore` instance used to store the setting value. The default value is `nil`.
     ///   - options: An array of `DCSettingOption` instances.
     public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, options configuredOptions: [DCSettingOption<ValueType>]) {
-        if let defaultValue = configuredOptions.first(where: { $0.isDefault } )?.value ?? configuredOptions.first?.value {
+        if let defaultValue = configuredOptions.first(where: { $0.isDefault })?.value ?? configuredOptions.first?.value {
             self.init(key: key, value: defaultValue, label: label, configuation: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
         }
         else {

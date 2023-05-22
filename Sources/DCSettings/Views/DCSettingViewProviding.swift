@@ -32,6 +32,9 @@ public protocol DCSettingViewProviding {
 /// This type can be used as a placeholder when no custom views are needed.
 public struct DCDefaultViewProvider: DCSettingViewProviding {
     
+    /// Creates a new `DCDefaultViewProvider` instance.
+    public init() {}
+    
     /// Returns a view representing the user interface for changing the specified setting.
     ///
     /// This default implementation of the `content` method always returns `nil`, indicating that no custom view is available for the specified setting.
