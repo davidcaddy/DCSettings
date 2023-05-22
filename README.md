@@ -264,7 +264,7 @@ struct ContentView: View {
 }
 ```
 
-## Contributions and support
+## Contributions
 
 Before you start using **DCSettings**, it’s recommended you spend a few minutes familiarizing yourself with its documentation. Since this is a very young project, it’s likely to have some rough edges. Please do send through feedback on any issues you encounter.
 
