@@ -47,7 +47,12 @@ DCSettingsManager.shared.configure {
 
 Then use a **DCSettings** to display the settings in a list view:
 
-![Screenshot](Screenshot.png)
+![Settings View](/Sources/DCSettings/Documentation.docc/Resources/SettingsView.png#gh-light-mode-only)
+![Settings View](/Sources/DCSettings/Documentation.docc/Resources/SettingsView~dark.png#gh-dark-mode-only)
+
+```swift
+DCSettingsView(includeSettingsWithoutLabels: true)
+```
 
 ## Installation
 
@@ -258,3 +263,9 @@ struct ContentView: View {
     }
 }
 ```
+
+## Contributions and support
+
+Before you start using **DCSettings**, it’s recommended you spend a few minutes familiarizing yourself with its documentation. Since this is a very young project, it’s likely to have some rough edges. Please do send through feedback on any issues you encounter.
+
+Depending on scope and direction your contributions are more than welcome. If you wish to make a change, please [open a Pull Request](https://github.com/JohnSundell/Publish/pull/new) - even if just a rough draft of the proposed changes - and we can discuss it further.
