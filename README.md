@@ -132,10 +132,10 @@ In this example, we’ve created a setting group for general settings and added 
 
 ## Accessing Settings
 
-Once you’ve configured your settings, you can access them elsewhere using the `DCStorage` property wrapper. Here’s an example of how you might access the ShowNotifications setting from the previous example:
+Once you’ve configured your settings, you can access them elsewhere using the `DCStoredValue` property wrapper. Here’s an example of how you might access the ShowNotifications setting from the previous example:
 
 ```swift
-@DCStorage("ShowNotifications") var showNotifications: Bool
+@DCStoredValue("ShowNotifications") var showNotifications: Bool
 ```
 
 You can also access settings directly using the `DCSettingsManager` `value(forKey:)` method. Here’s an example of how you might do this:

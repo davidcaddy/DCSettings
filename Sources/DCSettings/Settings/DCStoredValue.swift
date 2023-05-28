@@ -8,21 +8,21 @@ import SwiftUI
 
 /// A property wrapper that wraps a value stored in a `DCSettingStore`.
 ///
-/// The `DCStorage` property wrapper can be used to wrap a value that is stored in a `DCSettingStore`.
+/// The `DCStoredValue` property wrapper can be used to wrap a value that is stored in a `DCSettingStore`.
 ///
 /// When the wrapped value is accessed or modified, the value will be automatically loaded from or saved to the store using a `DCSetting` instance.
 ///
 /// Example:
 /// ```swift
-/// @DCStorage("key1") var value1: Int
+/// @DCStoredValue("key1") var value1: Int
 ///
-/// @DCStorage("key2") var value2: String
+/// @DCStoredValue("key2") var value2: String
 ///
-/// @DCStorage("key3") var value3: Bool
+/// @DCStoredValue("key3") var value3: Bool
 /// ```
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 @propertyWrapper
-public struct DCStorage<ValueType>: DynamicProperty where ValueType: Equatable {
+public struct DCStoredValue<ValueType>: DynamicProperty where ValueType: Equatable {
     
     @StateObject private var setting: DCSetting<ValueType>
 
@@ -38,13 +38,13 @@ public struct DCStorage<ValueType>: DynamicProperty where ValueType: Equatable {
         }
     }
 
-    /// Initializes a new `DCStorage` instance with the specified key, default value, and settings manager.
+    /// Initializes a new `DCStoredValue` instance with the specified key and settings manager.
     ///
-    /// This initializer creates a new instance of `DCStorage` with the specified key, default value, and settings manager.
+    /// This initializer creates a new instance of `DCStoredValue` with the specified key and settings manager.
     /// The key and default value are required, while the settings manager is optional and defaults to the `.shared` singleton instance.
     ///
     /// If a `DCSetting` instance with the specified key already exists in the settings manager, it will be used to initialize the `StateObject` property.
-    /// Otherwise, a new `DCSetting` instance will be created with the specified key and default value.
+    /// Otherwise, a runtime error will occur.
     ///
     /// - Parameters:
     ///   - key: The key used to identify the setting in the store.
@@ -58,7 +58,7 @@ public struct DCStorage<ValueType>: DynamicProperty where ValueType: Equatable {
             _setting = StateObject(wrappedValue: setting)
         }
         else {
-            fatalError("[DCStorage] No value of specified type found for key \(key.keyValue). Settings need to be configured in the specified settings manager before use.")
+            fatalError("[DCStoredValue] No value of specified type found for key \(key.keyValue). Settings need to be configured in the specified settings manager before use.")
         }
     }
 }
