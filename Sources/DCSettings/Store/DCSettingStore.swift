@@ -52,8 +52,8 @@ public enum DCSettingStore {
     ///
     /// - Parameter key: The key for the value to observe.
     /// - Returns: A publisher that emits the value for the given key whenever it changes.
-    public func publisher(forKey key: String) -> AnyPublisher<Any?, Never> {
-        return backingStore.publisher(forKey: key)
+    public func valuePublisher(forKey key: String) -> AnyPublisher<Any?, Never> {
+        return backingStore.valuePublisher(forKey: key)
     }
     
     /// Sets the value of the specified key in the key-value store.

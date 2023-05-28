@@ -13,7 +13,7 @@ public protocol DCKeyValueStore {
     ///
     /// - Parameter key: The key for the value to observe.
     /// - Returns: A publisher that emits the value for the given key whenever it changes.
-    func publisher(forKey key: String) -> AnyPublisher<Any?, Never>
+    func valuePublisher(forKey key: String) -> AnyPublisher<Any?, Never>
     
     /// Sets the value of the specified key in the key-value store.
     ///

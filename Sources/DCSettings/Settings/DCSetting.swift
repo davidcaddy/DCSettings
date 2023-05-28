@@ -226,7 +226,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     
     private func setUpListener() {
         guard let store = store else { return }
-        cancellable = store.publisher(forKey: key)
+        cancellable = store.valuePublisher(forKey: key)
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
                 if let newTypedValue = newValue as? ValueType, self?.value != newTypedValue {
