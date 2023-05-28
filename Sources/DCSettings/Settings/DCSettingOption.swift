@@ -6,6 +6,56 @@
 
 import Foundation
 
+/// A protocol that defines the requirements for providing options for a `DCSetting`.
+///
+/// Conforming types must be `CaseIterable` and `RawRepresentable` with a `RawValue` that conforms to `Equatable`.
+/// This protocol is typically used with an enumeration to provide a finite set of options for a `DCSetting`.
+public protocol DCSettingOptionProviding: CaseIterable, RawRepresentable where RawValue: Equatable {
+    
+    /// The default case for the conforming type.
+    ///
+    /// If not provided, this property returns `nil`.
+    static var defaultCase: Self? { get }
+    
+    /// The label to display for the conforming type's case.
+    ///
+    /// If not provided, this property returns `nil`.
+    var label: String? { get }
+    
+    /// The image to display for the conforming type's case.
+    ///
+    /// If not provided, this property returns `nil`.
+    var image: DCImageName? { get }
+}
+
+/// An extension that provides default implementations for the `DCSettingOptionProviding` protocol.
+public extension DCSettingOptionProviding {
+    
+    /// The default case for the conforming type.
+    ///
+    /// This property returns `nil` by default.
+    static var defaultCase: Self? { return nil }
+    
+    /// The label to display for the conforming type's case.
+    ///
+    /// This property returns `nil` by default.
+    var label: String? { return nil }
+    
+    /// The image to display for the conforming type's case.
+    ///
+    /// This property returns `nil` by default.
+    var image: DCImageName? { return nil }
+}
+
+/// An enumeration representing the name of an image for a setting option.
+///
+/// The `ImageName` enumeration includes two cases: `system` and `custom`. The `system` case represents a system-provided image,
+/// while the `custom` case represents any other image available within the project.
+public enum DCImageName: Equatable {
+    case system(String)
+    case custom(String)
+}
+
 /// A structure that represents a setting option.
 ///
 /// The `DCSettingOption` struct is used to represent a setting option with an associated value of a specific type.
@@ -15,20 +65,11 @@ import Foundation
 /// - Note: The value type must conform to the `Equatable` protocol.
 public struct DCSettingOption<ValueType>: Equatable where ValueType: Equatable {
     
-    /// An enumeration representing the name of an image for a setting option.
-    ///
-    /// The `ImageName` enumeration includes two cases: `system` and `custom`. The `system` case represents a system-provided image,
-    /// while the `custom` case represents any other image available within the project.
-    public enum ImageName: Equatable {
-        case system(String)
-        case custom(String)
-    }
-    
     /// An optional label for the setting option.
     public let label: String?
     
     /// An optional image for the setting option.
-    public let image: ImageName?
+    public let image: DCImageName?
     
     /// The value associated with the setting option.
     public let value: ValueType
@@ -36,7 +77,7 @@ public struct DCSettingOption<ValueType>: Equatable where ValueType: Equatable {
     /// A boolean value indicating whether the option is the default option.
     public let isDefault: Bool
     
-    init(value: ValueType, label: String?, image: ImageName?, isDefault: Bool = false) {
+    init(value: ValueType, label: String?, image: DCImageName?, isDefault: Bool = false) {
         self.value = value
         self.label = label
         self.image = image

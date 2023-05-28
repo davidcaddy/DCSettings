@@ -190,6 +190,31 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
         }
     }
     
+    /// Initializes a new `DCSetting` instance with the specified key and options provider.
+    ///
+    /// - Parameters:
+    ///   - key: The key for the setting.
+    ///   - label: The label for the setting. Defaults to `nil`.
+    ///   - store: The store to use for the setting. Defaults to `nil`.
+    ///   - optionsProvider: The type that provides options for the setting.
+    public convenience init?<ProviderType: DCSettingOptionProviding>(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, optionsProvider: ProviderType.Type) where ValueType == ProviderType.RawValue {
+        if let defaultCase = optionsProvider.defaultCase ?? ProviderType.allCases.first {
+            let options: [DCSettingOption] = ProviderType.allCases.map { option in
+                var label = option.label
+                if label == nil, let stringConvertible = option.rawValue as? LosslessStringConvertible {
+                    label = String(stringConvertible)
+                }
+                let image = option.image
+                let isDefault = option == defaultCase
+                return DCSettingOption(value: option.rawValue, label: label, image: image, isDefault: isDefault)
+            }
+            self.init(key: key, label: label, store: store, options: options)
+        }
+        else {
+            return nil
+        }
+    }
+    
     /// Refreshes the setting value from the store.
     ///
     /// This method refreshes the current value of the setting from the store.
