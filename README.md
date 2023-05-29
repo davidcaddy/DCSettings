@@ -194,21 +194,21 @@ Here’s an example that shows how you might create and use a `DCSettingsView`:
 ```swift
 struct ContentView: View {
     var body: some View {
-        DCSettingsView(includeSettingsWithoutLabels: true)
+        DCSettingsView(filter: .labelled)
     }
 }
 ```
 
-> Note: By default, `DCSettingsView` will only display settings that have a label. If you want to display settings that don’t have a label, you can set the `includeSettingsWithoutLabels` parameter to `true`.
+> Note: By default, `DCSettingsView` will display **all** settings. If you want to display settings only settings that have a label, you can set the filter parameter to `.labelled`.
 
-`DCSettingsView` has several customization options available. For example, you can specify an array of hidden keys to hide certain setting groups or individual settings. You can also provide a custom content provider to control how each setting is displayed.
+`DCSettingsView` has several customization options available. For example, you can specify a filter to include or exclude certain setting groups or individual settings. You can also provide a custom content provider to control how each setting is displayed.
 
-Here’s an example that specifies that the “General” setting group should be hidden, by passing an array of hidden keys to the `DCSettingsView` initializer:
+Here’s an example that specifies that the “General” setting group should be excluded, by passing a filter to the `DCSettingsView` initializer:
 
 ```swift
 struct ContentView: View {
     var body: some View {
-        DCSettingsView(hiddenKeys: ["General"])
+        DCSettingsView(filter: .excludeKeys(["General"]))
     }
 }
 ```
