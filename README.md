@@ -51,7 +51,7 @@ Then use a **DCSettingsView** to display the settings in a list view:
 ![Settings View](/Sources/DCSettings/Documentation.docc/Resources/SettingsView~dark.png#gh-dark-mode-only)
 
 ```swift
-DCSettingsView(includeSettingsWithoutLabels: true)
+DCSettingsView()
 ```
 
 ## Installation
