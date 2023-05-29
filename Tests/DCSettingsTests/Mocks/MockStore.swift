@@ -12,7 +12,7 @@ class MockStore: DCKeyValueStore {
     var storage: [String: Any] = [:]
     private let subject = PassthroughSubject<(String, Any?), Never>()
     
-    func publisher(forKey key: String) -> AnyPublisher<Any?, Never> {
+    func valuePublisher(forKey key: String) -> AnyPublisher<Any?, Never> {
         return subject.filter { $0.0 == key }.map { $0.1 }.eraseToAnyPublisher()
     }
     
