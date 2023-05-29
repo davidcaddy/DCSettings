@@ -52,7 +52,7 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
     ///   The default value is an instance of `DCDefaultViewProvider`.
     ///   - listStyle: A `ListStyle` value used to set the style of the list. The default value is platform-dependent.
     #if os(macOS)
-        public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, contentProvider: Provider? = DCDefaultViewProvider(), listStyle: Style = SidebarListStyle()) {
+        public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, contentProvider: Provider? = DCDefaultViewProvider(), listStyle: S = SidebarListStyle()) {
             self.settingsManager = settingsManager
             self.filter = filter
             self.contentProvider = contentProvider
