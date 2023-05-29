@@ -43,5 +43,5 @@ DCSettingsManager.shared.configure {
 ![Settings View](SettingsView.png)
 
 ```swift
-DCSettingsView(includeSettingsWithoutLabels: true)
+DCSettingsView()
 ```
