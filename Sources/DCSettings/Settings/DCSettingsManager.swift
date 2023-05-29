@@ -137,7 +137,7 @@ public class DCSettingsManager {
     ///
     /// - Returns: An `AnyPublisher` that emits the current value of the setting with the specified key.
     /// Returns `nil` if the setting is not found or the value not of the expected type.
-    public func valuePublisher<ValueType>(forKey key: String) -> AnyPublisher<ValueType, Never>? where ValueType: Equatable {
+    public func valuePublisher<ValueType>(forKey key: DCKeyRepresentable) -> AnyPublisher<ValueType, Never>? where ValueType: Equatable {
         guard let settable = setting(forKey: key) as? DCSetting<ValueType> else {
             return nil
         }
@@ -153,7 +153,7 @@ public class DCSettingsManager {
     ///
     /// - Returns: An `AnyPublisher` that emits the represented value of the setting with the specified key.
     /// Returns `nil` if the setting is not found or the represented value cannot be initialized from the raw value.
-    public func representedValuePublisher<ValueType>(forKey key: String) -> AnyPublisher<ValueType?, Never>? where ValueType: RawRepresentable, ValueType.RawValue: Equatable{
+    public func representedValuePublisher<ValueType>(forKey key: DCKeyRepresentable) -> AnyPublisher<ValueType?, Never>? where ValueType: RawRepresentable, ValueType.RawValue: Equatable{
         guard let settable = setting(forKey: key) as? DCSetting<ValueType.RawValue> else {
             return nil
         }
