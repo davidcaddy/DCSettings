@@ -65,7 +65,7 @@ public enum DCSettingStore {
         if isStandardType(ValueType.self) {
             backingStore.set(value, forKey: key)
         }
-        else if let encodableValue = value as? Encodable, let data = try? PropertyListEncoder().encode(encodableValue) {
+        else if let encodableValue = value as? Encodable, let data = try? JSONEncoder().encode(encodableValue) {
             backingStore.set(data, forKey: key)
         }
     }
@@ -84,7 +84,7 @@ public enum DCSettingStore {
             return backingStore.object(forKey: key) as? ValueType
         }
         else if let data = object as? Data, let decodableType = ValueType.self as? Decodable.Type {
-            let value = try? PropertyListDecoder().decode(decodableType, from: data)
+            let value = try? JSONDecoder().decode(decodableType, from: data)
             return value as? ValueType
         }
         return nil
