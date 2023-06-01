@@ -30,7 +30,7 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
     private let settingsManager: DCSettingsManager
     private let filter: Filter?
     private let contentProvider: Provider?
-    private var listStyle: S
+    private let listStyle: S
     
     private var hiddenKeys: [String] {
         if case .excludeKeys(let keys) = filter {
