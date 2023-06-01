@@ -61,4 +61,23 @@ public struct DCStoredValue<ValueType>: DynamicProperty where ValueType: Equatab
             fatalError("[DCStoredValue] No value of specified type found for key \(key.keyValue). Settings need to be configured in the specified settings manager before use.")
         }
     }
+    
+    /// A binding to the current value of the wrapped property.
+    ///
+    /// The `projectedValue` property provides a `Binding` to the current value of the wrapped property.
+    /// This binding can be used to create a two-way connection between the value stored in the `DCSettingStore` and a SwiftUI control.
+    ///
+    /// Example:
+    /// ```swift
+    /// struct ContentView: View {
+    ///     @DCStoredValue("key1") var value1: Bool
+    ///
+    ///     var body: some View {
+    ///         Toggle("Value", isOn: $value1)
+    ///     }
+    /// }
+    /// ```
+    public var projectedValue: Binding<ValueType> {
+        return setting.valueBinding()
+    }
 }
