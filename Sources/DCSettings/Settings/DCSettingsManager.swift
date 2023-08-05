@@ -36,7 +36,7 @@ public class DCSettingsManager {
     /// A shared instance of `DCSettingsManager`.
     public static let shared = DCSettingsManager()
     
-    private(set) var groups: [DCSettingGroup] = []
+    public private(set) var groups: [DCSettingGroup] = []
     
     private var cancellables = Set<AnyCancellable>()
     

@@ -17,16 +17,16 @@ import Foundation
 public struct DCSettingGroup: Identifiable {
     
     /// The key for the setting group.
-    let key: String
+    public let key: String
     
     /// The label for the setting group.
-    let label: String?
+    public let label: String?
     
     /// The store for the setting group.
-    let store: DCSettingStore
+    public let store: DCSettingStore
     
     /// The array of settings in the setting group.
-    let settings: [any DCSettable]
+    public let settings: [any DCSettable]
     
     /// The identifier for the setting group.
     public var id: String {
