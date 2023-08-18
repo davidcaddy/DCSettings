@@ -50,6 +50,7 @@ struct DCBoolSettingView: View {
     var body: some View {
         Toggle(setting.displayLabel, isOn: $setting.value)
             .toggleStyle(SwitchToggleStyle())
+            .accessibilityIdentifier(setting.key)
             #if os(macOS)
                 .controlSize(.mini)
             #endif
@@ -63,7 +64,7 @@ struct DCIntSettingView: View {
     var body: some View {
         if let options = setting.configuation?.options {
             if options.count > 2 {
-                DCMenuPickerView(label: setting.displayLabel, options: options, value: $setting.value)
+                DCMenuPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
             }
             else {
                 HStack {
@@ -76,6 +77,7 @@ struct DCIntSettingView: View {
                         }
                     }
                     .labelsHidden()
+                    .accessibilityIdentifier(setting.key)
                     #if os(macOS)
                         .pickerStyle(RadioGroupPickerStyle())
                         .horizontalRadioGroupLayout()
@@ -87,7 +89,7 @@ struct DCIntSettingView: View {
             }
         }
         else if let bounds = setting.configuation?.bounds {
-            DCSliderView(label: setting.displayLabel, value: Binding(get: {
+            DCSliderView(key: setting.key, label: setting.displayLabel, value: Binding(get: {
                 Double(setting.value)
             }, set: { newValue in
                 setting.value = Int(newValue)
@@ -101,6 +103,7 @@ struct DCIntSettingView: View {
                     .padding(.trailing, 8.0)
                 Stepper(setting.displayLabel, value: $setting.value)
                     .labelsHidden()
+                    .accessibilityIdentifier(setting.key)
             }
         }
     }
@@ -112,10 +115,10 @@ struct DCDoubleSettingView: View {
     
     var body: some View {
         if let options = setting.configuation?.options, options.count > 2 {
-            DCMenuPickerView(label: setting.displayLabel, options: options, value: $setting.value)
+            DCMenuPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
         }
         else {
-            DCSliderView(label: setting.displayLabel, value: $setting.value, bounds: setting.configuation?.bounds, step: setting.configuation?.step, specifier: "%.2f")
+            DCSliderView(key: setting.key, label: setting.displayLabel, value: $setting.value, bounds: setting.configuation?.bounds, step: setting.configuation?.step, specifier: "%.2f")
         }
     }
 }
@@ -127,7 +130,7 @@ struct DCStringSettingView: View {
     var body: some View {
         if let options = setting.configuation?.options {
             if options.count > 2 {
-                DCMenuPickerView(label: setting.displayLabel, options: options, value: $setting.value)
+                DCMenuPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
             }
             else {
                 HStack {
@@ -140,6 +143,7 @@ struct DCStringSettingView: View {
                         }
                     }
                     .labelsHidden()
+                    .accessibilityIdentifier(setting.key)
                     #if os(macOS)
                         .pickerStyle(RadioGroupPickerStyle())
                         .horizontalRadioGroupLayout()
@@ -152,6 +156,7 @@ struct DCStringSettingView: View {
         }
         else {
             TextField(setting.displayLabel, text: $setting.value)
+                .accessibilityIdentifier(setting.key)
         }
     }
 }
@@ -169,11 +174,13 @@ struct DCDateSettingView: View {
                 DatePicker(selection: $setting.value, in: bounds.upperBound...bounds.upperBound, displayedComponents: .date) {
                     Text(setting.displayLabel)
                 }
+                .accessibilityIdentifier(setting.key)
             }
             else {
                 DatePicker(selection: $setting.value, in: ...Date.now, displayedComponents: .date) {
                     Text(setting.displayLabel)
                 }
+                .accessibilityIdentifier(setting.key)
             }
         #endif
     }
@@ -185,16 +192,18 @@ struct DCColorSettingView: View {
     
     var body: some View {
         #if os(watchOS)
-                // TODO: watchOS implementation
-                Text(setting.displayLabel)
+            // TODO: watchOS implementation
+            Text(setting.displayLabel)
         #else
-                ColorPicker(setting.displayLabel, selection: $setting.value)
+            ColorPicker(setting.displayLabel, selection: $setting.value)
+            .accessibilityIdentifier(setting.key)
         #endif
     }
 }
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCSliderView: View {
+    let key: String
     let label: String
     @Binding var value: Double
     let bounds: DCValueBounds<Double>?
@@ -225,6 +234,7 @@ struct DCSliderView: View {
                             .font(.footnote)
                     }
                     .labelsHidden()
+                    .accessibilityIdentifier(key)
                 }
                 else {
                     Slider(value: $value, in: valueBounds.lowerBound...valueBounds.upperBound) {
@@ -241,10 +251,12 @@ struct DCSliderView: View {
                             .font(.footnote)
                     }
                     .labelsHidden()
+                    .accessibilityIdentifier(key)
                 }
             }
             else {
                 Slider(value: $value)
+                    .accessibilityIdentifier(key)
             }
         }
     }
@@ -252,6 +264,7 @@ struct DCSliderView: View {
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
+    let key: String
     let label: String
     let options: [DCSettingOption<ValueType>]
     @Binding var value: ValueType
@@ -269,6 +282,7 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
                 }
                 .labelsHidden()
                 .fixedSize()
+                .accessibilityIdentifier(key)
             #else
                 Menu {
                     Picker(label, selection: $value) {
@@ -277,6 +291,7 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
                                 .tag(option.value)
                         }
                     }
+                    .accessibilityIdentifier(key)
                 } label: {
                     HStack {
                         Spacer()
