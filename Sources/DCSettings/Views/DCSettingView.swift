@@ -88,7 +88,7 @@ struct DCIntSettingView: View {
                         .horizontalRadioGroupLayout()
                     #elseif !os(watchOS)
                         .pickerStyle(SegmentedPickerStyle())
-                        .frame(maxWidth: 150.0)
+                        .frame(maxWidth: 140.0)
                     #endif
                 }
                 .foregroundColor(isEnabled ? .primary : .secondary)
@@ -159,7 +159,7 @@ struct DCStringSettingView: View {
                         .horizontalRadioGroupLayout()
                     #elseif os(iOS)
                         .pickerStyle(SegmentedPickerStyle())
-                        .frame(maxWidth: 150.0)
+                        .frame(maxWidth: 140.0)
                     #endif
                 }
                 .foregroundColor(isEnabled ? .primary : .secondary)
@@ -296,6 +296,7 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
     var body: some View {
         HStack {
             Text(label)
+                .foregroundColor(isEnabled ? .primary : .secondary)
             Spacer()
             #if os(macOS) || os(watchOS)
                 Picker(label, selection: $value) {
@@ -341,7 +342,6 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
                 }
             #endif
         }
-        .foregroundColor(isEnabled ? .primary : .secondary)
     }
 }
 
