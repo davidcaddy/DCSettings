@@ -71,7 +71,6 @@ struct DCIntSettingView: View {
             else {
                 HStack {
                     Text(setting.displayLabel)
-                        .foregroundColor(isEnabled ? .primary : .secondary)
                     Spacer(minLength: 16.0)
                     Picker(setting.displayLabel, selection: $setting.value) {
                         ForEach(options, id: \.value) { option in
@@ -89,6 +88,7 @@ struct DCIntSettingView: View {
                         .frame(maxWidth: 150.0)
                     #endif
                 }
+                .foregroundColor(isEnabled ? .primary : .secondary)
             }
         }
         else if let bounds = setting.configuation?.bounds {
@@ -109,6 +109,7 @@ struct DCIntSettingView: View {
                     .labelsHidden()
                     .accessibilityIdentifier(setting.key)
             }
+            .foregroundColor(isEnabled ? .primary : .secondary)
         }
     }
 }
@@ -141,7 +142,6 @@ struct DCStringSettingView: View {
             else {
                 HStack {
                     Text(setting.displayLabel)
-                        .foregroundColor(isEnabled ? .primary : .secondary)
                     Spacer(minLength: 16.0)
                     Picker(setting.displayLabel, selection: $setting.value) {
                         ForEach(options, id: \.value) { option in
@@ -159,10 +159,12 @@ struct DCStringSettingView: View {
                         .frame(maxWidth: 150.0)
                     #endif
                 }
+                .foregroundColor(isEnabled ? .primary : .secondary)
             }
         }
         else {
             TextField(setting.displayLabel, text: $setting.value)
+                .foregroundColor(isEnabled ? .primary : .secondary)
                 .accessibilityIdentifier(setting.key)
         }
     }
@@ -170,6 +172,8 @@ struct DCStringSettingView: View {
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCDateSettingView: View {
+    @Environment(\.isEnabled) var isEnabled
+    
     @ObservedObject var setting: DCSetting<Date>
     
     var body: some View {
@@ -181,12 +185,14 @@ struct DCDateSettingView: View {
                 DatePicker(selection: $setting.value, in: bounds.upperBound...bounds.upperBound, displayedComponents: .date) {
                     Text(setting.displayLabel)
                 }
+                .foregroundColor(isEnabled ? .primary : .secondary)
                 .accessibilityIdentifier(setting.key)
             }
             else {
                 DatePicker(selection: $setting.value, in: ...Date.now, displayedComponents: .date) {
                     Text(setting.displayLabel)
                 }
+                .foregroundColor(isEnabled ? .primary : .secondary)
                 .accessibilityIdentifier(setting.key)
             }
         #endif
@@ -195,6 +201,8 @@ struct DCDateSettingView: View {
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCColorSettingView: View {
+    @Environment(\.isEnabled) var isEnabled
+    
     @ObservedObject var setting: DCSetting<Color>
     
     var body: some View {
@@ -203,6 +211,7 @@ struct DCColorSettingView: View {
             Text(setting.displayLabel)
         #else
             ColorPicker(setting.displayLabel, selection: $setting.value)
+            .foregroundColor(isEnabled ? .primary : .secondary)
             .accessibilityIdentifier(setting.key)
         #endif
     }
@@ -223,7 +232,6 @@ struct DCSliderView: View {
         VStack {
             HStack {
                 Text(label)
-                    .foregroundColor(isEnabled ? .primary : .secondary)
                 Spacer()
                 Text("\(value, specifier: specifier)")
                     .monospacedDigit()
@@ -269,6 +277,7 @@ struct DCSliderView: View {
                     .accessibilityIdentifier(key)
             }
         }
+        .foregroundColor(isEnabled ? .primary : .secondary)
     }
 }
 
@@ -284,7 +293,6 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
     var body: some View {
         HStack {
             Text(label)
-                .foregroundColor(isEnabled ? .primary : .secondary)
             Spacer()
             #if os(macOS) || os(watchOS)
                 Picker(label, selection: $value) {
@@ -330,6 +338,7 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
                 }
             #endif
         }
+        .foregroundColor(isEnabled ? .primary : .secondary)
     }
 }
 
