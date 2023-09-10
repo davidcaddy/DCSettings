@@ -45,12 +45,15 @@ extension DCSettingOption {
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCBoolSettingView: View {
+    @Environment(\.isEnabled) var isEnabled
+    
     @ObservedObject var setting: DCSetting<Bool>
     
     var body: some View {
         Toggle(setting.displayLabel, isOn: $setting.value)
             .toggleStyle(SwitchToggleStyle())
             .accessibilityIdentifier(setting.key)
+            .foregroundColor(isEnabled ? .primary : .secondary)
             #if os(macOS)
                 .controlSize(.mini)
             #endif
