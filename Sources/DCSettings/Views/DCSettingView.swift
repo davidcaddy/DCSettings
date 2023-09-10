@@ -59,6 +59,8 @@ struct DCBoolSettingView: View {
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCIntSettingView: View {
+    @Environment(\.isEnabled) var isEnabled
+    
     @ObservedObject var setting: DCSetting<Int>
     
     var body: some View {
@@ -69,6 +71,7 @@ struct DCIntSettingView: View {
             else {
                 HStack {
                     Text(setting.displayLabel)
+                        .foregroundColor(isEnabled ? .primary : .secondary)
                     Spacer(minLength: 16.0)
                     Picker(setting.displayLabel, selection: $setting.value) {
                         ForEach(options, id: \.value) { option in
@@ -83,7 +86,7 @@ struct DCIntSettingView: View {
                         .horizontalRadioGroupLayout()
                     #elseif !os(watchOS)
                         .pickerStyle(SegmentedPickerStyle())
-                        .frame(maxWidth: 160.0)
+                        .frame(maxWidth: 150.0)
                     #endif
                 }
             }
@@ -98,6 +101,7 @@ struct DCIntSettingView: View {
         else {
             HStack {
                 Text(setting.displayLabel)
+                    .foregroundColor(isEnabled ? .primary : .secondary)
                 Spacer()
                 Text(String(setting.value))
                     .padding(.trailing, 8.0)
@@ -125,6 +129,8 @@ struct DCDoubleSettingView: View {
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCStringSettingView: View {
+    @Environment(\.isEnabled) var isEnabled
+    
     @ObservedObject var setting: DCSetting<String>
     
     var body: some View {
@@ -135,6 +141,7 @@ struct DCStringSettingView: View {
             else {
                 HStack {
                     Text(setting.displayLabel)
+                        .foregroundColor(isEnabled ? .primary : .secondary)
                     Spacer(minLength: 16.0)
                     Picker(setting.displayLabel, selection: $setting.value) {
                         ForEach(options, id: \.value) { option in
@@ -149,7 +156,7 @@ struct DCStringSettingView: View {
                         .horizontalRadioGroupLayout()
                     #elseif os(iOS)
                         .pickerStyle(SegmentedPickerStyle())
-                        .frame(maxWidth: 160.0)
+                        .frame(maxWidth: 150.0)
                     #endif
                 }
             }
@@ -203,6 +210,8 @@ struct DCColorSettingView: View {
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCSliderView: View {
+    @Environment(\.isEnabled) var isEnabled
+    
     let key: String
     let label: String
     @Binding var value: Double
@@ -214,6 +223,7 @@ struct DCSliderView: View {
         VStack {
             HStack {
                 Text(label)
+                    .foregroundColor(isEnabled ? .primary : .secondary)
                 Spacer()
                 Text("\(value, specifier: specifier)")
                     .monospacedDigit()
@@ -264,6 +274,8 @@ struct DCSliderView: View {
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
 struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
+    @Environment(\.isEnabled) var isEnabled
+    
     let key: String
     let label: String
     let options: [DCSettingOption<ValueType>]
@@ -272,6 +284,7 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
     var body: some View {
         HStack {
             Text(label)
+                .foregroundColor(isEnabled ? .primary : .secondary)
             Spacer()
             #if os(macOS) || os(watchOS)
                 Picker(label, selection: $value) {
