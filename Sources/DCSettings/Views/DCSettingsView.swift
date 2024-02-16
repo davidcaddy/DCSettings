@@ -14,7 +14,7 @@ import SwiftUI
 /// The view uses a `DCSettingViewProviding` instance to provide custom views for individual settings.
 /// If no custom view is available for a specific setting, a default view will be used if the setting's value is a supported type.
 /// Supported types as standard are: `Bool`, `Int`, `Double`, `String`, `Date` and `Color`.
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
 public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: View {
     
     /// An enumeration that defines the available filters for the settings view.
@@ -58,7 +58,7 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
             self.contentProvider = contentProvider
             self.listStyle = listStyle
         }
-    #elseif os(iOS)
+    #else
         public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, contentProvider: Provider? = DCDefaultViewProvider(), listStyle: S = InsetGroupedListStyle()) {
             self.settingsManager = settingsManager
             self.filter = filter
@@ -88,7 +88,7 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, *)
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
 struct DCSettingsView_Previews: PreviewProvider {
 
     static var previews: some View {
