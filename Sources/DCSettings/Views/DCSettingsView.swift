@@ -14,7 +14,7 @@ import SwiftUI
 /// The view uses a `DCSettingViewProviding` instance to provide custom views for individual settings.
 /// If no custom view is available for a specific setting, a default view will be used if the setting's value is a supported type.
 /// Supported types as standard are: `Bool`, `Int`, `Double`, `String`, `Date` and `Color`.
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: View {
     
     /// An enumeration that defines the available filters for the settings view.
@@ -70,7 +70,7 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
     public var body: some View {
         List(settingsManager.groups) { group in
             if !hiddenKeys.contains(group.key.keyValue) {
-                Section(group.label?.sentenceFormatted ?? "") {
+                Section {
                     ForEach(group.settings, id: \.key) { setting in
                         if ((setting.label != nil) || (filter != .labelled)) && !hiddenKeys.contains(setting.key.keyValue) {
                             if let content = contentProvider?.content(for: setting), !(content is EmptyView) {
@@ -81,6 +81,8 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
                             }
                         }
                     }
+                } header: {
+                    Text(group.label?.sentenceFormatted ?? "")
                 }
             }
         }
@@ -88,7 +90,7 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCSettingsView_Previews: PreviewProvider {
 
     static var previews: some View {

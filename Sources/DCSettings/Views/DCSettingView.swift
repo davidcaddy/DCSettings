@@ -15,7 +15,7 @@ extension DCSetting {
 
 extension DCSettingOption {
     
-    @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+    @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
     public func labelView() -> some View {
         return HStack {
             if let string = label {
@@ -43,7 +43,7 @@ extension DCSettingOption {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCBoolSettingView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -60,7 +60,7 @@ struct DCBoolSettingView: View {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCIntSettingView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -117,7 +117,7 @@ struct DCIntSettingView: View {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCDoubleSettingView: View {
     @ObservedObject var setting: DCSetting<Double>
     
@@ -131,7 +131,7 @@ struct DCDoubleSettingView: View {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCStringSettingView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -173,7 +173,7 @@ struct DCStringSettingView: View {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCDateSettingView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -192,7 +192,7 @@ struct DCDateSettingView: View {
                 .accessibilityIdentifier(setting.key)
             }
             else {
-                DatePicker(selection: $setting.value, in: ...Date.now, displayedComponents: .date) {
+                DatePicker(selection: $setting.value, in: ...Date(), displayedComponents: .date) {
                     Text(setting.displayLabel)
                 }
                 .foregroundColor(isEnabled ? .primary : .secondary)
@@ -202,7 +202,7 @@ struct DCDateSettingView: View {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCColorSettingView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -220,7 +220,7 @@ struct DCColorSettingView: View {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCSliderView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -237,7 +237,7 @@ struct DCSliderView: View {
                 Text(label)
                 Spacer()
                 Text("\(value, specifier: specifier)")
-                    .monospacedDigit()
+                    .monospacedDigitIfAvailable()
             }
             if let valueBounds = bounds {
                 if let valueStep = step {
@@ -245,12 +245,12 @@ struct DCSliderView: View {
                         Text(label)
                     } minimumValueLabel: {
                         Text("\(valueBounds.lowerBound, specifier: specifier)")
-                            .monospacedDigit()
+                            .monospacedDigitIfAvailable()
                             .foregroundColor(.secondary)
                             .font(.footnote)
                     } maximumValueLabel: {
                         Text("\(valueBounds.upperBound, specifier: specifier)")
-                            .monospacedDigit()
+                            .monospacedDigitIfAvailable()
                             .foregroundColor(.secondary)
                             .font(.footnote)
                     }
@@ -262,12 +262,12 @@ struct DCSliderView: View {
                         Text(label)
                     } minimumValueLabel: {
                         Text("\(valueBounds.lowerBound, specifier: specifier)")
-                            .monospacedDigit()
+                            .monospacedDigitIfAvailable()
                             .foregroundColor(.secondary)
                             .font(.footnote)
                     } maximumValueLabel: {
                         Text("\(valueBounds.upperBound, specifier: specifier)")
-                            .monospacedDigit()
+                            .monospacedDigitIfAvailable()
                             .foregroundColor(.secondary)
                             .font(.footnote)
                     }
@@ -284,7 +284,7 @@ struct DCSliderView: View {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
     @Environment(\.isEnabled) var isEnabled
     
@@ -326,7 +326,7 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
                         else {
                             if let doubleValue = value as? Double {
                                 Text("\(doubleValue, specifier: "%.2f")")
-                                    .monospacedDigit()
+                                    .monospacedDigitIfAvailable()
                             }
                             else if let intValue = value as? Int {
                                 Text(String(intValue))
@@ -354,7 +354,7 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
 /// If no specific view is available for the value type, the view will be empty.
 ///
 /// Supported types are: `Bool`, `Int`,  `Double`, `String`, `Date` and `Color`.
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 public struct DCSettingView: View {
     
     private let setting: any DCSettable
@@ -390,7 +390,7 @@ public struct DCSettingView: View {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCSettingView_Previews: PreviewProvider {
 
     static var previews: some View {
