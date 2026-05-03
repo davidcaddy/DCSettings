@@ -17,7 +17,7 @@ final class StringExtendedTests: XCTestCase {
         XCTAssertEqual("great_userSetting2".sentenceFormatted, "Great user setting 2")
     }
     
-    func testSentenceFormattedTrimsLeadingWhitespaceFromAcronyms() {
+    func testSentenceFormattedFormatsAcronymCamelCaseInput() {
         XCTAssertEqual("URLScheme".sentenceFormatted, "Urlscheme")
     }
 }
