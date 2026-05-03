@@ -14,14 +14,11 @@ import AppKit
 #endif
 
 #if compiler(>=6.0)
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 extension Color: @retroactive Codable {}
 #else
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 extension Color: Codable {}
 #endif
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 extension Color {
     
     #if canImport(UIKit)

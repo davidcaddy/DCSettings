@@ -8,7 +8,7 @@ To configure settings, you can use the `configure` method on a ``DCSettingsManag
 
 Once your settings are set up, you can quickly add a settings view to your app using ``DCSettingsView``. This view displays a list of all the setting groups and settings that you’ve configured using the given ``DCSettingsManager``. You can create an instance of this view and add it to your app’s view hierarchy like any other SwiftUI view.
 
-> Note: The settings configuration and storage APIs support the package's minimum platform versions. ``DCSettingsView`` is available on iOS 14, macOS 11, tvOS 14, watchOS 8, and visionOS 1 or newer.
+> Note: The settings configuration and storage APIs support the package's minimum platform versions. ``DCSettingsView`` is available on iOS 14, macOS 11, tvOS 14, watchOS 7, and visionOS 1 or newer.
 
 *Example configuration:*
 

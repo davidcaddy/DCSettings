@@ -14,7 +14,6 @@ import SwiftUI
 /// The view uses a `DCSettingViewProviding` instance to provide custom views for individual settings.
 /// If no custom view is available for a specific setting, a default view will be used if the setting's value is a supported type.
 /// Supported types as standard are: `Bool`, `Int`, `Double`, `String`, `Date` and `Color`.
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: View {
     
     /// An enumeration that defines the available filters for the settings view.
@@ -80,7 +79,6 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 extension DCSettingsView where Provider == DCDefaultViewProvider {
     
     /// Initializes a new settings view with the default content provider and the specified list style.
@@ -90,7 +88,6 @@ extension DCSettingsView where Provider == DCDefaultViewProvider {
 }
 
 #if os(macOS)
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 extension DCSettingsView where S == SidebarListStyle {
     
     /// Initializes a new settings view with the platform default list style.
@@ -99,7 +96,6 @@ extension DCSettingsView where S == SidebarListStyle {
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 extension DCSettingsView where Provider == DCDefaultViewProvider, S == SidebarListStyle {
     
     /// Initializes a new settings view with the default content provider and platform default list style.
@@ -108,7 +104,6 @@ extension DCSettingsView where Provider == DCDefaultViewProvider, S == SidebarLi
     }
 }
 #elseif os(watchOS)
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 extension DCSettingsView where S == DefaultListStyle {
     
     /// Initializes a new settings view with the platform default list style.
@@ -117,7 +112,6 @@ extension DCSettingsView where S == DefaultListStyle {
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 extension DCSettingsView where Provider == DCDefaultViewProvider, S == DefaultListStyle {
     
     /// Initializes a new settings view with the default content provider and platform default list style.
@@ -126,7 +120,6 @@ extension DCSettingsView where Provider == DCDefaultViewProvider, S == DefaultLi
     }
 }
 #else
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 extension DCSettingsView where S == InsetGroupedListStyle {
     
     /// Initializes a new settings view with the platform default list style.
@@ -135,7 +128,6 @@ extension DCSettingsView where S == InsetGroupedListStyle {
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 extension DCSettingsView where Provider == DCDefaultViewProvider, S == InsetGroupedListStyle {
     
     /// Initializes a new settings view with the default content provider and platform default list style.
@@ -145,7 +137,6 @@ extension DCSettingsView where Provider == DCDefaultViewProvider, S == InsetGrou
 }
 #endif
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCSettingsView_Previews: PreviewProvider {
 
     static var previews: some View {

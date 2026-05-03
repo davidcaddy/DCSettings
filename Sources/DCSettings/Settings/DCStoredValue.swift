@@ -20,7 +20,6 @@ import SwiftUI
 ///
 /// @DCStoredValue("key3") var value3: Bool
 /// ```
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 @propertyWrapper
 public struct DCStoredValue<ValueType>: DynamicProperty where ValueType: Equatable {
     

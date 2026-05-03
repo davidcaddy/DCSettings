@@ -13,7 +13,6 @@ import SwiftUI
 /// This is useful when working with settings that have raw representable values such as enums or option sets.
 ///
 /// When the wrapped value is accessed or modified, the value will be automatically loaded from or saved to the store using a `DCSetting` instance.
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 @propertyWrapper
 public struct DCStoredRepresentedValue<ValueType>: DynamicProperty where ValueType: RawRepresentable, ValueType.RawValue: Equatable {
     

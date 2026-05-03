@@ -24,7 +24,6 @@ enum DCOptionControlStyle: Equatable {
 
 extension DCSettingOption {
     
-    @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
     public func labelView() -> some View {
         return HStack {
             if let string = label {
@@ -52,7 +51,6 @@ extension DCSettingOption {
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCBoolSettingView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -69,7 +67,6 @@ struct DCBoolSettingView: View {
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCIntSettingView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -153,7 +150,6 @@ struct DCIntSettingView: View {
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCDoubleSettingView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -193,7 +189,6 @@ struct DCDoubleSettingView: View {
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCStringSettingView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -235,7 +230,6 @@ struct DCStringSettingView: View {
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCDateSettingView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -264,7 +258,6 @@ struct DCDateSettingView: View {
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCColorSettingView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -282,7 +275,6 @@ struct DCColorSettingView: View {
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCSliderView: View {
     @Environment(\.isEnabled) var isEnabled
     
@@ -346,7 +338,6 @@ struct DCSliderView: View {
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
     @Environment(\.isEnabled) var isEnabled
     
@@ -416,7 +407,6 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
 /// If no specific view is available for the value type, the view will be empty.
 ///
 /// Supported types are: `Bool`, `Int`,  `Double`, `String`, `Date` and `Color`.
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 public struct DCSettingView: View {
     
     private let setting: any DCSettable
@@ -452,7 +442,6 @@ public struct DCSettingView: View {
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCSettingView_Previews: PreviewProvider {
 
     static var previews: some View {
