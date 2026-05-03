@@ -35,6 +35,13 @@ extension NSUbiquitousKeyValueStore: DCKeyValueStore {
     /// - Returns: A publisher that emits the value associated with the specified key whenever it changes.
     public func valuePublisher(forKey key: String) -> AnyPublisher<Any?, Never> {
         let notificationPublisher = NotificationCenter.default.publisher(for: NSUbiquitousKeyValueStore.didChangeExternallyNotification, object: self)
+            .filter { notification in
+                guard let changedKeys = notification.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] else {
+                    return true
+                }
+                
+                return changedKeys.contains(key)
+            }
             .map { _ in self.object(forKey: key) }
         let initialValuePublisher = Just(self.object(forKey: key))
         return initialValuePublisher.merge(with: notificationPublisher).eraseToAnyPublisher()

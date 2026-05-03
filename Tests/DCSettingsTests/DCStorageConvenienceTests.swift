@@ -70,6 +70,64 @@ final class DCStorageConvenienceTests: XCTestCase {
         XCTAssertEqual(receivedValues, [nil, "grid"])
     }
     
+    func testUserDefaultsValuePublisherDoesNotEmitDuplicateValueForUnrelatedChange() {
+        let suiteName = "DCStorageConvenienceTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let unrelatedChangeDidNotEmit = expectation(description: "Unrelated UserDefaults change did not emit")
+        unrelatedChangeDidNotEmit.isInverted = true
+        var receivedValues: [String?] = []
+        
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        
+        defaults.set("list", forKey: "layout")
+        
+        defaults.valuePublisher(forKey: "layout")
+            .sink { value in
+                receivedValues.append(value as? String)
+                if receivedValues.count > 1 {
+                    unrelatedChangeDidNotEmit.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
+        defaults.set("dark", forKey: "theme")
+        
+        wait(for: [unrelatedChangeDidNotEmit], timeout: 0.2)
+        XCTAssertEqual(receivedValues, ["list"])
+    }
+    
+    func testUbiquitousValuePublisherIgnoresUnrelatedChangedKeysNotification() {
+        let store = NSUbiquitousKeyValueStore.default
+        let key = "DCStorageConvenienceTests.\(UUID().uuidString).layout"
+        let unrelatedNotificationDidNotEmit = expectation(description: "Unrelated ubiquitous notification did not emit")
+        unrelatedNotificationDidNotEmit.isInverted = true
+        var receivedValueCount = 0
+        
+        defer {
+            store.removeObject(forKey: key)
+        }
+        
+        store.valuePublisher(forKey: key)
+            .sink { _ in
+                receivedValueCount += 1
+                if receivedValueCount > 1 {
+                    unrelatedNotificationDidNotEmit.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.post(
+            name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: store,
+            userInfo: [NSUbiquitousKeyValueStoreChangedKeysKey: ["unrelated"]]
+        )
+        
+        wait(for: [unrelatedNotificationDidNotEmit], timeout: 0.2)
+        XCTAssertEqual(receivedValueCount, 1)
+    }
+    
     func testStoredValueReadsAndWritesConfiguredSetting() {
         let manager = DCSettingsManager()
         let backingStore = MockStore()
