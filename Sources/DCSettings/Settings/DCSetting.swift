@@ -180,7 +180,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     ///   - key: The key used to identify the setting in the store.
     ///   - label: An optional label for the setting. The default value is `nil`.
     ///   - store: An optional `DCSettingStore` instance used to store the setting value. The default value is `nil`.
-    ///   - options: An array of `DCSettingOption` instances.
+    ///   - configuredOptions: An array of `DCSettingOption` instances.
     public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, options configuredOptions: [DCSettingOption<ValueType>]) {
         if let defaultValue = configuredOptions.first(where: { $0.isDefault })?.value ?? configuredOptions.first?.value {
             self.init(key: key, value: defaultValue, label: label, configuation: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
@@ -251,11 +251,11 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     
     private func setUpListener() {
         guard let store = store else { return }
-        cancellable = store.valuePublisher(forKey: key)
+        cancellable = store.valuePublisher(forKey: key, as: ValueType.self)
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
-                if let newTypedValue = newValue as? ValueType, self?.value != newTypedValue {
-                    self?.value = newTypedValue
+                if let newValue = newValue, self?.value != newValue {
+                    self?.value = newValue
                 }
             }
     }
