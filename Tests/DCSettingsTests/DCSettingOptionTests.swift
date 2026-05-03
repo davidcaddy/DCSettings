@@ -9,6 +9,23 @@ import XCTest
 
 final class DCSettingOptionTests: XCTestCase {
     
+    private enum TestOption: String, DCSettingOptionProviding {
+        case first
+        case second
+        
+        static var defaultCase: TestOption? {
+            return .second
+        }
+        
+        var label: String? {
+            return rawValue.sentenceFormatted
+        }
+        
+        var image: DCImageName? {
+            return .system(rawValue)
+        }
+    }
+    
     func testEquatable() {
         let option1 = DCSettingOption(value: "Value1", label: "Label1", image: "Image1")
         let option2 = DCSettingOption(value: "Value1", label: "Label1", image: "Image1")
@@ -41,5 +58,41 @@ final class DCSettingOptionTests: XCTestCase {
     func testDefaultOption() {
         let option = DCSettingOption(value: "Value", default: true)
         XCTAssertTrue(option.isDefault)
+    }
+    
+    func testDefaultModifierReturnsDefaultOption() {
+        let option = DCSettingOption(value: "Value", label: "Label").default()
+        
+        XCTAssertTrue(option.isDefault)
+        XCTAssertEqual(option.label, "Label")
+        XCTAssertEqual(option.value, "Value")
+    }
+    
+    func testImageOnlyInitializers() {
+        let customImageOption = DCSettingOption(value: "Value", image: "Image")
+        let systemImageOption = DCSettingOption(value: "Value", systemImage: "SystemImage")
+        
+        XCTAssertNil(customImageOption.label)
+        XCTAssertEqual(customImageOption.image, .custom("Image"))
+        XCTAssertNil(systemImageOption.label)
+        XCTAssertEqual(systemImageOption.image, .system("SystemImage"))
+    }
+    
+    func testDefaultOptionProvidingImplementations() {
+        XCTAssertNil(StringDefaultOption.defaultCase)
+        XCTAssertNil(StringDefaultOption.sample.label)
+        XCTAssertNil(StringDefaultOption.sample.image)
+    }
+    
+    func testOptionsProviderInitializerUsesProviderMetadata() {
+        let setting = DCSetting(key: "optionProvider", optionsProvider: TestOption.self)
+        
+        XCTAssertEqual(setting?.value, TestOption.second.rawValue)
+        XCTAssertEqual(setting?.configuation?.options?.first?.label, "First")
+        XCTAssertEqual(setting?.configuation?.options?.first?.image, .system("first"))
+    }
+    
+    private enum StringDefaultOption: String, DCSettingOptionProviding {
+        case sample
     }
 }

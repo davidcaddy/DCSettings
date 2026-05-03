@@ -6,18 +6,26 @@
 
 import XCTest
 @testable import DCSettings
+import Combine
 
 final class DCSettingTests: XCTestCase {
+    
+    private struct CodableValue: Codable, Equatable {
+        let name: String
+        let count: Int
+    }
 
     private var store: DCSettingStore!
     private var backingStore: MockStore!
     private var setting: DCSetting<String>!
+    private var cancellables: Set<AnyCancellable> = []
     
     override func setUp() {
         super.setUp()
         backingStore = MockStore()
         store = .custom(backingStore: backingStore)
         setting = DCSetting(key: "testKey", defaultValue: "defaultValue", store: store)
+        cancellables = []
     }
     
     func testInitWithDefaultValue() {
@@ -62,5 +70,39 @@ final class DCSettingTests: XCTestCase {
         setting.value = "newValue"
         
         XCTAssertEqual(backingStore?.storage["testKey"] as? String, setting.value)
+    }
+    
+    func testCodableCustomStoreRefreshRoundTrip() {
+        let storedValue = CodableValue(name: "stored", count: 42)
+        let defaultValue = CodableValue(name: "default", count: 0)
+        let setting = DCSetting(key: "codableKey", defaultValue: defaultValue, store: store)
+        
+        setting.value = storedValue
+        
+        XCTAssertTrue(backingStore.storage["codableKey"] is Data)
+        
+        let refreshedSetting = DCSetting(key: "codableKey", defaultValue: defaultValue, store: store)
+        refreshedSetting.refresh()
+        
+        XCTAssertEqual(refreshedSetting.value, storedValue)
+    }
+    
+    func testCodableCustomStorePublisherRoundTrip() {
+        let defaultValue = CodableValue(name: "default", count: 0)
+        let updatedValue = CodableValue(name: "updated", count: 7)
+        let setting = DCSetting(key: "codableKey", defaultValue: defaultValue, store: store)
+        let valueDidChange = expectation(description: "Codable value update was decoded")
+        
+        setting.refresh()
+        setting.objectWillChange
+            .sink {
+                valueDidChange.fulfill()
+            }
+            .store(in: &cancellables)
+        
+        store.set(updatedValue, forKey: "codableKey")
+        
+        wait(for: [valueDidChange], timeout: 1.0)
+        XCTAssertEqual(setting.value, updatedValue)
     }
 }

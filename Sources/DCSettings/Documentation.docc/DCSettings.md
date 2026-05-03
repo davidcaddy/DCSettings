@@ -4,9 +4,11 @@ DCSettings is a Swift package that simplifies the configuration of user preferen
 
 ## Overview
 
-To configure settings, you can use the `configure` method on a ``DCSettingsManager`` instance, typically the shared  singleton instance. This method takes a closure that returns an array of ``DCSettingGroup`` instances. Each ``DCSettingGroup`` can contain multiple ``DCSetting`` instances. Settings will be stored in `UserDefaults`, `NSUbiquitousKeyValueStore` or a custom key-value store depending on how they are configured. 
+To configure settings, you can use the `configure` method on a ``DCSettingsManager`` instance, typically the shared singleton instance. This method takes a closure that returns an array of ``DCSettingGroup`` instances. Each ``DCSettingGroup`` can contain multiple ``DCSetting`` instances. Settings will be stored in `UserDefaults`, `NSUbiquitousKeyValueStore` or a custom key-value store depending on how they are configured.
 
 Once your settings are set up, you can quickly add a settings view to your app using ``DCSettingsView``. This view displays a list of all the setting groups and settings that you’ve configured using the given ``DCSettingsManager``. You can create an instance of this view and add it to your app’s view hierarchy like any other SwiftUI view.
+
+> Note: The settings configuration and storage APIs support the package's minimum platform versions. ``DCSettingsView`` is available on iOS 14, macOS 11, tvOS 14, watchOS 8, and visionOS 1 or newer.
 
 *Example configuration:*
 
@@ -30,7 +32,10 @@ DCSettingsManager.shared.configure {
         DCSetting(key: "maxSyncItems", defaultValue: 1000)
     }
     DCSettingGroup("Appearance") {
-        DCSetting(key: "theme", label: "Theme", options: ["Light", "Dark"])
+        DCSetting(key: "theme", label: "Theme") {
+            DCSettingOption(value: "Light", label: "Light")
+            DCSettingOption(value: "Dark", label: "Dark")
+        }
         DCSetting(key: "fontSize", options: [12, 14, 16, 18, 20], defaultIndex: 2)
         DCSetting(key: "lineSpacing", defaultValue: 1.2, lowerBound: 1.0, upperBound: 1.6, step: 0.1)
         DCSetting(key: "highlightColor", defaultValue: Color.blue)

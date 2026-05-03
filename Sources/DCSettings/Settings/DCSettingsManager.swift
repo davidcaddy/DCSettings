@@ -44,7 +44,7 @@ public class DCSettingsManager {
     
     /// Configures the manager with an array of setting groups.
     ///
-    /// - Parameter groups: An array of `DCSettingGroup` values representing the setting groups to be managed by the manager.
+    /// - Parameter settingGroups: An array of `DCSettingGroup` values representing the setting groups to be managed by the manager.
     public func configure(groups settingGroups: [DCSettingGroup]) {
         groups = settingGroups
         for group in groups {
