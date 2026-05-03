@@ -7,22 +7,26 @@
 import XCTest
 @testable import DCSettings
 import SwiftUI
+import Combine
 
 class DCSettingsManagerTests: XCTestCase {
     
     private enum TestEnum: String, Equatable, CaseIterable {
         case case1
+        case case2
     }
     
     private var backingStore: MockStore!
     private var store: DCSettingStore!
     private var manager: DCSettingsManager!
+    private var cancellables: Set<AnyCancellable> = []
     
     override func setUp() {
         super.setUp()
         backingStore = MockStore()
         store = .custom(backingStore: backingStore)
         manager = DCSettingsManager()
+        cancellables = []
         
         manager.configure {
             DCSettingGroup("Group 1", store: store) {
@@ -80,11 +84,49 @@ class DCSettingsManagerTests: XCTestCase {
         XCTAssertNil(manager.value(forKey: "nonExistentKey") as String?)
     }
     
+    func testValuePublisherEmitsCurrentAndChangedValue() {
+        let valuesDidEmit = expectation(description: "Value publisher emitted current and changed values")
+        var receivedValues: [String] = []
+        
+        manager.valuePublisher(forKey: "key1")?
+            .sink { value in
+                receivedValues.append(value)
+                if receivedValues.count == 2 {
+                    valuesDidEmit.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
+        manager.set("newValue", forKey: "key1")
+        
+        wait(for: [valuesDidEmit], timeout: 1.0)
+        XCTAssertEqual(receivedValues, ["value1", "newValue"])
+    }
+    
     func testRepresentedValueForKey() {
         let value: TestEnum? = manager.representedValue(forKey: "key4")
         
         XCTAssertEqual(value, TestEnum.case1)
         XCTAssertNil(manager.representedValue(forKey: "nonExistentKey") as TestEnum?)
+    }
+    
+    func testRepresentedValuePublisherEmitsCurrentAndChangedValue() {
+        let valuesDidEmit = expectation(description: "Represented value publisher emitted current and changed values")
+        var receivedValues: [TestEnum?] = []
+        
+        manager.representedValuePublisher(forKey: "key4")?
+            .sink { value in
+                receivedValues.append(value)
+                if receivedValues.count == 2 {
+                    valuesDidEmit.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
+        manager.set(TestEnum.case2.rawValue, forKey: "key4")
+        
+        wait(for: [valuesDidEmit], timeout: 1.0)
+        XCTAssertEqual(receivedValues, [.case1, .case2])
     }
     
     func testValueBindingForKey() {

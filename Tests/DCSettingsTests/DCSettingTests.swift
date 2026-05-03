@@ -56,7 +56,7 @@ final class DCSettingTests: XCTestCase {
         let setting = DCSetting(key: "testKey", defaultValue: 5, store: store, lowerBound: 0, upperBound: 10)
         
         XCTAssertEqual(setting.value, 5)
-        XCTAssertEqual(setting.configuation?.bounds, DCValueBounds(lowerBound: 0, upperBound: 10))
+        XCTAssertEqual(setting.configuration?.bounds, DCValueBounds(lowerBound: 0, upperBound: 10))
     }
 
     func testValueBinding() {
@@ -70,6 +70,23 @@ final class DCSettingTests: XCTestCase {
         setting.value = "newValue"
         
         XCTAssertEqual(backingStore?.storage["testKey"] as? String, setting.value)
+    }
+    
+    func testRefreshNotifiesObserversWhenValueChanges() {
+        let valueDidRefresh = expectation(description: "Setting refresh emitted a change")
+        
+        setting.objectWillChange
+            .sink {
+                XCTAssertEqual(self.setting.value, "anotherValue")
+                valueDidRefresh.fulfill()
+            }
+            .store(in: &cancellables)
+        
+        backingStore.storage["testKey"] = "anotherValue"
+        setting.refresh()
+        
+        wait(for: [valueDidRefresh], timeout: 1.0)
+        XCTAssertEqual(setting.value, "anotherValue")
     }
     
     func testCodableCustomStoreRefreshRoundTrip() {

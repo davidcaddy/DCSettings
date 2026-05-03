@@ -73,15 +73,15 @@ struct DCIntSettingView: View {
     @ObservedObject var setting: DCSetting<Int>
     
     var body: some View {
-        if let options = setting.configuation?.options {
+        if let options = setting.configuration?.options {
             DCOptionPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
         }
-        else if let bounds = setting.configuation?.bounds {
+        else if let bounds = setting.configuration?.bounds {
             DCSliderView(key: setting.key, label: setting.displayLabel, value: Binding(get: {
                 Double(setting.value)
             }, set: { newValue in
                 setting.value = Int(newValue)
-            }), bounds: DCValueBounds(lowerBound: Double(bounds.lowerBound), upperBound: Double(bounds.upperBound)), step: setting.configuation?.step.map { Double($0) }, specifier: "%.0f")
+            }), bounds: DCValueBounds(lowerBound: Double(bounds.lowerBound), upperBound: Double(bounds.upperBound)), step: setting.configuration?.step.map { Double($0) }, specifier: "%.0f")
         }
         else {
             HStack {
@@ -130,11 +130,11 @@ struct DCDoubleSettingView: View {
     @ObservedObject var setting: DCSetting<Double>
     
     var body: some View {
-        if let options = setting.configuation?.options {
+        if let options = setting.configuration?.options {
             DCOptionPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
         }
         else {
-            DCSliderView(key: setting.key, label: setting.displayLabel, value: $setting.value, bounds: setting.configuation?.bounds, step: setting.configuation?.step, specifier: "%.2f")
+            DCSliderView(key: setting.key, label: setting.displayLabel, value: $setting.value, bounds: setting.configuration?.bounds, step: setting.configuration?.step, specifier: "%.2f")
         }
     }
 }
@@ -145,7 +145,7 @@ struct DCStringSettingView: View {
     @ObservedObject var setting: DCSetting<String>
     
     var body: some View {
-        if let options = setting.configuation?.options {
+        if let options = setting.configuration?.options {
             DCOptionPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
         }
         else {
@@ -170,7 +170,7 @@ struct DCDateSettingView: View {
             // TODO: watchOS implementation
             Text(setting.displayLabel)
         #else
-            if let bounds = setting.configuation?.bounds {
+            if let bounds = setting.configuration?.bounds {
                 DatePicker(selection: $setting.value, in: Self.datePickerRange(for: bounds), displayedComponents: .date) {
                     Text(setting.displayLabel)
                 }

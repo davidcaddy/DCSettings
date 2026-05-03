@@ -141,9 +141,9 @@ public class DCSettingsManager {
         guard let settable = setting(forKey: key) as? DCSetting<ValueType> else {
             return nil
         }
-        return settable.objectWillChange
-           .map { settable.value }
-           .eraseToAnyPublisher()
+        return Just(settable.value)
+            .merge(with: settable.objectWillChange.map { settable.value })
+            .eraseToAnyPublisher()
     }
     
     /// Returns a publisher that emits the represented value of the setting with the specified key.
@@ -157,9 +157,9 @@ public class DCSettingsManager {
         guard let settable = setting(forKey: key) as? DCSetting<ValueType.RawValue> else {
             return nil
         }
-        return settable.objectWillChange
-           .map { ValueType(rawValue: settable.value) }
-           .eraseToAnyPublisher()
+        return Just(ValueType(rawValue: settable.value))
+            .merge(with: settable.objectWillChange.map { ValueType(rawValue: settable.value) })
+            .eraseToAnyPublisher()
     }
     
     /// Returns a boolean value for the setting with the specified key.

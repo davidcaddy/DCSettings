@@ -31,6 +31,10 @@ public protocol DCSettable<ValueType>: ObservableObject where ValueType: Equatab
     var value: ValueType { get set }
     
     /// An optional configuration for the setting.
+    var configuration: DCSettingConfiguration<ValueType>? { get }
+    
+    /// An optional configuration for the setting.
+    @available(*, deprecated, renamed: "configuration")
     var configuation: DCSettingConfiguration<ValueType>? { get }
     
     /// An optional `DCSettingStore` instance used to store the setting value.
@@ -82,16 +86,22 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     public var store: DCSettingStore?
     
     /// An optional configuration for the setting.
-    public let configuation: DCSettingConfiguration<ValueType>?
+    public let configuration: DCSettingConfiguration<ValueType>?
+    
+    /// An optional configuration for the setting.
+    @available(*, deprecated, renamed: "configuration")
+    public var configuation: DCSettingConfiguration<ValueType>? {
+        configuration
+    }
     
     private var cancellable: AnyCancellable?
     
-    private init(key: DCKeyRepresentable, value: ValueType, label: String?, configuation: DCSettingConfiguration<ValueType>?, store: DCSettingStore?) {
+    private init(key: DCKeyRepresentable, value: ValueType, label: String?, configuration: DCSettingConfiguration<ValueType>?, store: DCSettingStore?) {
         self.key = key.keyValue
         self._value = value
         self.label = label
         self.store = store
-        self.configuation = configuation
+        self.configuration = configuration
     }
     
     /// Initializes a new `DCSetting` instance with the specified key, default value, label, and store.
@@ -104,7 +114,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     ///   - label: An optional label for the setting. The default value is `nil`.
     ///   - store: An optional `DCSettingStore` instance used to store the setting value. The default value is `nil`.
     public convenience init(key: DCKeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = nil) {
-        self.init(key: key.keyValue, value: defaultValue, label: label, configuation: nil, store: store)
+        self.init(key: key.keyValue, value: defaultValue, label: label, configuration: nil, store: store)
     }
 
     /// Initializes a new `DCSetting` instance with the specified key, label, store, options array, and default index.
@@ -122,7 +132,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, options: [ValueType], defaultIndex: Int) where ValueType: LosslessStringConvertible {
         if let defaultValue = options.get(defaultIndex) {
             let configuredOptions = options.map { DCSettingOption(value: $0, label: String($0)) }
-            self.init(key: key, value: defaultValue, label: label, configuation: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
+            self.init(key: key, value: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
         }
         else {
             return nil
@@ -142,7 +152,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     ///   - upperBound: The upper bound of the range of valid values for the setting.
     ///   - step: An optional step value that specifies the increment or decrement between valid values. The default value is `nil`.
     public convenience init(key: DCKeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = nil, lowerBound: ValueType, upperBound: ValueType, step: ValueType? = nil) where ValueType: Numeric {
-        self.init(key: key, value: defaultValue, label: label, configuation: DCSettingConfiguration<ValueType>(options: nil, bounds: DCValueBounds(lowerBound: lowerBound, upperBound: upperBound), step: step), store: store)
+        self.init(key: key, value: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: nil, bounds: DCValueBounds(lowerBound: lowerBound, upperBound: upperBound), step: step), store: store)
     }
     
     /// Initializes a new `DCSetting` instance with the specified key, label, store and result builder closure.
@@ -183,7 +193,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     ///   - options: An array of `DCSettingOption` instances.
     public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, options configuredOptions: [DCSettingOption<ValueType>]) {
         if let defaultValue = configuredOptions.first(where: { $0.isDefault })?.value ?? configuredOptions.first?.value {
-            self.init(key: key, value: defaultValue, label: label, configuation: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
+            self.init(key: key, value: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
         }
         else {
             return nil
@@ -225,6 +235,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     public func refresh() {
         if let newValue: ValueType = store?.object(forKey: key), value != newValue {
             _value = newValue
+            objectWillChange.send()
         }
         setUpListener()
     }

@@ -88,8 +88,8 @@ final class DCSettingOptionTests: XCTestCase {
         let setting = DCSetting(key: "optionProvider", optionsProvider: TestOption.self)
         
         XCTAssertEqual(setting?.value, TestOption.second.rawValue)
-        XCTAssertEqual(setting?.configuation?.options?.first?.label, "First")
-        XCTAssertEqual(setting?.configuation?.options?.first?.image, .system("first"))
+        XCTAssertEqual(setting?.configuration?.options?.first?.label, "First")
+        XCTAssertEqual(setting?.configuration?.options?.first?.image, .system("first"))
     }
     
     private enum StringDefaultOption: String, DCSettingOptionProviding {
