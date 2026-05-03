@@ -42,30 +42,20 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
     /// Initializes a new `DCSettingsView` instance with the specified settings manager, filter, and content provider.
     ///
     /// This initializer creates a new instance of `DCSettingsView` with the specified settings manager, filter, and content provider.
-    /// The settings manager is required, while the filter and content provider are optional.
+    /// The settings manager is required, while the filter is optional.
     ///
     /// - Parameters:
     ///   - settingsManager: A `DCSettingsManager` instance used to manage the settings.
     ///   The default value is the `.shared` singleton instance.
     ///   - filter: A `Filter` value used to filter the displayed settings. The default value is `nil`.
     ///   - contentProvider: A `DCSettingViewProviding` instance used to provide custom views for individual settings.
-    ///   The default value is an instance of `DCDefaultViewProvider`.
-    ///   - listStyle: A `ListStyle` value used to set the style of the list. The default value is platform-dependent.
-    #if os(macOS)
-        public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, contentProvider: Provider? = DCDefaultViewProvider(), listStyle: S = SidebarListStyle()) {
-            self.settingsManager = settingsManager
-            self.filter = filter
-            self.contentProvider = contentProvider
-            self.listStyle = listStyle
-        }
-    #else
-        public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, contentProvider: Provider? = DCDefaultViewProvider(), listStyle: S = InsetGroupedListStyle()) {
-            self.settingsManager = settingsManager
-            self.filter = filter
-            self.contentProvider = contentProvider
-            self.listStyle = listStyle
-        }
-    #endif
+    ///   - listStyle: A `ListStyle` value used to set the style of the list.
+    public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, contentProvider: Provider?, listStyle: S) {
+        self.settingsManager = settingsManager
+        self.filter = filter
+        self.contentProvider = contentProvider
+        self.listStyle = listStyle
+    }
     
     public var body: some View {
         List(settingsManager.groups) { group in
@@ -89,6 +79,71 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
         .listStyle(listStyle)
     }
 }
+
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
+extension DCSettingsView where Provider == DCDefaultViewProvider {
+    
+    /// Initializes a new settings view with the default content provider and the specified list style.
+    public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, listStyle: S) {
+        self.init(settingsManager: settingsManager, filter: filter, contentProvider: DCDefaultViewProvider(), listStyle: listStyle)
+    }
+}
+
+#if os(macOS)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
+extension DCSettingsView where S == SidebarListStyle {
+    
+    /// Initializes a new settings view with the platform default list style.
+    public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, contentProvider: Provider?) {
+        self.init(settingsManager: settingsManager, filter: filter, contentProvider: contentProvider, listStyle: SidebarListStyle())
+    }
+}
+
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
+extension DCSettingsView where Provider == DCDefaultViewProvider, S == SidebarListStyle {
+    
+    /// Initializes a new settings view with the default content provider and platform default list style.
+    public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil) {
+        self.init(settingsManager: settingsManager, filter: filter, contentProvider: DCDefaultViewProvider(), listStyle: SidebarListStyle())
+    }
+}
+#elseif os(watchOS)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
+extension DCSettingsView where S == DefaultListStyle {
+    
+    /// Initializes a new settings view with the platform default list style.
+    public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, contentProvider: Provider?) {
+        self.init(settingsManager: settingsManager, filter: filter, contentProvider: contentProvider, listStyle: DefaultListStyle())
+    }
+}
+
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
+extension DCSettingsView where Provider == DCDefaultViewProvider, S == DefaultListStyle {
+    
+    /// Initializes a new settings view with the default content provider and platform default list style.
+    public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil) {
+        self.init(settingsManager: settingsManager, filter: filter, contentProvider: DCDefaultViewProvider(), listStyle: DefaultListStyle())
+    }
+}
+#else
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
+extension DCSettingsView where S == InsetGroupedListStyle {
+    
+    /// Initializes a new settings view with the platform default list style.
+    public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, contentProvider: Provider?) {
+        self.init(settingsManager: settingsManager, filter: filter, contentProvider: contentProvider, listStyle: InsetGroupedListStyle())
+    }
+}
+
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
+extension DCSettingsView where Provider == DCDefaultViewProvider, S == InsetGroupedListStyle {
+    
+    /// Initializes a new settings view with the default content provider and platform default list style.
+    public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil) {
+        self.init(settingsManager: settingsManager, filter: filter, contentProvider: DCDefaultViewProvider(), listStyle: InsetGroupedListStyle())
+    }
+}
+#endif
 
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCSettingsView_Previews: PreviewProvider {
