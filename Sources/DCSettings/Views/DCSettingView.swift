@@ -13,6 +13,15 @@ extension DCSetting {
     }
 }
 
+enum DCOptionControlStyle: Equatable {
+    case picker
+    case menuPicker
+    
+    init(optionCount: Int) {
+        self = optionCount > 2 ? .menuPicker : .picker
+    }
+}
+
 extension DCSettingOption {
     
     @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
@@ -68,7 +77,7 @@ struct DCIntSettingView: View {
     
     var body: some View {
         if let options = setting.configuation?.options {
-            if options.count > 2 {
+            if DCOptionControlStyle(optionCount: options.count) == .menuPicker {
                 DCMenuPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
             }
             else {
@@ -99,7 +108,7 @@ struct DCIntSettingView: View {
                 Double(setting.value)
             }, set: { newValue in
                 setting.value = Int(newValue)
-            }), bounds: DCValueBounds(lowerBound: Double(bounds.lowerBound), upperBound: Double(bounds.upperBound)), step: Double(setting.configuation?.step ?? 0), specifier: "%.0f")
+            }), bounds: DCValueBounds(lowerBound: Double(bounds.lowerBound), upperBound: Double(bounds.upperBound)), step: setting.configuation?.step.map { Double($0) }, specifier: "%.0f")
         }
         else {
             HStack {
@@ -108,9 +117,36 @@ struct DCIntSettingView: View {
                 Spacer()
                 Text(String(setting.value))
                     .padding(.trailing, 8.0)
-                Stepper(setting.displayLabel, value: $setting.value)
-                    .labelsHidden()
-                    .accessibilityIdentifier(setting.key)
+                #if os(watchOS)
+                    if #available(watchOS 9.0, *) {
+                        Stepper(setting.displayLabel, value: $setting.value)
+                            .labelsHidden()
+                            .accessibilityIdentifier(setting.key)
+                    }
+                    else {
+                        HStack(spacing: 8.0) {
+                            Button {
+                                setting.value -= 1
+                            } label: {
+                                Image(systemName: "minus")
+                            }
+                            .accessibilityLabel("Decrease \(setting.displayLabel)")
+                            .accessibilityIdentifier("\(setting.key).decrement")
+                            
+                            Button {
+                                setting.value += 1
+                            } label: {
+                                Image(systemName: "plus")
+                            }
+                            .accessibilityLabel("Increase \(setting.displayLabel)")
+                            .accessibilityIdentifier("\(setting.key).increment")
+                        }
+                    }
+                #else
+                    Stepper(setting.displayLabel, value: $setting.value)
+                        .labelsHidden()
+                        .accessibilityIdentifier(setting.key)
+                #endif
             }
             .foregroundColor(isEnabled ? .primary : .secondary)
         }
@@ -119,11 +155,37 @@ struct DCIntSettingView: View {
 
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 8.0, visionOS 1.0, *)
 struct DCDoubleSettingView: View {
+    @Environment(\.isEnabled) var isEnabled
+    
     @ObservedObject var setting: DCSetting<Double>
     
     var body: some View {
-        if let options = setting.configuation?.options, options.count > 2 {
-            DCMenuPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
+        if let options = setting.configuation?.options {
+            if DCOptionControlStyle(optionCount: options.count) == .menuPicker {
+                DCMenuPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
+            }
+            else {
+                HStack {
+                    Text(setting.displayLabel)
+                    Spacer(minLength: 16.0)
+                    Picker(setting.displayLabel, selection: $setting.value) {
+                        ForEach(options, id: \.value) { option in
+                            option.labelView()
+                                .tag(option.value)
+                        }
+                    }
+                    .labelsHidden()
+                    .accessibilityIdentifier(setting.key)
+                    #if os(macOS)
+                        .pickerStyle(RadioGroupPickerStyle())
+                        .horizontalRadioGroupLayout()
+                    #elseif !os(watchOS)
+                        .pickerStyle(SegmentedPickerStyle())
+                        .frame(maxWidth: 140.0)
+                    #endif
+                }
+                .foregroundColor(isEnabled ? .primary : .secondary)
+            }
         }
         else {
             DCSliderView(key: setting.key, label: setting.displayLabel, value: $setting.value, bounds: setting.configuation?.bounds, step: setting.configuation?.step, specifier: "%.2f")
@@ -139,7 +201,7 @@ struct DCStringSettingView: View {
     
     var body: some View {
         if let options = setting.configuation?.options {
-            if options.count > 2 {
+            if DCOptionControlStyle(optionCount: options.count) == .menuPicker {
                 DCMenuPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
             }
             else {
@@ -185,7 +247,7 @@ struct DCDateSettingView: View {
             Text(setting.displayLabel)
         #else
             if let bounds = setting.configuation?.bounds {
-                DatePicker(selection: $setting.value, in: bounds.upperBound...bounds.upperBound, displayedComponents: .date) {
+                DatePicker(selection: $setting.value, in: bounds.lowerBound...bounds.upperBound, displayedComponents: .date) {
                     Text(setting.displayLabel)
                 }
                 .foregroundColor(isEnabled ? .primary : .secondary)
