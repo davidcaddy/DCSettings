@@ -74,31 +74,7 @@ struct DCIntSettingView: View {
     
     var body: some View {
         if let options = setting.configuation?.options {
-            if DCOptionControlStyle(optionCount: options.count) == .menuPicker {
-                DCMenuPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
-            }
-            else {
-                HStack {
-                    Text(setting.displayLabel)
-                    Spacer(minLength: 16.0)
-                    Picker(setting.displayLabel, selection: $setting.value) {
-                        ForEach(options, id: \.value) { option in
-                            option.labelView()
-                                .tag(option.value)
-                        }
-                    }
-                    .labelsHidden()
-                    .accessibilityIdentifier(setting.key)
-                    #if os(macOS)
-                        .pickerStyle(RadioGroupPickerStyle())
-                        .horizontalRadioGroupLayout()
-                    #elseif !os(watchOS)
-                        .pickerStyle(SegmentedPickerStyle())
-                        .frame(maxWidth: 140.0)
-                    #endif
-                }
-                .foregroundColor(isEnabled ? .primary : .secondary)
-            }
+            DCOptionPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
         }
         else if let bounds = setting.configuation?.bounds {
             DCSliderView(key: setting.key, label: setting.displayLabel, value: Binding(get: {
@@ -151,37 +127,11 @@ struct DCIntSettingView: View {
 }
 
 struct DCDoubleSettingView: View {
-    @Environment(\.isEnabled) var isEnabled
-    
     @ObservedObject var setting: DCSetting<Double>
     
     var body: some View {
         if let options = setting.configuation?.options {
-            if DCOptionControlStyle(optionCount: options.count) == .menuPicker {
-                DCMenuPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
-            }
-            else {
-                HStack {
-                    Text(setting.displayLabel)
-                    Spacer(minLength: 16.0)
-                    Picker(setting.displayLabel, selection: $setting.value) {
-                        ForEach(options, id: \.value) { option in
-                            option.labelView()
-                                .tag(option.value)
-                        }
-                    }
-                    .labelsHidden()
-                    .accessibilityIdentifier(setting.key)
-                    #if os(macOS)
-                        .pickerStyle(RadioGroupPickerStyle())
-                        .horizontalRadioGroupLayout()
-                    #elseif !os(watchOS)
-                        .pickerStyle(SegmentedPickerStyle())
-                        .frame(maxWidth: 140.0)
-                    #endif
-                }
-                .foregroundColor(isEnabled ? .primary : .secondary)
-            }
+            DCOptionPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
         }
         else {
             DCSliderView(key: setting.key, label: setting.displayLabel, value: $setting.value, bounds: setting.configuation?.bounds, step: setting.configuation?.step, specifier: "%.2f")
@@ -196,31 +146,7 @@ struct DCStringSettingView: View {
     
     var body: some View {
         if let options = setting.configuation?.options {
-            if DCOptionControlStyle(optionCount: options.count) == .menuPicker {
-                DCMenuPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
-            }
-            else {
-                HStack {
-                    Text(setting.displayLabel)
-                    Spacer(minLength: 16.0)
-                    Picker(setting.displayLabel, selection: $setting.value) {
-                        ForEach(options, id: \.value) { option in
-                            option.labelView()
-                                .tag(option.value)
-                        }
-                    }
-                    .labelsHidden()
-                    .accessibilityIdentifier(setting.key)
-                    #if os(macOS)
-                        .pickerStyle(RadioGroupPickerStyle())
-                        .horizontalRadioGroupLayout()
-                    #elseif os(iOS)
-                        .pickerStyle(SegmentedPickerStyle())
-                        .frame(maxWidth: 140.0)
-                    #endif
-                }
-                .foregroundColor(isEnabled ? .primary : .secondary)
-            }
+            DCOptionPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
         }
         else {
             TextField(setting.displayLabel, text: $setting.value)
@@ -339,6 +265,43 @@ struct DCSliderView: View {
             }
         }
         .foregroundColor(isEnabled ? .primary : .secondary)
+    }
+}
+
+struct DCOptionPickerView<ValueType>: View where ValueType: Equatable & Hashable {
+    @Environment(\.isEnabled) var isEnabled
+    
+    let key: String
+    let label: String
+    let options: [DCSettingOption<ValueType>]
+    @Binding var value: ValueType
+    
+    var body: some View {
+        if DCOptionControlStyle(optionCount: options.count) == .menuPicker {
+            DCMenuPickerView(key: key, label: label, options: options, value: $value)
+        }
+        else {
+            HStack {
+                Text(label)
+                Spacer(minLength: 16.0)
+                Picker(label, selection: $value) {
+                    ForEach(options, id: \.value) { option in
+                        option.labelView()
+                            .tag(option.value)
+                    }
+                }
+                .labelsHidden()
+                .accessibilityIdentifier(key)
+                #if os(macOS)
+                    .pickerStyle(RadioGroupPickerStyle())
+                    .horizontalRadioGroupLayout()
+                #elseif !os(watchOS)
+                    .pickerStyle(SegmentedPickerStyle())
+                    .frame(maxWidth: 140.0)
+                #endif
+            }
+            .foregroundColor(isEnabled ? .primary : .secondary)
+        }
     }
 }
 

@@ -18,6 +18,10 @@ final class StringExtendedTests: XCTestCase {
     }
     
     func testSentenceFormattedFormatsAcronymCamelCaseInput() {
-        XCTAssertEqual("URLScheme".sentenceFormatted, "Urlscheme")
+        XCTAssertEqual("URLScheme".sentenceFormatted, "URL scheme")
+    }
+    
+    func testSentenceFormattedPreservesAcronymsAfterFirstWord() {
+        XCTAssertEqual("callbackURLScheme".sentenceFormatted, "Callback URL scheme")
     }
 }
