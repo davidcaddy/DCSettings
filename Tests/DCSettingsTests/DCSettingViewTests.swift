@@ -31,5 +31,15 @@ final class DCSettingViewTests: XCTestCase {
         XCTAssertEqual(DCOptionControlStyle(optionCount: 3), .menuPicker)
         XCTAssertEqual(DCOptionControlStyle(optionCount: 10), .menuPicker)
     }
+    
+    func testDatePickerRangeUsesLowerAndUpperBounds() {
+        let lowerBound = Date(timeIntervalSince1970: 1_704_067_200)
+        let upperBound = Date(timeIntervalSince1970: 1_735_689_600)
+        let bounds = DCValueBounds(lowerBound: lowerBound, upperBound: upperBound)
+        
+        let range = DCDateSettingView.datePickerRange(for: bounds)
+        
+        XCTAssertEqual(range.lowerBound, lowerBound)
+        XCTAssertEqual(range.upperBound, upperBound)
+    }
 }
-

@@ -235,13 +235,17 @@ struct DCDateSettingView: View {
     
     @ObservedObject var setting: DCSetting<Date>
     
+    static func datePickerRange(for bounds: DCValueBounds<Date>) -> ClosedRange<Date> {
+        return bounds.lowerBound...bounds.upperBound
+    }
+    
     var body: some View {
         #if os(watchOS)
             // TODO: watchOS implementation
             Text(setting.displayLabel)
         #else
             if let bounds = setting.configuation?.bounds {
-                DatePicker(selection: $setting.value, in: bounds.lowerBound...bounds.upperBound, displayedComponents: .date) {
+                DatePicker(selection: $setting.value, in: Self.datePickerRange(for: bounds), displayedComponents: .date) {
                     Text(setting.displayLabel)
                 }
                 .foregroundColor(isEnabled ? .primary : .secondary)

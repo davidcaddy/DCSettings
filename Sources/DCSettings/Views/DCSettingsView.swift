@@ -41,7 +41,7 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
     /// Initializes a new `DCSettingsView` instance with the specified settings manager, filter, and content provider.
     ///
     /// This initializer creates a new instance of `DCSettingsView` with the specified settings manager, filter, and content provider.
-    /// The settings manager is required, while the filter is optional.
+    /// The settings manager defaults to the `.shared` singleton instance, while the filter is optional.
     ///
     /// - Parameters:
     ///   - settingsManager: A `DCSettingsManager` instance used to manage the settings.

@@ -19,6 +19,9 @@ public enum DCSettingStore {
     case userDefaults(suiteName: String)
     
     /// A key-value store that uses the iCloud `NSUbiquitousKeyValueStore` key-value store.
+    ///
+    /// On watchOS, this store is available in watchOS 9.0 or newer.
+    @available(watchOS 9.0, *)
     case ubiquitous
     
     /// A custom key-value store that conforms to the `DCKeyValueStore` protocol.
@@ -37,9 +40,8 @@ public enum DCSettingStore {
                 if #available(watchOS 9.0, *) {
                     return NSUbiquitousKeyValueStore.default
                 }
-                else {
-                    fatalError("[DCSettingStore] 'NSUbiquitousKeyValueStore' is only available in watchOS 9.0 or newer")
-                }
+                
+                return UserDefaults.standard
             #else
                 return NSUbiquitousKeyValueStore.default
             #endif
