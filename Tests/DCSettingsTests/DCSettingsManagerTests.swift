@@ -4,29 +4,26 @@
 //  MIT license, see LICENSE file for details
 //
 
-import XCTest
+import Testing
 @testable import DCSettings
 import SwiftUI
 import Combine
 
-@MainActor class DCSettingsManagerTests: XCTestCase {
+@Suite @MainActor struct DCSettingsManagerTests {
 
     private enum TestEnum: String, Equatable, CaseIterable {
         case case1
         case case2
     }
 
-    private var backingStore: MockStore!
-    private var store: DCSettingStore!
-    private var manager: DCSettingsManager!
-    private var cancellables: Set<AnyCancellable> = []
+    private let backingStore: MockStore
+    private let store: DCSettingStore
+    private let manager: DCSettingsManager
 
-    override func setUp() async throws {
-        try await super.setUp()
+    init() {
         backingStore = MockStore()
         store = .custom(backingStore: backingStore)
         manager = DCSettingsManager()
-        cancellables = []
 
         manager.configure {
             DCSettingGroup("Group 1", store: store) {
@@ -43,125 +40,116 @@ import Combine
         }
     }
 
-    func testConfigureWithSettingGroups() {
-        XCTAssertEqual(manager.groups.count, 2)
-        XCTAssertEqual(manager.groups[0].label, "Group 1")
-        XCTAssertEqual(manager.groups[1].label, "Group 2")
+    @Test func configureWithSettingGroups() {
+        #expect(manager.groups.count == 2)
+        #expect(manager.groups[0].label == "Group 1")
+        #expect(manager.groups[1].label == "Group 2")
     }
 
-    func testSetAndGetValue() {
-        XCTAssertTrue(manager.bool(forKey: "key3"))
+    @Test func setAndGetValue() {
+        #expect(manager.bool(forKey: "key3"))
 
         manager.set(false, forKey: "key3")
 
-        XCTAssertFalse(manager.bool(forKey: "key3"))
+        #expect(!manager.bool(forKey: "key3"))
     }
 
-    func testConfigure() {
-        XCTAssertEqual(manager.groups.count, 2)
-        XCTAssertEqual(manager.groups.first?.settings.count, 2)
-        XCTAssertEqual(manager.groups.last?.settings.count, 5)
+    @Test func configure() {
+        #expect(manager.groups.count == 2)
+        #expect(manager.groups.first?.settings.count == 2)
+        #expect(manager.groups.last?.settings.count == 5)
     }
 
-    func testSet() {
-        XCTAssertTrue(manager.set("newValue", forKey: "key1"))
-        XCTAssertEqual(backingStore.storage["key1"] as? String, "newValue")
-        XCTAssertFalse(manager.set("newValue", forKey: "nonExistentKey"))
+    @Test func set() {
+        #expect(manager.set("newValue", forKey: "key1"))
+        #expect(backingStore.storage["key1"] as? String == "newValue")
+        #expect(!manager.set("newValue", forKey: "nonExistentKey"))
     }
 
-    func testSettingForKey() {
-        let setting = manager.setting(forKey: "key1") as? DCSetting<String>
+    @Test func settingForKey() throws {
+        let setting = try #require(manager.setting(forKey: "key1") as? DCSetting<String>)
 
-        XCTAssertNotNil(setting)
-        XCTAssertEqual(setting?.value, "value1")
-        XCTAssertNil(manager.setting(forKey: "nonExistentKey"))
+        #expect(setting.value == "value1")
+        #expect(manager.setting(forKey: "nonExistentKey") == nil)
     }
 
-    func testValueForKey() {
+    @Test func valueForKey() {
         let value: String? = manager.value(forKey: "key1")
 
-        XCTAssertEqual(value, "value1")
-        XCTAssertNil(manager.value(forKey: "nonExistentKey") as String?)
+        #expect(value == "value1")
+        #expect((manager.value(forKey: "nonExistentKey") as String?) == nil)
     }
 
-    func testValuePublisherEmitsCurrentAndChangedValue() {
-        let valuesDidEmit = expectation(description: "Value publisher emitted current and changed values")
+    @Test func valuePublisherEmitsCurrentAndChangedValue() async {
         var receivedValues: [String] = []
+        var cancellables: Set<AnyCancellable> = []
 
         manager.valuePublisher(forKey: "key1")?
             .sink { value in
                 receivedValues.append(value)
-                if receivedValues.count == 2 {
-                    valuesDidEmit.fulfill()
-                }
             }
             .store(in: &cancellables)
 
         manager.set("newValue", forKey: "key1")
 
-        wait(for: [valuesDidEmit], timeout: 1.0)
-        XCTAssertEqual(receivedValues, ["value1", "newValue"])
+        #expect(await waitUntil { receivedValues.count == 2 })
+        #expect(receivedValues == ["value1", "newValue"])
     }
 
-    func testRepresentedValueForKey() {
+    @Test func representedValueForKey() {
         let value: TestEnum? = manager.representedValue(forKey: "key4")
 
-        XCTAssertEqual(value, TestEnum.case1)
-        XCTAssertNil(manager.representedValue(forKey: "nonExistentKey") as TestEnum?)
+        #expect(value == TestEnum.case1)
+        #expect((manager.representedValue(forKey: "nonExistentKey") as TestEnum?) == nil)
     }
 
-    func testRepresentedValuePublisherEmitsCurrentAndChangedValue() {
-        let valuesDidEmit = expectation(description: "Represented value publisher emitted current and changed values")
+    @Test func representedValuePublisherEmitsCurrentAndChangedValue() async {
         var receivedValues: [TestEnum?] = []
+        var cancellables: Set<AnyCancellable> = []
 
         manager.representedValuePublisher(forKey: "key4")?
             .sink { value in
                 receivedValues.append(value)
-                if receivedValues.count == 2 {
-                    valuesDidEmit.fulfill()
-                }
             }
             .store(in: &cancellables)
 
         manager.set(TestEnum.case2.rawValue, forKey: "key4")
 
-        wait(for: [valuesDidEmit], timeout: 1.0)
-        XCTAssertEqual(receivedValues, [.case1, .case2])
+        #expect(await waitUntil { receivedValues.count == 2 })
+        #expect(receivedValues == [.case1, .case2])
     }
 
-    func testValueBindingForKey() {
-        let binding = manager.valueBinding(forKey: "key1") as Binding<String>?
+    @Test func valueBindingForKey() throws {
+        let binding = try #require(manager.valueBinding(forKey: "key1") as Binding<String>?)
 
-        XCTAssertNotNil(binding)
+        binding.wrappedValue = "newValue"
 
-        binding?.wrappedValue = "newValue"
-
-        XCTAssertEqual(backingStore.storage["key1"] as? String, "newValue")
-        XCTAssertNil(manager.valueBinding(forKey: "nonExistentKey") as Binding<String>?)
+        #expect(backingStore.storage["key1"] as? String == "newValue")
+        #expect((manager.valueBinding(forKey: "nonExistentKey") as Binding<String>?) == nil)
     }
 
-    func testBoolForKey() {
-        XCTAssertTrue(manager.bool(forKey: "key3"))
-        XCTAssertFalse(manager.bool(forKey: "nonExistentKey"))
+    @Test func boolForKey() {
+        #expect(manager.bool(forKey: "key3"))
+        #expect(!manager.bool(forKey: "nonExistentKey"))
     }
 
-    func testIntForKey() {
-        XCTAssertTrue(manager.int(forKey: "key2") == 2)
-        XCTAssertTrue(manager.int(forKey: "nonExistentKey") == 0)
+    @Test func intForKey() {
+        #expect(manager.int(forKey: "key2") == 2)
+        #expect(manager.int(forKey: "nonExistentKey") == 0)
     }
 
-    func testDoubleForKey() {
-        XCTAssertTrue(manager.double(forKey: "key5") == 5.0)
-        XCTAssertTrue(manager.double(forKey: "nonExistentKey") == 0.0)
+    @Test func doubleForKey() {
+        #expect(manager.double(forKey: "key5") == 5.0)
+        #expect(manager.double(forKey: "nonExistentKey") == 0.0)
     }
 
-    func testStringForKey() {
-        XCTAssertEqual(manager.string(forKey: "key7"), "value2")
-        XCTAssertEqual(manager.string(forKey: "nonExistentKey"), "")
+    @Test func stringForKey() {
+        #expect(manager.string(forKey: "key7") == "value2")
+        #expect(manager.string(forKey: "nonExistentKey") == "")
     }
 
-    func testDateForKey() {
-        XCTAssertEqual(manager.date(forKey: "key6"), Date.distantFuture)
-        XCTAssertEqual(manager.date(forKey: "nonExistentKey"), .distantPast)
+    @Test func dateForKey() {
+        #expect(manager.date(forKey: "key6") == Date.distantFuture)
+        #expect(manager.date(forKey: "nonExistentKey") == .distantPast)
     }
 }

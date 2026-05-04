@@ -4,24 +4,24 @@
 //  MIT license, see LICENSE file for details
 //
 
-import XCTest
+import Testing
 @testable import DCSettings
 
-final class StringExtendedTests: XCTestCase {
+@Suite struct StringExtendedTests {
 
-    func testSentenceCapitalizedLowercasesRemainingCharacters() {
-        XCTAssertEqual("hELLO WORLD".sentenceCapitalized, "Hello world")
+    @Test func sentenceCapitalizedLowercasesRemainingCharacters() {
+        #expect("hELLO WORLD".sentenceCapitalized == "Hello world")
     }
 
-    func testSentenceFormattedReplacesUnderscoresAndCamelCase() {
-        XCTAssertEqual("great_userSetting2".sentenceFormatted, "Great user setting 2")
+    @Test func sentenceFormattedReplacesUnderscoresAndCamelCase() {
+        #expect("great_userSetting2".sentenceFormatted == "Great user setting 2")
     }
 
-    func testSentenceFormattedFormatsAcronymCamelCaseInput() {
-        XCTAssertEqual("URLScheme".sentenceFormatted, "URL scheme")
+    @Test func sentenceFormattedFormatsAcronymCamelCaseInput() {
+        #expect("URLScheme".sentenceFormatted == "URL scheme")
     }
 
-    func testSentenceFormattedPreservesAcronymsAfterFirstWord() {
-        XCTAssertEqual("callbackURLScheme".sentenceFormatted, "Callback URL scheme")
+    @Test func sentenceFormattedPreservesAcronymsAfterFirstWord() {
+        #expect("callbackURLScheme".sentenceFormatted == "Callback URL scheme")
     }
 }

@@ -4,12 +4,12 @@
 //  MIT license, see LICENSE file for details
 //
 
-import XCTest
+import Testing
 import SwiftUI
 import Combine
 @testable import DCSettings
 
-@MainActor final class DCStorageConvenienceTests: XCTestCase {
+@Suite @MainActor struct DCStorageConvenienceTests {
 
     private enum TestMode: String {
         case list
@@ -28,14 +28,7 @@ import Combine
         let columns: Int
     }
 
-    private var cancellables: Set<AnyCancellable> = []
-
-    override func tearDown() async throws {
-        cancellables = []
-        try await super.tearDown()
-    }
-
-    func testColorCodableRoundTrip() throws {
+    @Test func colorCodableRoundTrip() throws {
         let components = ColorComponents(red: 0.25, green: 0.5, blue: 0.75, opacity: 0.6)
         let color = Color(red: components.red, green: components.green, blue: components.blue, opacity: components.opacity)
 
@@ -44,17 +37,17 @@ import Combine
         let encodedDecodedColor = try JSONEncoder().encode(decodedColor)
         let decodedComponents = try JSONDecoder().decode(ColorComponents.self, from: encodedDecodedColor)
 
-        XCTAssertEqual(decodedComponents.red, components.red, accuracy: 0.001)
-        XCTAssertEqual(decodedComponents.green, components.green, accuracy: 0.001)
-        XCTAssertEqual(decodedComponents.blue, components.blue, accuracy: 0.001)
-        XCTAssertEqual(decodedComponents.opacity, components.opacity, accuracy: 0.001)
+        #expect(abs(decodedComponents.red - components.red) <= 0.001)
+        #expect(abs(decodedComponents.green - components.green) <= 0.001)
+        #expect(abs(decodedComponents.blue - components.blue) <= 0.001)
+        #expect(abs(decodedComponents.opacity - components.opacity) <= 0.001)
     }
 
-    func testUserDefaultsValuePublisherEmitsInitialAndChangedValue() {
+    @Test func userDefaultsValuePublisherEmitsInitialAndChangedValue() async throws {
         let suiteName = "DCStorageConvenienceTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        let valueDidChange = expectation(description: "UserDefaults value changed")
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
         var receivedValues: [String?] = []
+        var cancellables: Set<AnyCancellable> = []
 
         defer {
             defaults.removePersistentDomain(forName: suiteName)
@@ -63,24 +56,20 @@ import Combine
         defaults.valuePublisher(forKey: "layout")
             .sink { value in
                 receivedValues.append(value as? String)
-                if receivedValues.count == 2 {
-                    valueDidChange.fulfill()
-                }
             }
             .store(in: &cancellables)
 
         defaults.set("grid", forKey: "layout")
 
-        wait(for: [valueDidChange], timeout: 1.0)
-        XCTAssertEqual(receivedValues, [nil, "grid"])
+        #expect(await waitUntil { receivedValues.count == 2 })
+        #expect(receivedValues == [nil, "grid"])
     }
 
-    func testUserDefaultsValuePublisherDoesNotEmitDuplicateValueForUnrelatedChange() {
+    @Test func userDefaultsValuePublisherDoesNotEmitDuplicateValueForUnrelatedChange() async throws {
         let suiteName = "DCStorageConvenienceTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        let unrelatedChangeDidNotEmit = expectation(description: "Unrelated UserDefaults change did not emit")
-        unrelatedChangeDidNotEmit.isInverted = true
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
         var receivedValues: [String?] = []
+        var cancellables: Set<AnyCancellable> = []
 
         defer {
             defaults.removePersistentDomain(forName: suiteName)
@@ -91,26 +80,22 @@ import Combine
         defaults.valuePublisher(forKey: "layout")
             .sink { value in
                 receivedValues.append(value as? String)
-                if receivedValues.count > 1 {
-                    unrelatedChangeDidNotEmit.fulfill()
-                }
             }
             .store(in: &cancellables)
 
         defaults.set("dark", forKey: "theme")
 
-        wait(for: [unrelatedChangeDidNotEmit], timeout: 0.2)
-        XCTAssertEqual(receivedValues, ["list"])
+        try? await Task.sleep(for: .milliseconds(200))
+        #expect(receivedValues == ["list"])
     }
 
-    func testUserDefaultsValuePublisherKeepsSuiteValuesIsolated() {
+    @Test func userDefaultsValuePublisherKeepsSuiteValuesIsolated() async throws {
         let observedSuiteName = "DCStorageConvenienceTests.observed.\(UUID().uuidString)"
         let unrelatedSuiteName = "DCStorageConvenienceTests.unrelated.\(UUID().uuidString)"
-        let observedDefaults = UserDefaults(suiteName: observedSuiteName)!
-        let unrelatedDefaults = UserDefaults(suiteName: unrelatedSuiteName)!
-        let unrelatedSuiteDidNotEmit = expectation(description: "Unrelated UserDefaults suite change did not emit")
-        unrelatedSuiteDidNotEmit.isInverted = true
+        let observedDefaults = try #require(UserDefaults(suiteName: observedSuiteName))
+        let unrelatedDefaults = try #require(UserDefaults(suiteName: unrelatedSuiteName))
         var receivedValues: [String?] = []
+        var cancellables: Set<AnyCancellable> = []
 
         defer {
             observedDefaults.removePersistentDomain(forName: observedSuiteName)
@@ -122,25 +107,22 @@ import Combine
         observedDefaults.valuePublisher(forKey: "layout")
             .sink { value in
                 receivedValues.append(value as? String)
-                if receivedValues.count > 1 {
-                    unrelatedSuiteDidNotEmit.fulfill()
-                }
             }
             .store(in: &cancellables)
 
         unrelatedDefaults.set("grid", forKey: "layout")
 
-        wait(for: [unrelatedSuiteDidNotEmit], timeout: 0.2)
-        XCTAssertEqual(receivedValues, ["list"])
+        try? await Task.sleep(for: .milliseconds(200))
+        #expect(receivedValues == ["list"])
     }
 
-    func testUserDefaultsSettingStoreTypedValuePublisherEmitsInitialAndChangedValue() {
+    @Test func userDefaultsSettingStoreTypedValuePublisherEmitsInitialAndChangedValue() async throws {
         let suiteName = "DCStorageConvenienceTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
         let store = DCSettingStore.userDefaults(suiteName: suiteName)
         let key = "layout"
-        let valueDidChange = expectation(description: "Typed UserDefaults setting store value changed")
         var receivedValues: [String?] = []
+        var cancellables: Set<AnyCancellable> = []
 
         defer {
             defaults.removePersistentDomain(forName: suiteName)
@@ -151,52 +133,46 @@ import Combine
         store.valuePublisher(forKey: key, as: String.self)
             .sink { value in
                 receivedValues.append(value)
-                if receivedValues.count == 2 {
-                    valueDidChange.fulfill()
-                }
             }
             .store(in: &cancellables)
 
         store.set("grid", forKey: key)
 
-        wait(for: [valueDidChange], timeout: 1.0)
-        XCTAssertEqual(receivedValues, ["list", "grid"])
+        #expect(await waitUntil { receivedValues.count == 2 })
+        #expect(receivedValues == ["list", "grid"])
     }
 
-    func testUserDefaultsSettingStoreTypedValuePublisherDecodesCodableValues() {
+    @Test func userDefaultsSettingStoreTypedValuePublisherDecodesCodableValues() async throws {
         let suiteName = "DCStorageConvenienceTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
         let store = DCSettingStore.userDefaults(suiteName: suiteName)
         let key = "layout"
         let firstValue = StoredLayout(name: "list", columns: 1)
         let secondValue = StoredLayout(name: "grid", columns: 3)
-        let valueDidChange = expectation(description: "Typed UserDefaults setting store Codable value changed")
         var receivedValues: [StoredLayout?] = []
+        var cancellables: Set<AnyCancellable> = []
 
         defer {
             defaults.removePersistentDomain(forName: suiteName)
         }
 
-        XCTAssertTrue(store.set(firstValue, forKey: key))
+        #expect(store.set(firstValue, forKey: key))
 
         store.valuePublisher(forKey: key, as: StoredLayout.self)
             .sink { value in
                 receivedValues.append(value)
-                if receivedValues.count == 2 {
-                    valueDidChange.fulfill()
-                }
             }
             .store(in: &cancellables)
 
-        XCTAssertTrue(store.set(secondValue, forKey: key))
+        #expect(store.set(secondValue, forKey: key))
 
-        wait(for: [valueDidChange], timeout: 1.0)
-        XCTAssertEqual(receivedValues, [firstValue, secondValue])
+        #expect(await waitUntil { receivedValues.count == 2 })
+        #expect(receivedValues == [firstValue, secondValue])
     }
 
-    func testSettingStoreSetReturnsTrueWhenClearingCodableValue() {
+    @Test func settingStoreSetReturnsTrueWhenClearingCodableValue() throws {
         let suiteName = "DCStorageConvenienceTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
         let store = DCSettingStore.userDefaults(suiteName: suiteName)
         let key = "layout"
         let value = StoredLayout(name: "list", columns: 1)
@@ -205,25 +181,24 @@ import Combine
             defaults.removePersistentDomain(forName: suiteName)
         }
 
-        XCTAssertTrue(store.set(value, forKey: key))
-        XCTAssertEqual(store.object(forKey: key), value)
+        #expect(store.set(value, forKey: key))
+        #expect(store.object(forKey: key) == value)
 
-        XCTAssertTrue(store.set(nil as StoredLayout?, forKey: key))
-        XCTAssertNil(store.object(forKey: key) as StoredLayout?)
+        #expect(store.set(nil as StoredLayout?, forKey: key))
+        #expect((store.object(forKey: key) as StoredLayout?) == nil)
     }
 
-    func testUbiquitousValuePublisherIgnoresUnrelatedChangedKeysNotification() throws {
+    @Test func ubiquitousValuePublisherIgnoresUnrelatedChangedKeysNotification() async {
         #if os(watchOS)
-            guard #available(watchOS 9.0, *) else {
-                throw XCTSkip("NSUbiquitousKeyValueStore DCKeyValueStore conformance requires watchOS 9 or newer.")
+            if #unavailable(watchOS 9.0) {
+                return
             }
         #endif
 
         let store = NSUbiquitousKeyValueStore.default
         let key = "DCStorageConvenienceTests.\(UUID().uuidString).layout"
-        let unrelatedNotificationDidNotEmit = expectation(description: "Unrelated ubiquitous notification did not emit")
-        unrelatedNotificationDidNotEmit.isInverted = true
         var receivedValueCount = 0
+        var cancellables: Set<AnyCancellable> = []
 
         defer {
             store.removeObject(forKey: key)
@@ -232,9 +207,6 @@ import Combine
         store.valuePublisher(forKey: key)
             .sink { _ in
                 receivedValueCount += 1
-                if receivedValueCount > 1 {
-                    unrelatedNotificationDidNotEmit.fulfill()
-                }
             }
             .store(in: &cancellables)
 
@@ -244,11 +216,11 @@ import Combine
             userInfo: [NSUbiquitousKeyValueStoreChangedKeysKey: ["unrelated"]]
         )
 
-        wait(for: [unrelatedNotificationDidNotEmit], timeout: 0.2)
-        XCTAssertEqual(receivedValueCount, 1)
+        try? await Task.sleep(for: .milliseconds(200))
+        #expect(receivedValueCount == 1)
     }
 
-    func testStoredValueReadsAndWritesConfiguredSetting() {
+    @Test func storedValueReadsAndWritesConfiguredSetting() {
         let manager = DCSettingsManager()
         let backingStore = MockStore()
 
@@ -260,15 +232,15 @@ import Combine
 
         let storedValue = DCStoredValue<String>("title", settingsManager: manager)
 
-        XCTAssertEqual(storedValue.wrappedValue, "Initial")
+        #expect(storedValue.wrappedValue == "Initial")
 
         storedValue.wrappedValue = "Updated"
 
-        XCTAssertEqual(manager.string(forKey: "title"), "Updated")
-        XCTAssertEqual(backingStore.storage["title"] as? String, "Updated")
+        #expect(manager.string(forKey: "title") == "Updated")
+        #expect(backingStore.storage["title"] as? String == "Updated")
     }
 
-    func testStoredRepresentedValueReadsAndWritesRawRepresentableSetting() {
+    @Test func storedRepresentedValueReadsAndWritesRawRepresentableSetting() {
         let manager = DCSettingsManager()
         let backingStore = MockStore()
 
@@ -280,15 +252,15 @@ import Combine
 
         let storedValue = DCStoredRepresentedValue<TestMode>("mode", settingsManager: manager)
 
-        XCTAssertEqual(storedValue.wrappedValue, .list)
+        #expect(storedValue.wrappedValue == .list)
 
         storedValue.wrappedValue = .grid
 
-        XCTAssertEqual(manager.string(forKey: "mode"), TestMode.grid.rawValue)
-        XCTAssertEqual(backingStore.storage["mode"] as? String, TestMode.grid.rawValue)
+        #expect(manager.string(forKey: "mode") == TestMode.grid.rawValue)
+        #expect(backingStore.storage["mode"] as? String == TestMode.grid.rawValue)
 
         storedValue.wrappedValue = nil
 
-        XCTAssertEqual(manager.string(forKey: "mode"), TestMode.grid.rawValue)
+        #expect(manager.string(forKey: "mode") == TestMode.grid.rawValue)
     }
 }

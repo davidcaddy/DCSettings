@@ -4,11 +4,12 @@
 //  MIT license, see LICENSE file for details
 //
 
-import XCTest
+import Testing
+import Foundation
 @testable import DCSettings
 import Combine
 
-@MainActor final class DCSettingTests: XCTestCase {
+@Suite @MainActor struct DCSettingTests {
 
     private struct CodableValue: Codable, Equatable {
         let name: String
@@ -25,117 +26,115 @@ import Combine
         func refresh() {}
     }
 
-    private var store: DCSettingStore!
-    private var backingStore: MockStore!
-    private var setting: DCSetting<String>!
-    private var cancellables: Set<AnyCancellable> = []
+    private let store: DCSettingStore
+    private let backingStore: MockStore
+    private let setting: DCSetting<String>
 
-    override func setUp() async throws {
-        try await super.setUp()
+    init() {
         backingStore = MockStore()
         store = .custom(backingStore: backingStore)
         setting = DCSetting(key: "testKey", defaultValue: "defaultValue", store: store)
-        cancellables = []
     }
 
-    func testInitWithDefaultValue() {
-        XCTAssertEqual(setting.value, "defaultValue")
+    @Test func initWithDefaultValue() {
+        #expect(setting.value == "defaultValue")
     }
 
-    func testValueChange() {
+    @Test func valueChange() {
         setting.value = "newValue"
 
-        XCTAssertEqual(setting.value, "newValue")
+        #expect(setting.value == "newValue")
     }
 
-    func testRefresh() {
+    @Test func refresh() {
         backingStore.set("anotherValue", forKey: "testKey")
         setting.refresh()
 
-        XCTAssertEqual(setting.value, "anotherValue")
+        #expect(setting.value == "anotherValue")
     }
 
-    func testInitWithOptions() {
+    @Test func initWithOptions() throws {
         let options = ["option1", "option2", "option3"]
-        let setting = DCSetting(key: "testKey", store: store, options: options, defaultIndex: 1)
+        let setting = try #require(DCSetting(key: "testKey", store: store, options: options, defaultIndex: 1))
 
-        XCTAssertEqual(setting?.value, "option2")
+        #expect(setting.value == "option2")
     }
 
-    func testInitWithBounds() {
+    @Test func initWithBounds() {
         let setting = DCSetting(key: "testKey", defaultValue: 5, store: store, lowerBound: 0, upperBound: 10)
 
-        XCTAssertEqual(setting.value, 5)
-        XCTAssertEqual(setting.configuration?.bounds, DCValueBounds(lowerBound: 0, upperBound: 10))
+        #expect(setting.value == 5)
+        #expect(setting.configuration?.bounds == DCValueBounds(lowerBound: 0, upperBound: 10))
     }
 
-    func testConfigurationCompatibilityForLegacySettableConformer() {
+    @Test func configurationCompatibilityForLegacySettableConformer() {
         let setting = LegacySettable()
 
-        XCTAssertEqual(setting.configuration?.step, 1)
+        #expect(setting.configuration?.step == 1)
     }
 
-    func testValueBinding() {
+    @Test func valueBinding() {
         let binding = setting.valueBinding()
         binding.wrappedValue = "newValue"
 
-        XCTAssertEqual(setting.value, "newValue")
+        #expect(setting.value == "newValue")
     }
 
-    func testStoreSet() {
+    @Test func storeSet() {
         setting.value = "newValue"
 
-        XCTAssertEqual(backingStore?.storage["testKey"] as? String, setting.value)
+        #expect(backingStore.storage["testKey"] as? String == setting.value)
     }
 
-    func testRefreshNotifiesObserversWhenValueChanges() {
-        let valueDidRefresh = expectation(description: "Setting refresh emitted a change")
+    @Test func refreshNotifiesObserversWhenValueChanges() async {
+        var didRefresh = false
+        var cancellables: Set<AnyCancellable> = []
 
         setting.objectWillChange
             .sink {
-                XCTAssertEqual(self.setting.value, "anotherValue")
-                valueDidRefresh.fulfill()
+                didRefresh = true
             }
             .store(in: &cancellables)
 
         backingStore.storage["testKey"] = "anotherValue"
         setting.refresh()
 
-        wait(for: [valueDidRefresh], timeout: 1.0)
-        XCTAssertEqual(setting.value, "anotherValue")
+        #expect(await waitUntil { didRefresh })
+        #expect(setting.value == "anotherValue")
     }
 
-    func testCodableCustomStoreRefreshRoundTrip() {
+    @Test func codableCustomStoreRefreshRoundTrip() {
         let storedValue = CodableValue(name: "stored", count: 42)
         let defaultValue = CodableValue(name: "default", count: 0)
         let setting = DCSetting(key: "codableKey", defaultValue: defaultValue, store: store)
 
         setting.value = storedValue
 
-        XCTAssertTrue(backingStore.storage["codableKey"] is Data)
+        #expect(backingStore.storage["codableKey"] is Data)
 
         let refreshedSetting = DCSetting(key: "codableKey", defaultValue: defaultValue, store: store)
         refreshedSetting.refresh()
 
-        XCTAssertEqual(refreshedSetting.value, storedValue)
+        #expect(refreshedSetting.value == storedValue)
     }
 
-    func testCodableCustomStorePublisherRoundTrip() {
+    @Test func codableCustomStorePublisherRoundTrip() async {
         let defaultValue = CodableValue(name: "default", count: 0)
         let updatedValue = CodableValue(name: "updated", count: 7)
         let setting = DCSetting(key: "codableKey", defaultValue: defaultValue, store: store)
-        let valueDidChange = expectation(description: "Codable value update was decoded")
+        var didChange = false
+        var cancellables: Set<AnyCancellable> = []
 
         setting.refresh()
         setting.objectWillChange
             .sink {
-                valueDidChange.fulfill()
+                didChange = true
             }
             .store(in: &cancellables)
 
         store.set(updatedValue, forKey: "codableKey")
 
-        wait(for: [valueDidChange], timeout: 1.0)
-        XCTAssertEqual(setting.value, updatedValue)
+        #expect(await waitUntil { didChange })
+        #expect(setting.value == updatedValue)
     }
 }

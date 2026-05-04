@@ -4,11 +4,11 @@
 //  MIT license, see LICENSE file for details
 //
 
-import XCTest
+import Testing
 import SwiftUI
 @testable import DCSettings
 
-@MainActor final class DCSettingsViewTests: XCTestCase {
+@Suite @MainActor struct DCSettingsViewTests {
 
     private struct CustomViewProvider: DCSettingViewProviding {
         func content(for setting: any DCSettable) -> Text? {
@@ -16,7 +16,7 @@ import SwiftUI
         }
     }
 
-    func testDefaultInitializerUsesDefaultProviderAndPlatformListStyle() {
+    @Test func defaultInitializerUsesDefaultProviderAndPlatformListStyle() {
         #if os(macOS)
             let view: DCSettingsView<DCDefaultViewProvider, SidebarListStyle> = DCSettingsView()
         #elseif os(watchOS)
@@ -25,10 +25,10 @@ import SwiftUI
             let view: DCSettingsView<DCDefaultViewProvider, InsetGroupedListStyle> = DCSettingsView()
         #endif
 
-        XCTAssertNotNil(view)
+        #expect(!String(describing: type(of: view)).isEmpty)
     }
 
-    func testCustomProviderInitializerUsesPlatformListStyle() {
+    @Test func customProviderInitializerUsesPlatformListStyle() {
         #if os(macOS)
             let view: DCSettingsView<CustomViewProvider, SidebarListStyle> = DCSettingsView(contentProvider: CustomViewProvider())
         #elseif os(watchOS)
@@ -37,12 +37,12 @@ import SwiftUI
             let view: DCSettingsView<CustomViewProvider, InsetGroupedListStyle> = DCSettingsView(contentProvider: CustomViewProvider())
         #endif
 
-        XCTAssertNotNil(view)
+        #expect(!String(describing: type(of: view)).isEmpty)
     }
 
-    func testCustomListStyleInitializerUsesDefaultProvider() {
+    @Test func customListStyleInitializerUsesDefaultProvider() {
         let view: DCSettingsView<DCDefaultViewProvider, PlainListStyle> = DCSettingsView(listStyle: PlainListStyle())
 
-        XCTAssertNotNil(view)
+        #expect(!String(describing: type(of: view)).isEmpty)
     }
 }

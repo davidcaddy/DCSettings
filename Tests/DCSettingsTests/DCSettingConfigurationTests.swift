@@ -4,12 +4,12 @@
 //  MIT license, see LICENSE file for details
 //
 
-import XCTest
+import Testing
 @testable import DCSettings
 
-class DCSettingConfigurationTests: XCTestCase {
+@Suite struct DCSettingConfigurationTests {
 
-    func testInitWithOptions() {
+    @Test func initWithOptions() {
         let options = [
             DCSettingOption(value: "option1"),
             DCSettingOption(value: "option2"),
@@ -17,20 +17,20 @@ class DCSettingConfigurationTests: XCTestCase {
         ]
         let configuration = DCSettingConfiguration(options: options, bounds: nil, step: nil)
 
-        XCTAssertEqual(configuration.options?.count, 3)
-        XCTAssertEqual(configuration.options, options)
+        #expect(configuration.options?.count == 3)
+        #expect(configuration.options == options)
     }
 
-    func testInitWithBounds() {
+    @Test func initWithBounds() {
         let bounds = DCValueBounds(lowerBound: 0, upperBound: 10)
         let configuration = DCSettingConfiguration(options: nil, bounds: bounds, step: nil)
 
-        XCTAssertEqual(configuration.bounds, bounds)
+        #expect(configuration.bounds == bounds)
     }
 
-    func testInitWithStep() {
+    @Test func initWithStep() {
         let configuration = DCSettingConfiguration(options: nil, bounds: nil, step: 2)
 
-        XCTAssertEqual(configuration.step, 2)
+        #expect(configuration.step == 2)
     }
 }

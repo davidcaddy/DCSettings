@@ -19,7 +19,7 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 - Supports Codable setting values by storing them as JSON-encoded `Data`.
 - De-duplicates unchanged UserDefaults publisher values and ignores unrelated ubiquitous-store key changes.
 - Refines default settings controls, option pickers, date ranges, and platform list styles.
-- Expands package tests around storage, publishers, setting views, options, and string formatting.
+- Migrates the package test suite to Swift Testing and expands coverage around storage, publishers, setting views, options, and string formatting.
 
 ### Migration Notes
 

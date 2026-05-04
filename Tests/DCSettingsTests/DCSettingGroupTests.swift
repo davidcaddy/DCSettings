@@ -4,62 +4,65 @@
 //  MIT license, see LICENSE file for details
 //
 
-import XCTest
+import Testing
 @testable import DCSettings
 
-@MainActor class DCSettingGroupTests: XCTestCase {
+@Suite @MainActor struct DCSettingGroupTests {
 
-    private var store: DCSettingStore!
-    private var setting1: DCSetting<String>!
-    private var setting2: DCSetting<Int>!
-    private var group: DCSettingGroup!
+    private let store: DCSettingStore
+    private let setting1: DCSetting<String>
+    private let setting2: DCSetting<Int>
+    private let group: DCSettingGroup
 
-    override func setUp() async throws {
-        try await super.setUp()
-        store = .custom(backingStore: MockStore())
-        setting1 = DCSetting(key: "testKey1", defaultValue: "defaultValue1")
-        setting2 = DCSetting(key: "testKey2", defaultValue: 0)
-        group = DCSettingGroup(store: store) {
+    init() {
+        let store = DCSettingStore.custom(backingStore: MockStore())
+        let setting1 = DCSetting(key: "testKey1", defaultValue: "defaultValue1")
+        let setting2 = DCSetting(key: "testKey2", defaultValue: 0)
+
+        self.store = store
+        self.setting1 = setting1
+        self.setting2 = setting2
+        self.group = DCSettingGroup(store: store) {
             setting1
             setting2
         }
     }
 
-    func testSettings() {
-        XCTAssertEqual(group.settings.count, 2)
+    @Test func settings() {
+        #expect(group.settings.count == 2)
     }
 
-    func testKeyLabelAndID() {
+    @Test func keyLabelAndID() {
         let group = DCSettingGroup(key: "general", label: "General", store: store, settings: [setting1])
 
-        XCTAssertEqual(group.key, "general")
-        XCTAssertEqual(group.id, "general")
-        XCTAssertEqual(group.label, "General")
+        #expect(group.key == "general")
+        #expect(group.id == "general")
+        #expect(group.label == "General")
     }
 
-    func testLabelInitializerCreatesGroupWithSettings() {
+    @Test func labelInitializerCreatesGroupWithSettings() {
         let group = DCSettingGroup("General", store: store, settings: [setting1, setting2])
 
-        XCTAssertEqual(group.label, "General")
-        XCTAssertEqual(group.settings.count, 2)
+        #expect(group.label == "General")
+        #expect(group.settings.count == 2)
     }
 
-    func testStoreModifierReturnsCopyWithNewStore() {
+    @Test func storeModifierReturnsCopyWithNewStore() {
         let newStore = DCSettingStore.custom(backingStore: MockStore())
 
         let updatedGroup = group.store(newStore)
 
-        XCTAssertEqual(updatedGroup.key, group.key)
-        XCTAssertEqual(updatedGroup.label, group.label)
-        XCTAssertEqual(updatedGroup.settings.count, group.settings.count)
+        #expect(updatedGroup.key == group.key)
+        #expect(updatedGroup.label == group.label)
+        #expect(updatedGroup.settings.count == group.settings.count)
     }
 
-    func testGroupsBuilderBuildsGroups() {
+    @Test func groupsBuilderBuildsGroups() {
         let groups = DCSettingGroupsBuilder.buildBlock(
             DCSettingGroup("General", settings: [setting1]),
             DCSettingGroup("Appearance", settings: [setting2])
         )
 
-        XCTAssertEqual(groups.map(\.label), ["General", "Appearance"])
+        #expect(groups.map(\.label) == ["General", "Appearance"])
     }
 }

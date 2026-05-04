@@ -4,42 +4,43 @@
 //  MIT license, see LICENSE file for details
 //
 
-import XCTest
+import Testing
+import Foundation
 @testable import DCSettings
 
-@MainActor final class DCSettingViewTests: XCTestCase {
+@Suite @MainActor struct DCSettingViewTests {
 
-    func testDisplayLabelUsesExplicitLabel() {
+    @Test func displayLabelUsesExplicitLabel() {
         let setting = DCSetting(key: "articleListLayout", defaultValue: true, label: "Layout")
 
-        XCTAssertEqual(setting.displayLabel, "Layout")
+        #expect(setting.displayLabel == "Layout")
     }
 
-    func testDisplayLabelFormatsKeyWhenLabelIsMissing() {
+    @Test func displayLabelFormatsKeyWhenLabelIsMissing() {
         let setting = DCSetting(key: "articleListLayout", defaultValue: true)
 
-        XCTAssertEqual(setting.displayLabel, "Article list layout")
+        #expect(setting.displayLabel == "Article list layout")
     }
 
-    func testOptionControlStyleUsesPickerForTwoOrFewerOptions() {
-        XCTAssertEqual(DCOptionControlStyle(optionCount: 0), .picker)
-        XCTAssertEqual(DCOptionControlStyle(optionCount: 1), .picker)
-        XCTAssertEqual(DCOptionControlStyle(optionCount: 2), .picker)
+    @Test func optionControlStyleUsesPickerForTwoOrFewerOptions() {
+        #expect(DCOptionControlStyle(optionCount: 0) == .picker)
+        #expect(DCOptionControlStyle(optionCount: 1) == .picker)
+        #expect(DCOptionControlStyle(optionCount: 2) == .picker)
     }
 
-    func testOptionControlStyleUsesMenuPickerForMoreThanTwoOptions() {
-        XCTAssertEqual(DCOptionControlStyle(optionCount: 3), .menuPicker)
-        XCTAssertEqual(DCOptionControlStyle(optionCount: 10), .menuPicker)
+    @Test func optionControlStyleUsesMenuPickerForMoreThanTwoOptions() {
+        #expect(DCOptionControlStyle(optionCount: 3) == .menuPicker)
+        #expect(DCOptionControlStyle(optionCount: 10) == .menuPicker)
     }
 
-    func testDatePickerRangeUsesLowerAndUpperBounds() {
+    @Test func datePickerRangeUsesLowerAndUpperBounds() {
         let lowerBound = Date(timeIntervalSince1970: 1_704_067_200)
         let upperBound = Date(timeIntervalSince1970: 1_735_689_600)
         let bounds = DCValueBounds(lowerBound: lowerBound, upperBound: upperBound)
 
         let range = DCDateSettingView.datePickerRange(for: bounds)
 
-        XCTAssertEqual(range.lowerBound, lowerBound)
-        XCTAssertEqual(range.upperBound, upperBound)
+        #expect(range.lowerBound == lowerBound)
+        #expect(range.upperBound == upperBound)
     }
 }
