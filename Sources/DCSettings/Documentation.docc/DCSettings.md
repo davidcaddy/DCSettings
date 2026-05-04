@@ -10,6 +10,8 @@ Once your settings are set up, you can quickly add a settings view to your app u
 
 > Note: The settings configuration and storage APIs support the package's minimum platform versions, except ``DCSettingStore/ubiquitous`` requires watchOS 9 or newer. ``DCSettingsView`` is available on iOS 14, macOS 11, tvOS 14, watchOS 7, and visionOS 2 or newer.
 
+DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. Custom ``DCKeyValueStore`` implementations should accept `Data` values to support custom `Codable` setting types.
+
 *Example configuration:*
 
 ```swift
@@ -36,7 +38,13 @@ DCSettingsManager.shared.configure {
             DCSettingOption(value: "Light", label: "Light")
             DCSettingOption(value: "Dark", label: "Dark")
         }
-        DCSetting(key: "fontSize", options: [12, 14, 16, 18, 20], defaultIndex: 2)
+        DCSetting(key: "fontSize", label: "Font Size") {
+            DCSettingOption(value: 12, label: "12 pt")
+            DCSettingOption(value: 14, label: "14 pt")
+            DCSettingOption(value: 16, label: "16 pt").default()
+            DCSettingOption(value: 18, label: "18 pt")
+            DCSettingOption(value: 20, label: "20 pt")
+        }
         DCSetting(key: "lineSpacing", defaultValue: 1.2, lowerBound: 1.0, upperBound: 1.6, step: 0.1)
         DCSetting(key: "highlightColor", defaultValue: Color.blue)
     }

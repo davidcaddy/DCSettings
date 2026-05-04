@@ -3,11 +3,11 @@
 </p>
 
 <p align="center">
-    <img src="https://img.shields.io/badge/Swift-5.7-orange.svg" />
+    <img src="https://img.shields.io/badge/Swift-5.9-orange.svg" />
     <a href="https://swift.org/package-manager">
         <img src="https://img.shields.io/badge/swiftpm-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
     </a>
-     <img src="https://img.shields.io/badge/platforms-iOS+macOS-brightgreen.svg?style=flat" alt="iOS | Mac" />
+     <img src="https://img.shields.io/badge/platforms-iOS+macOS+tvOS+watchOS+visionOS-brightgreen.svg?style=flat" alt="iOS | macOS | tvOS | watchOS | visionOS" />
     <a href="https://mastodon.social/@caddy">
         <img src="https://img.shields.io/badge/Mastodon-@caddy-blue.svg?style=flat" alt="Mastodon: @caddy" />
     </a>
@@ -15,7 +15,7 @@
 
 Welcome to **DCSettings**, a Swift package that simplifies the configuration of user preferences with an easy-to-use result builder syntax and a drop-in SwiftUI user interface.
 
-You can configure settings in `UserDeafults`, `NSUbiquitousKeyValueStore` or a custom key-value store, like so: 
+You can configure settings in `UserDefaults`, `NSUbiquitousKeyValueStore` or a custom key-value store, like so:
 
 ```swift
 DCSettingsManager.shared.configure {
@@ -37,8 +37,17 @@ DCSettingsManager.shared.configure {
         DCSetting(key: "maxSyncItems", defaultValue: 1000)
     }
     DCSettingGroup("Appearance") {
-        DCSetting(key: "theme", label: "Theme", options: ["Light", "Dark"])
-        DCSetting(key: "fontSize", options: [12, 14, 16, 18, 20], defaultIndex: 2)
+        DCSetting(key: "theme", label: "Theme") {
+            DCSettingOption(value: "Light", label: "Light")
+            DCSettingOption(value: "Dark", label: "Dark")
+        }
+        DCSetting(key: "fontSize", label: "Font Size") {
+            DCSettingOption(value: 12, label: "12 pt")
+            DCSettingOption(value: 14, label: "14 pt")
+            DCSettingOption(value: 16, label: "16 pt").default()
+            DCSettingOption(value: 18, label: "18 pt")
+            DCSettingOption(value: 20, label: "20 pt")
+        }
         DCSetting(key: "lineSpacing", defaultValue: 1.2, lowerBound: 1.0, upperBound: 1.6, step: 0.1)
         DCSetting(key: "highlightColor", defaultValue: Color.blue)
     }
@@ -60,9 +69,13 @@ To install **DCSettings**, add the following line to your `Package.swift` file:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/davidcaddy/DCSettings.git", from: "0.1.0")
+    .package(url: "https://github.com/davidcaddy/DCSettings.git", from: "1.0.0")
 ]
 ```
+
+### Requirements
+
+DCSettings requires Swift 5.9 or newer and supports iOS 14, macOS 11, tvOS 14, watchOS 7, and visionOS 2 or newer. `DCSettingStore.ubiquitous` requires watchOS 9 or newer.
 
 ## Usage
 
@@ -74,7 +87,7 @@ import DCSettings
 
 ## Configuring Settings
 
-To configure settings, you can use the `configure` method on an `DCSettingsManager` instance, typically the shared  singleton instance. This method takes a closure that returns an array of `DCSettingGroup` instances. Each `DCSettingGroup` can contain multiple `DCSetting` instances.
+To configure settings, you can use the `configure` method on a `DCSettingsManager` instance, typically the shared singleton instance. This method takes a closure that returns an array of `DCSettingGroup` instances. Each `DCSettingGroup` can contain multiple `DCSetting` instances.
 
 Here’s an example of how you might configure your settings:
 
@@ -83,7 +96,7 @@ DCSettingsManager.shared.configure {
     DCSettingGroup("General") {
         DCSetting(key: "showNotifications", defaultValue: true)
         DCSetting(key: "soundEffects", defaultValue: true)
-        DCSetting(key: "shemeColor") {
+        DCSetting(key: "themeColor") {
             DCSettingOption(value: "Blue")
             DCSettingOption(value: "Red")
             DCSettingOption(value: "Green")
@@ -97,17 +110,17 @@ DCSettingsManager.shared.configure {
 }
 ```
 
-When configuring your settings you have several options available to you. First, you can create `DCSettingGroup` instances to group related settings together. Each `DCSettingGroup` can have a key and a label. The label is used to provide a human-readable name for the group. 
+When configuring your settings you have several options available to you. First, you can create `DCSettingGroup` instances to group related settings together. Each `DCSettingGroup` can have a key and a label. The label is used to provide a human-readable name for the group.
 
-> It is recommended to avoid settings sepecfic keys for groups.
+> It is recommended to avoid setting-specific keys for groups.
 
 Within each `DCSettingGroup`, you can create `DCSetting` instances to represent individual settings. Each `DCSetting` has a key, a default value, and an optional label. The key is used to uniquely identify the setting, while the default value is used as the initial value for the setting if no value has been previously set. The label is used to provide a human-readable name for the setting. If no label is provided, a sentence cased string version of the key will be used as the label.
 
-> Note: `DCSetting` supports the following types by default: `Bool`, `Int`, `Double`, `String`, `Date`, and `Color` (SwiftUI). You can also use custom types as they conform to the `Codable` protocol.
+> Note: `DCSetting` supports the following types by default: `Bool`, `Int`, `Double`, `String`, `Date`, and `Color` (SwiftUI). You can also use custom types when they conform to `Codable`.
 
 In addition to these basic properties, `DCSetting` instances can also have additional configuration options. These options are specified using the `DCSettingConfiguration` struct.
 
-One of the options available in `DCSettingConfiguration` is the options property. This property allows you to specify an array of `DCSettingOption` instances that represent the list valid values for the setting. Each `DCSettingOption` has a value and can also have an optional label and image.
+One of the options available in `DCSettingConfiguration` is the options property. This property allows you to specify an array of `DCSettingOption` instances that represent the valid values for the setting. Each `DCSettingOption` has a value and can also have an optional label and image.
 
 Another configuration option available in `DCSettingConfiguration` is the bounds property. This property allows you to specify a range of valid values for the setting using a `DCValueBounds` instance. A `DCValueBounds` instance has a lower bound and an upper bound that define the range of valid values.
 
@@ -123,12 +136,20 @@ DCSettingsManager.shared.configure {
             DCSettingOption(value: "Red")
             DCSettingOption(value: "Green")
         }
-        DCSetting(key: "fontSize", defaultValue: 14, lowerBound: 10, upperBound: 20, step: 2)
+        DCSetting(key: "fontSize", label: "Font Size") {
+            DCSettingOption(value: 10, label: "10 pt")
+            DCSettingOption(value: 12, label: "12 pt")
+            DCSettingOption(value: 14, label: "14 pt").default()
+            DCSettingOption(value: 16, label: "16 pt")
+            DCSettingOption(value: 18, label: "18 pt")
+            DCSettingOption(value: 20, label: "20 pt")
+        }
+        DCSetting(key: "lineSpacing", defaultValue: 1.2, lowerBound: 1.0, upperBound: 1.6, step: 0.1)
     }
 }
 ```
 
-In this example, we’ve created a setting group for general settings and added two settings: one for the theme color and one for the font size. The theme color setting has three options: blue (the default), red, and green. The font size setting has a default value of 14 and a range of valid values from 10 to 20, with a step value of 2.
+In this example, we’ve created a setting group for general settings and added three settings: one for the theme color, one for the font size, and one for line spacing. The theme color and font size settings use explicit options, while the line spacing setting has a range of valid values from 1.0 to 1.6 with a step value of 0.1.
 
 ## Accessing Settings
 
@@ -146,7 +167,7 @@ let showNotifications = DCSettingsManager.shared.bool(forKey: "ShowNotifications
 
 ## Backing Stores
 
-**DCSettings** allows you to specify which key-value store to use for each setting group and individual setting. By default, settings use the standard  key-value store, which is backed by `UserDefaults.standard`. However, you can specify a different key-value store by using the *store* property of a `DCSettingGroup` or `DCSetting`.
+**DCSettings** allows you to specify which key-value store to use for each setting group and individual setting. By default, settings use the standard key-value store, which is backed by `UserDefaults.standard`. However, you can specify a different key-value store by using the *store* property of a `DCSettingGroup` or `DCSetting`.
 
 Here’s an example that shows how to use a custom key-value store backed by a `UserDefaults` instance with the suite name "com.example.myapp".
 
@@ -173,7 +194,15 @@ DCSettingsManager.shared.configure {
 
 > Note: If you specify a custom key-value store for a setting group, all settings within that group will use that key-value store, unless you specify a different key-value store for an individual setting.
 
+### Storage contract
+
+DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. Values that are neither property-list compatible nor `Encodable` are rejected in debug builds with an assertion and are not persisted.
+
+Custom `DCKeyValueStore` implementations should accept `Data` values if they need to support custom `Codable` setting types.
+
 **DCSettings** also supports using `NSUbiquitousKeyValueStore` as a key-value store for your settings, which is a key-value store that stores data in iCloud, allowing settings to be shared across multiple devices. Here’s an example that shows how to use `NSUbiquitousKeyValueStore` for a setting group:
+
+> Note: `DCSettingStore.ubiquitous` requires watchOS 9 or newer. The rest of the settings configuration and storage APIs support the package's minimum platform versions.
 
 ```swift
 DCSettingsManager.shared.configure {
@@ -219,7 +248,7 @@ When you use a `DCSettingsView` to display your settings, each setting will be p
 
 - `Bool`: Settings with a Bool value type are presented as a toggle switch. The user can tap the switch to turn the setting on or off.
 - `Int`: Settings with an Int value type are presented in several different ways depending on their configuration. If the setting has options, it will be presented as a segmented control or a popover menu, depending on the number of options. If the setting has value bounds, it will be presented as a slider. Otherwise, it will be presented as a stepper control.
-- `Double`: Settings with an Int value type are presented in several different ways depending on their configuration. If the setting has options, it will be presented as a segmented control or a popover menu, depending on the number of options. Otherwiseit will be presented as a slider. The user can drag the slider to adjust the value of the setting.
+- `Double`: Settings with a Double value type are presented in several different ways depending on their configuration. If the setting has options, it will be presented as a segmented control or a popover menu, depending on the number of options. Otherwise, it will be presented as a slider. The user can drag the slider to adjust the value of the setting.
 - `String`: Settings with a String value type are presented in several different ways depending on their configuration. If the setting has options, it will be presented as a segmented control or a menu, depending on the number of options. Otherwise, it will be presented as a text field.
 - `Date`: Settings with a Date value type are presented as a date picker. The user can tap the date picker to choose a date.
 - `Color`: Settings with a Color value type are presented as a color picker. The user can tap the color picker to choose a color.
@@ -238,7 +267,7 @@ When configuring a `DCSetting`, you can provide several additional options that 
 
 `DCSettingViewProviding` is a protocol that allows you to provide custom views for individual settings within a `DCSettingsView`. To use this protocol, you’ll need to create a type that conforms to it and implement the `content(for:)` method.
 
-The `content(for:)` method takes a `DCSettable` instance as its argument and returns an optional view. If you return a view from this method, it will be used when ppresenting the setting to the user. If you return `nil`, the default view for the setting will be used.
+The `content(for:)` method takes a `DCSettable` instance as its argument and returns an optional view. If you return a view from this method, it will be used when presenting the setting to the user. If you return `nil`, the default view for the setting will be used.
 
 Here’s an example that shows how you might create a custom `DCSettingViewProviding` type:
 

@@ -9,7 +9,7 @@ import Combine
 
 @available(watchOS 9.0, *)
 extension NSUbiquitousKeyValueStore: DCKeyValueStore {
-    
+
     /// Sets the value of the specified key in the key-value store.
     ///
     /// - Parameters:
@@ -18,7 +18,7 @@ extension NSUbiquitousKeyValueStore: DCKeyValueStore {
     public func set(_ value: Int, forKey key: String) {
         setValue(Int64(value), forKey: key)
     }
-    
+
     /// Returns the integer value associated with the specified key.
     ///
     /// - Parameter key: A key in the current key-value store.
@@ -27,7 +27,7 @@ extension NSUbiquitousKeyValueStore: DCKeyValueStore {
     public func integer(forKey key: String) -> Int {
         return Int(exactly: longLong(forKey: key)) ?? 0
     }
-    
+
     /// Returns a publisher that emits the value associated with the specified key whenever it changes.
     ///
     /// - Parameter key: The key for the value to observe.
@@ -39,7 +39,7 @@ extension NSUbiquitousKeyValueStore: DCKeyValueStore {
                 guard let changedKeys = notification.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] else {
                     return true
                 }
-                
+
                 return changedKeys.contains(key)
             }
             .map { _ in self.object(forKey: key) }

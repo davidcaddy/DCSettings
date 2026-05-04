@@ -9,13 +9,13 @@ import SwiftUI
 @testable import DCSettings
 
 final class DCSettingsViewTests: XCTestCase {
-    
+
     private struct CustomViewProvider: DCSettingViewProviding {
         func content(for setting: any DCSettable) -> Text? {
             return nil
         }
     }
-    
+
     func testDefaultInitializerUsesDefaultProviderAndPlatformListStyle() {
         #if os(macOS)
             let view: DCSettingsView<DCDefaultViewProvider, SidebarListStyle> = DCSettingsView()
@@ -24,10 +24,10 @@ final class DCSettingsViewTests: XCTestCase {
         #else
             let view: DCSettingsView<DCDefaultViewProvider, InsetGroupedListStyle> = DCSettingsView()
         #endif
-        
+
         XCTAssertNotNil(view)
     }
-    
+
     func testCustomProviderInitializerUsesPlatformListStyle() {
         #if os(macOS)
             let view: DCSettingsView<CustomViewProvider, SidebarListStyle> = DCSettingsView(contentProvider: CustomViewProvider())
@@ -36,13 +36,13 @@ final class DCSettingsViewTests: XCTestCase {
         #else
             let view: DCSettingsView<CustomViewProvider, InsetGroupedListStyle> = DCSettingsView(contentProvider: CustomViewProvider())
         #endif
-        
+
         XCTAssertNotNil(view)
     }
-    
+
     func testCustomListStyleInitializerUsesDefaultProvider() {
         let view: DCSettingsView<DCDefaultViewProvider, PlainListStyle> = DCSettingsView(listStyle: PlainListStyle())
-        
+
         XCTAssertNotNil(view)
     }
 }

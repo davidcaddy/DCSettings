@@ -7,7 +7,7 @@
 import Foundation
 
 extension String: DCKeyRepresentable {
-    
+
     /// The key value of the string.
     ///
     /// This property returns the string itself.
@@ -17,7 +17,7 @@ extension String: DCKeyRepresentable {
 }
 
 extension UUID: DCKeyRepresentable {
-    
+
     /// The key value of the `UUID`.
     ///
     /// This property returns the string representation of the `UUID`.

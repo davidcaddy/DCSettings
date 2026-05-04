@@ -15,7 +15,7 @@ import SwiftUI
 /// When the wrapped value is accessed or modified, the value will be automatically loaded from or saved to the store using a `DCSetting` instance.
 @propertyWrapper
 public struct DCStoredRepresentedValue<ValueType>: DynamicProperty where ValueType: RawRepresentable, ValueType.RawValue: Equatable {
-    
+
     @StateObject private var setting: DCSetting<ValueType.RawValue>
 
     /// The current represented value of the wrapped property.

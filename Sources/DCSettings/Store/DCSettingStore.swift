@@ -9,26 +9,26 @@ import Combine
 
 /// An enumeration that represents different types of key-value stores.
 public enum DCSettingStore {
-    
+
     /// The standard `UserDefaults` key-value store.
     case standard
-    
+
     /// A `UserDefaults` key-value store with the specified suite name.
     ///
     /// - Parameter suiteName: The suite name of the `UserDefaults` store to use.
     case userDefaults(suiteName: String)
-    
+
     /// A key-value store that uses the iCloud `NSUbiquitousKeyValueStore` key-value store.
     ///
     /// On watchOS, this store is available in watchOS 9.0 or newer.
     @available(watchOS 9.0, *)
     case ubiquitous
-    
+
     /// A custom key-value store that conforms to the `DCKeyValueStore` protocol.
     ///
     /// - Parameter backingStore: The custom key-value store to use.
     case custom(backingStore: DCKeyValueStore)
-    
+
     private var backingStore: DCKeyValueStore {
         switch self {
         case .standard:
@@ -40,7 +40,7 @@ public enum DCSettingStore {
                 if #available(watchOS 9.0, *) {
                     return NSUbiquitousKeyValueStore.default
                 }
-                
+
                 return UserDefaults.standard
             #else
                 return NSUbiquitousKeyValueStore.default
@@ -49,7 +49,7 @@ public enum DCSettingStore {
             return backingStore
         }
     }
-    
+
     /// Returns a publisher that emits the value for the given key whenever it changes.
     ///
     /// - Parameter key: The key for the value to observe.
@@ -57,7 +57,7 @@ public enum DCSettingStore {
     public func valuePublisher(forKey key: String) -> AnyPublisher<Any?, Never> {
         return backingStore.valuePublisher(forKey: key)
     }
-    
+
     /// Returns a publisher that emits the typed value for the given key whenever it changes.
     ///
     /// - Parameters:
@@ -71,21 +71,43 @@ public enum DCSettingStore {
             }
             .eraseToAnyPublisher()
     }
-    
+
     /// Sets the value of the specified key in the key-value store.
+    ///
+    /// Standard property-list compatible values are stored directly. Other values
+    /// must conform to `Encodable` and are stored as JSON-encoded `Data`.
     ///
     /// - Parameters:
     ///   - value: The value to store in the key-value store.
     ///   - key: The key with which to associate the value.
-    public func set<ValueType>(_ value: ValueType?, forKey key: String) {
+    /// - Returns: `true` when the value could be stored, otherwise `false`.
+    @discardableResult public func set<ValueType>(_ value: ValueType?, forKey key: String) -> Bool {
+        guard let value else {
+            backingStore.set(nil, forKey: key)
+            return true
+        }
+
         if isStandardType(ValueType.self) {
             backingStore.set(value, forKey: key)
+            return true
         }
-        else if let encodableValue = value as? Encodable, let data = try? JSONEncoder().encode(encodableValue) {
-            backingStore.set(data, forKey: key)
+
+        if let encodableValue = value as? Encodable {
+            do {
+                let data = try JSONEncoder().encode(encodableValue)
+                backingStore.set(data, forKey: key)
+                return true
+            }
+            catch {
+                assertionFailure("[DCSettingStore] Failed to encode value for key '\(key)': \(error)")
+                return false
+            }
         }
+
+        assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible or Encodable.")
+        return false
     }
-    
+
     /// Returns the value associated with the specified key.
     ///
     /// - Parameter key: A key in the key-value store.
@@ -93,7 +115,7 @@ public enum DCSettingStore {
     public func object<ValueType>(forKey key: String) -> ValueType? {
         return decodedValue(backingStore.object(forKey: key), as: ValueType.self)
     }
-    
+
     /// Sets a boolean value for the specified key in the key-value store.
     ///
     /// - Parameters:
@@ -102,7 +124,7 @@ public enum DCSettingStore {
     public func set(_ value: Bool, forKey key: String) {
         backingStore.set(value, forKey: key)
     }
-    
+
     /// Returns a boolean value associated with the specified key.
     ///
     /// - Parameter key: A key in the key-value store.
@@ -110,7 +132,7 @@ public enum DCSettingStore {
     public func bool(forKey key: String) -> Bool {
         return backingStore.bool(forKey: key)
     }
-    
+
     /// Sets an integer value for the specified key in the key-value store.
     ///
     /// - Parameters:
@@ -119,7 +141,7 @@ public enum DCSettingStore {
     public func set(_ value: Int, forKey key: String) {
         backingStore.set(value, forKey: key)
     }
-    
+
     /// Returns an integer value associated with the specified key.
     ///
     /// - Parameter key: A key in the key-value store.
@@ -127,7 +149,7 @@ public enum DCSettingStore {
     public func integer(forKey key: String) -> Int {
         return backingStore.integer(forKey: key)
     }
-    
+
     /// Sets a double-precision floating-point value for the specified key in the key-value store.
     ///
     /// - Parameters:
@@ -136,7 +158,7 @@ public enum DCSettingStore {
     public func set(_ value: Double, forKey key: String) {
         backingStore.set(value, forKey: key)
     }
-    
+
     /// Returns a double-precision floating-point value associated with the specified key.
     ///
     /// - Parameter key:  A key in the key-value store.
@@ -145,7 +167,7 @@ public enum DCSettingStore {
     public func double(forKey key: String) -> Double {
         return backingStore.double(forKey: key)
     }
-    
+
     /// Returns a string associated with the specified key.
     ///
     /// - Parameter key: A key in the key-value store.
@@ -153,21 +175,21 @@ public enum DCSettingStore {
     public func string(forKey key: String) -> String? {
         return backingStore.string(forKey: key)
     }
-    
+
     private func isStandardType<T>(_ type: T.Type) -> Bool {
         return type == Bool.self || type == Int.self || type == Double.self || type == String.self || type == Date.self || type == Data.self
     }
-    
+
     private func decodedValue<ValueType>(_ object: Any?, as type: ValueType.Type) -> ValueType? {
         if let value = object as? ValueType {
             return value
         }
-        
+
         if let data = object as? Data, let decodableType = ValueType.self as? Decodable.Type {
             let value = try? JSONDecoder().decode(decodableType, from: data)
             return value as? ValueType
         }
-        
+
         return nil
     }
 }

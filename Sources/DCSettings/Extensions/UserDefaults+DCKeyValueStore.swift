@@ -21,14 +21,14 @@ private func areKeyValueStoreObjectsEqual(_ lhs: Any?, _ rhs: Any?) -> Bool {
 }
 
 extension UserDefaults: DCKeyValueStore {
-    
+
     /// Returns a publisher that emits the value associated with the specified key whenever it changes.
     ///
     /// - Parameter key: The key for the value to observe.
     ///
     /// - Returns: A publisher that emits the value associated with the specified key whenever it changes.
     public func valuePublisher(forKey key: String) -> AnyPublisher<Any?, Never> {
-        let notificationPublisher = NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification, object: self)
+        let notificationPublisher = NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
             .map { _ in self.object(forKey: key) }
         let initialValuePublisher = Just(self.object(forKey: key))
         return initialValuePublisher.merge(with: notificationPublisher)

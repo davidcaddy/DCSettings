@@ -20,13 +20,13 @@ extension Color: Codable {}
 #endif
 
 extension Color {
-    
+
     #if canImport(UIKit)
     typealias NativeColor = UIColor
     #elseif canImport(AppKit)
     typealias NativeColor = NSColor
     #endif
-    
+
     private enum CodingKeys: String, CodingKey {
         case red
         case green
@@ -37,13 +37,13 @@ extension Color {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         let nativeColor = NativeColor(self)
-        
+
         var red: CGFloat = 0
         var green: CGFloat = 0
         var blue: CGFloat = 0
         var alpha: CGFloat = 0
         nativeColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        
+
         try container.encode(red, forKey: .red)
         try container.encode(green, forKey: .green)
         try container.encode(blue, forKey: .blue)
@@ -56,7 +56,7 @@ extension Color {
         let green = try container.decode(CGFloat.self, forKey: .green)
         let blue = try container.decode(CGFloat.self, forKey: .blue)
         let opacity = try container.decode(CGFloat.self, forKey: .opacity)
-        
+
         self.init(NativeColor(red: red, green: green, blue: blue, alpha: opacity))
     }
 }

@@ -17,31 +17,35 @@ import SwiftUI
 ///
 /// The protocol also includes a `refresh` method that can be used to refresh the setting value from the store.
 public protocol DCSettable<ValueType>: ObservableObject where ValueType: Equatable {
-    
+
     /// The type of value associated with the setting.
     associatedtype ValueType
-    
+
     /// An optional label for the setting.
     var label: String? { get }
-    
+
     /// The key used to identify the setting in the store.
     var key: String { get }
-    
+
     /// The current value of the setting.
     var value: ValueType { get set }
-    
+
     /// An optional configuration for the setting.
-    var configuration: DCSettingConfiguration<ValueType>? { get }
-    
-    /// An optional configuration for the setting.
-    @available(*, deprecated, renamed: "configuration")
     var configuation: DCSettingConfiguration<ValueType>? { get }
-    
+
     /// An optional `DCSettingStore` instance used to store the setting value.
     var store: DCSettingStore? { get set }
-    
+
     /// Refreshes the setting value from the store.
     func refresh()
+}
+
+public extension DCSettable {
+
+    /// An optional configuration for the setting.
+    var configuration: DCSettingConfiguration<ValueType>? {
+        configuation
+    }
 }
 
 /// A class that represents a settable value with a specific type.
@@ -57,15 +61,15 @@ public protocol DCSettable<ValueType>: ObservableObject where ValueType: Equatab
 ///
 /// - Note: If the store is not set when the setting is configured by a manager instance, the store of the group in which the setting resides will be used.
 public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
-    
+
     /// The key used to identify the setting in the store.
     public let key: String
-    
+
     /// An optional label for the setting.
     public let label: String?
-    
+
     private var _value: ValueType
-    
+
     /// The current value of the setting.
     public var value: ValueType {
         get {
@@ -79,23 +83,23 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
             }
         }
     }
-    
+
     /// An optional `DCSettingStore` instance used to store the setting value.
     ///
     /// If not provided when initialized, this will be set to the store of the group in which the setting resides when configured by a manager.
     public var store: DCSettingStore?
-    
+
     /// An optional configuration for the setting.
     public let configuration: DCSettingConfiguration<ValueType>?
-    
+
     /// An optional configuration for the setting.
     @available(*, deprecated, renamed: "configuration")
     public var configuation: DCSettingConfiguration<ValueType>? {
         configuration
     }
-    
+
     private var cancellable: AnyCancellable?
-    
+
     private init(key: DCKeyRepresentable, value: ValueType, label: String?, configuration: DCSettingConfiguration<ValueType>?, store: DCSettingStore?) {
         self.key = key.keyValue
         self._value = value
@@ -103,7 +107,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
         self.store = store
         self.configuration = configuration
     }
-    
+
     /// Initializes a new `DCSetting` instance with the specified key, default value, label, and store.
     ///
     /// If a store is not provided, the store of the group in which the setting resides will be used once configured.
@@ -154,7 +158,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     public convenience init(key: DCKeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = nil, lowerBound: ValueType, upperBound: ValueType, step: ValueType? = nil) where ValueType: Numeric {
         self.init(key: key, value: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: nil, bounds: DCValueBounds(lowerBound: lowerBound, upperBound: upperBound), step: step), store: store)
     }
-    
+
     /// Initializes a new `DCSetting` instance with the specified key, label, store and result builder closure.
     ///
     /// This convenience initializer creates a new instance of `DCSetting` with an array of options constructed using a result builder closure.
@@ -174,7 +178,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, @DCSettingOptionsBuilder _ builder: () -> [DCSettingOption<ValueType>]) {
         self.init(key: key, label: label, store: store, options: builder())
     }
-    
+
     /// Initializes a new `DCSetting` instance with the specified key, label, store and options.
     ///
     /// This convenience initializer creates a new instance of `DCSetting` with an array of options.
@@ -199,7 +203,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
             return nil
         }
     }
-    
+
     /// Initializes a new `DCSetting` instance with the specified key and options provider.
     ///
     /// - Parameters:
@@ -224,7 +228,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
             return nil
         }
     }
-    
+
     /// Refreshes the setting value from the store.
     ///
     /// This method refreshes the current value of the setting from the store.
@@ -239,13 +243,13 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
         }
         setUpListener()
     }
-    
+
     private func save() {
         cancellable = nil
         store?.set(value, forKey: key)
         setUpListener()
     }
-    
+
     /// Returns a binding for the current value of the setting.
     ///
     /// This method returns a `Binding` instance for the current value of the setting.
@@ -259,7 +263,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
             self.value = newValue
         }
     }
-    
+
     private func setUpListener() {
         guard let store = store else { return }
         cancellable = store.valuePublisher(forKey: key, as: ValueType.self)
@@ -287,7 +291,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
 /// ```
 @resultBuilder
 public struct DCSettingsBuilder {
-    
+
     /// Constructs an array of `DCSettable` instances from the provided expressions.
     ///
     /// This method is called by the result builder to construct the final result from the provided expressions.

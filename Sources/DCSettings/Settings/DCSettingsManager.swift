@@ -32,16 +32,16 @@ import Combine
 /// manager.set(!darkMode, forKey: "darkMode")
 /// ```
 public class DCSettingsManager {
-    
+
     /// A shared instance of `DCSettingsManager`.
     public static let shared = DCSettingsManager()
-    
+
     public private(set) var groups: [DCSettingGroup] = []
-    
+
     private var cancellables = Set<AnyCancellable>()
-    
+
     public init() {}
-    
+
     /// Configures the manager with an array of setting groups.
     ///
     /// - Parameter settingGroups: An array of `DCSettingGroup` values representing the setting groups to be managed by the manager.
@@ -55,7 +55,7 @@ public class DCSettingsManager {
             }
         }
     }
-    
+
     /// Configures the manager with a result builder that produces an array of setting groups.
     ///
     /// - Parameter builder: A result builder that produces an array of `DCSettingGroup` values
@@ -63,7 +63,7 @@ public class DCSettingsManager {
     public func configure(@DCSettingGroupsBuilder _ builder: () -> [DCSettingGroup]) {
         configure(groups: builder())
     }
-    
+
     /// Sets the value for a setting with the specified key.
     ///
     /// - Parameters:
@@ -88,7 +88,7 @@ public class DCSettingsManager {
         let existingSettings = groups.flatMap({ $0.settings })
         return existingSettings.first(where: { $0.key == key.keyValue })
     }
-    
+
     /// Returns the value for a setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
@@ -98,7 +98,7 @@ public class DCSettingsManager {
         let setting = setting(forKey: key) as? DCSetting<ValueType>
         return setting?.value
     }
-    
+
     /// Returns the represented value for a setting with the specified key.
     ///
     /// This method is useful when working with settings that have raw representable values such as enums or option sets.
@@ -113,7 +113,7 @@ public class DCSettingsManager {
         }
         return nil
     }
-    
+
     /// Returns a binding to the value for a setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
@@ -129,7 +129,7 @@ public class DCSettingsManager {
         }
         return nil
     }
-    
+
     /// Returns a publisher that emits the current value of the setting with the specified key.
     ///
     /// - Parameters:
@@ -145,7 +145,7 @@ public class DCSettingsManager {
             .merge(with: settable.objectWillChange.map { settable.value })
             .eraseToAnyPublisher()
     }
-    
+
     /// Returns a publisher that emits the represented value of the setting with the specified key.
     ///
     /// - Parameters:
@@ -161,7 +161,7 @@ public class DCSettingsManager {
             .merge(with: settable.objectWillChange.map { ValueType(rawValue: settable.value) })
             .eraseToAnyPublisher()
     }
-    
+
     /// Returns a boolean value for the setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
@@ -170,7 +170,7 @@ public class DCSettingsManager {
     public func bool(forKey key: DCKeyRepresentable) -> Bool {
         return value(forKey: key) ?? false
     }
-    
+
     /// Returns an integer value for the setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
@@ -179,7 +179,7 @@ public class DCSettingsManager {
     public func int(forKey key: DCKeyRepresentable) -> Int {
         return value(forKey: key) ?? 0
     }
-    
+
     /// Returns a double value for the setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
@@ -188,7 +188,7 @@ public class DCSettingsManager {
     public func double(forKey key: DCKeyRepresentable) -> Double {
         return value(forKey: key) ?? 0.0
     }
-    
+
     /// Returns a string value for the setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
@@ -197,7 +197,7 @@ public class DCSettingsManager {
     public func string(forKey key: DCKeyRepresentable) -> String {
         return value(forKey: key) ?? ""
     }
-    
+
     /// Returns a date value for the setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.
@@ -206,7 +206,7 @@ public class DCSettingsManager {
     public func date(forKey key: DCKeyRepresentable) -> Date {
         return value(forKey: key) ?? .distantPast
     }
-    
+
     /// Returns a color value for the setting with the specified key.
     ///
     /// - Parameter key: The key of the desired setting value.

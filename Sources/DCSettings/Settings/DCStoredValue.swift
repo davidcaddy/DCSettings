@@ -22,7 +22,7 @@ import SwiftUI
 /// ```
 @propertyWrapper
 public struct DCStoredValue<ValueType>: DynamicProperty where ValueType: Equatable {
-    
+
     @StateObject private var setting: DCSetting<ValueType>
 
     /// The current value of the wrapped property.
@@ -60,7 +60,7 @@ public struct DCStoredValue<ValueType>: DynamicProperty where ValueType: Equatab
             fatalError("[DCStoredValue] No value of specified type found for key \(key.keyValue). Settings need to be configured in the specified settings manager before use.")
         }
     }
-    
+
     /// A binding to the current value of the wrapped property.
     ///
     /// The `projectedValue` property provides a `Binding` to the current value of the wrapped property.

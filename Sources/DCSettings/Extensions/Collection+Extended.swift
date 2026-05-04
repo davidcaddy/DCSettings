@@ -7,7 +7,7 @@
 import Foundation
 
 extension Collection {
-    
+
     func get(_ index: Index) -> Element? {
         if indices.contains(index) {
             return self[index]

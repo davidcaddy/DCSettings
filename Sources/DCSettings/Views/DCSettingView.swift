@@ -7,7 +7,7 @@
 import SwiftUI
 
 extension DCSetting {
-    
+
     var displayLabel: String {
         return label ?? key.sentenceFormatted
     }
@@ -16,14 +16,14 @@ extension DCSetting {
 enum DCOptionControlStyle: Equatable {
     case picker
     case menuPicker
-    
+
     init(optionCount: Int) {
         self = optionCount > 2 ? .menuPicker : .picker
     }
 }
 
 extension DCSettingOption {
-    
+
     public func labelView() -> some View {
         return HStack {
             if let string = label {
@@ -53,9 +53,9 @@ extension DCSettingOption {
 
 struct DCBoolSettingView: View {
     @Environment(\.isEnabled) var isEnabled
-    
+
     @ObservedObject var setting: DCSetting<Bool>
-    
+
     var body: some View {
         Toggle(setting.displayLabel, isOn: $setting.value)
             .toggleStyle(SwitchToggleStyle())
@@ -69,9 +69,9 @@ struct DCBoolSettingView: View {
 
 struct DCIntSettingView: View {
     @Environment(\.isEnabled) var isEnabled
-    
+
     @ObservedObject var setting: DCSetting<Int>
-    
+
     var body: some View {
         if let options = setting.configuration?.options {
             DCOptionPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
@@ -105,7 +105,7 @@ struct DCIntSettingView: View {
                             }
                             .accessibilityLabel("Decrease \(setting.displayLabel)")
                             .accessibilityIdentifier("\(setting.key).decrement")
-                            
+
                             Button {
                                 setting.value += 1
                             } label: {
@@ -128,7 +128,7 @@ struct DCIntSettingView: View {
 
 struct DCDoubleSettingView: View {
     @ObservedObject var setting: DCSetting<Double>
-    
+
     var body: some View {
         if let options = setting.configuration?.options {
             DCOptionPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
@@ -141,9 +141,9 @@ struct DCDoubleSettingView: View {
 
 struct DCStringSettingView: View {
     @Environment(\.isEnabled) var isEnabled
-    
+
     @ObservedObject var setting: DCSetting<String>
-    
+
     var body: some View {
         if let options = setting.configuration?.options {
             DCOptionPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
@@ -158,13 +158,13 @@ struct DCStringSettingView: View {
 
 struct DCDateSettingView: View {
     @Environment(\.isEnabled) var isEnabled
-    
+
     @ObservedObject var setting: DCSetting<Date>
-    
+
     static func datePickerRange(for bounds: DCValueBounds<Date>) -> ClosedRange<Date> {
         return bounds.lowerBound...bounds.upperBound
     }
-    
+
     var body: some View {
         #if os(watchOS)
             // TODO: watchOS implementation
@@ -190,9 +190,9 @@ struct DCDateSettingView: View {
 
 struct DCColorSettingView: View {
     @Environment(\.isEnabled) var isEnabled
-    
+
     @ObservedObject var setting: DCSetting<Color>
-    
+
     var body: some View {
         #if os(watchOS)
             // TODO: watchOS implementation
@@ -207,14 +207,14 @@ struct DCColorSettingView: View {
 
 struct DCSliderView: View {
     @Environment(\.isEnabled) var isEnabled
-    
+
     let key: String
     let label: String
     @Binding var value: Double
     let bounds: DCValueBounds<Double>?
     let step: Double?
     let specifier: String
-    
+
     var body: some View {
         VStack {
             HStack {
@@ -270,12 +270,12 @@ struct DCSliderView: View {
 
 struct DCOptionPickerView<ValueType>: View where ValueType: Equatable & Hashable {
     @Environment(\.isEnabled) var isEnabled
-    
+
     let key: String
     let label: String
     let options: [DCSettingOption<ValueType>]
     @Binding var value: ValueType
-    
+
     var body: some View {
         if DCOptionControlStyle(optionCount: options.count) == .menuPicker {
             DCMenuPickerView(key: key, label: label, options: options, value: $value)
@@ -307,12 +307,12 @@ struct DCOptionPickerView<ValueType>: View where ValueType: Equatable & Hashable
 
 struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
     @Environment(\.isEnabled) var isEnabled
-    
+
     let key: String
     let label: String
     let options: [DCSettingOption<ValueType>]
     @Binding var value: ValueType
-    
+
     var body: some View {
         HStack {
             Text(label)
@@ -375,9 +375,9 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
 ///
 /// Supported types are: `Bool`, `Int`,  `Double`, `String`, `Date` and `Color`.
 public struct DCSettingView: View {
-    
+
     private let setting: any DCSettable
-    
+
     /// Initializes a new `DCSettingView` instance with the specified setting.
     ///
     /// This initializer creates a new instance of `DCSettingView` with the specified setting. The setting must be an instance of `DCSettable`.
@@ -386,7 +386,7 @@ public struct DCSettingView: View {
     public init(_ setting: any DCSettable) {
         self.setting = setting
     }
-    
+
     public var body: some View {
         if let concreteSetting = setting as? DCSetting<Bool> {
             DCBoolSettingView(setting: concreteSetting)

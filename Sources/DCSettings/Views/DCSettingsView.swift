@@ -15,22 +15,22 @@ import SwiftUI
 /// If no custom view is available for a specific setting, a default view will be used if the setting's value is a supported type.
 /// Supported types as standard are: `Bool`, `Int`, `Double`, `String`, `Date` and `Color`.
 public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: View {
-    
+
     /// An enumeration that defines the available filters for the settings view.
     public enum Filter: Equatable {
-        
+
         /// A filter that includes only settings with labels.
         case labelled
-        
+
         /// A filter that excludes settings with the specified keys.
         case excludeKeys([String])
     }
-    
+
     private let settingsManager: DCSettingsManager
     private let filter: Filter?
     private let contentProvider: Provider?
     private let listStyle: S
-    
+
     private var hiddenKeys: [String] {
         if case .excludeKeys(let keys) = filter {
             return keys
@@ -55,7 +55,7 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
         self.contentProvider = contentProvider
         self.listStyle = listStyle
     }
-    
+
     public var body: some View {
         List(settingsManager.groups) { group in
             if !hiddenKeys.contains(group.key.keyValue) {
@@ -80,7 +80,7 @@ public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: Vi
 }
 
 extension DCSettingsView where Provider == DCDefaultViewProvider {
-    
+
     /// Initializes a new settings view with the default content provider and the specified list style.
     public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, listStyle: S) {
         self.init(settingsManager: settingsManager, filter: filter, contentProvider: DCDefaultViewProvider(), listStyle: listStyle)
@@ -89,7 +89,7 @@ extension DCSettingsView where Provider == DCDefaultViewProvider {
 
 #if os(macOS)
 extension DCSettingsView where S == SidebarListStyle {
-    
+
     /// Initializes a new settings view with the platform default list style.
     public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, contentProvider: Provider?) {
         self.init(settingsManager: settingsManager, filter: filter, contentProvider: contentProvider, listStyle: SidebarListStyle())
@@ -97,7 +97,7 @@ extension DCSettingsView where S == SidebarListStyle {
 }
 
 extension DCSettingsView where Provider == DCDefaultViewProvider, S == SidebarListStyle {
-    
+
     /// Initializes a new settings view with the default content provider and platform default list style.
     public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil) {
         self.init(settingsManager: settingsManager, filter: filter, contentProvider: DCDefaultViewProvider(), listStyle: SidebarListStyle())
@@ -105,7 +105,7 @@ extension DCSettingsView where Provider == DCDefaultViewProvider, S == SidebarLi
 }
 #elseif os(watchOS)
 extension DCSettingsView where S == DefaultListStyle {
-    
+
     /// Initializes a new settings view with the platform default list style.
     public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, contentProvider: Provider?) {
         self.init(settingsManager: settingsManager, filter: filter, contentProvider: contentProvider, listStyle: DefaultListStyle())
@@ -113,7 +113,7 @@ extension DCSettingsView where S == DefaultListStyle {
 }
 
 extension DCSettingsView where Provider == DCDefaultViewProvider, S == DefaultListStyle {
-    
+
     /// Initializes a new settings view with the default content provider and platform default list style.
     public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil) {
         self.init(settingsManager: settingsManager, filter: filter, contentProvider: DCDefaultViewProvider(), listStyle: DefaultListStyle())
@@ -121,7 +121,7 @@ extension DCSettingsView where Provider == DCDefaultViewProvider, S == DefaultLi
 }
 #else
 extension DCSettingsView where S == InsetGroupedListStyle {
-    
+
     /// Initializes a new settings view with the platform default list style.
     public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil, contentProvider: Provider?) {
         self.init(settingsManager: settingsManager, filter: filter, contentProvider: contentProvider, listStyle: InsetGroupedListStyle())
@@ -129,7 +129,7 @@ extension DCSettingsView where S == InsetGroupedListStyle {
 }
 
 extension DCSettingsView where Provider == DCDefaultViewProvider, S == InsetGroupedListStyle {
-    
+
     /// Initializes a new settings view with the default content provider and platform default list style.
     public init(settingsManager: DCSettingsManager = .shared, filter: Filter? = nil) {
         self.init(settingsManager: settingsManager, filter: filter, contentProvider: DCDefaultViewProvider(), listStyle: InsetGroupedListStyle())

@@ -15,24 +15,24 @@ import Foundation
 ///
 /// - Note: The `DCSettingGroup` conforms to the `Identifiable` protocol and uses its key as its `id`.
 public struct DCSettingGroup: Identifiable {
-    
+
     /// The key for the setting group.
     public let key: String
-    
+
     /// The label for the setting group.
     public let label: String?
-    
+
     /// The store for the setting group.
     public let store: DCSettingStore
-    
+
     /// The array of settings in the setting group.
     public let settings: [any DCSettable]
-    
+
     /// The identifier for the setting group.
     public var id: String {
         return key
     }
-    
+
     /// Creates a new setting group with the specified key, label, store, and settings.
     ///
     /// - Parameters:
@@ -46,7 +46,7 @@ public struct DCSettingGroup: Identifiable {
         self.store = store
         self.settings = settings
     }
-    
+
     /// Creates a new setting group with the specified label, store, and settings.
     ///
     /// A new `UUID` will be used as the group's key.
@@ -58,7 +58,7 @@ public struct DCSettingGroup: Identifiable {
     public init(_ label: String? = nil, store: DCSettingStore = .standard, settings: [any DCSettable]) {
         self.init(key: nil, label: label, store: store, settings: settings)
     }
-    
+
     /// Creates a new setting group with the specified key, label, store, and settings.
     ///
     /// - Parameters:
@@ -69,7 +69,7 @@ public struct DCSettingGroup: Identifiable {
     public init(key: DCKeyRepresentable?, label: String? = nil, store: DCSettingStore = .standard, @DCSettingsBuilder _ builder: () -> [any DCSettable]) {
         self.init(key: key, label: label, store: store, settings: builder())
     }
-    
+
     /// Creates a new setting group with the specified label, store, and settings.
     ///
     /// A new `UUID` will be used as the group's key.
@@ -84,7 +84,7 @@ public struct DCSettingGroup: Identifiable {
 }
 
 extension DCSettingGroup {
-    
+
     /// Returns a copy of the setting group with the specified store.
     ///
     /// - Parameter store: The new store for the setting group.
@@ -113,7 +113,7 @@ extension DCSettingGroup {
 /// ```
 @resultBuilder
 public struct DCSettingGroupsBuilder {
-    
+
     /// Builds an array of setting groups from the provided setting group instances.
     ///
     /// - Parameter settings: The setting group instances to include in the array.

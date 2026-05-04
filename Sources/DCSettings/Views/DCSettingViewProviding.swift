@@ -12,10 +12,10 @@ import SwiftUI
 /// The protocol includes a `content` method that takes a `DCSettable` instance as an argument
 /// and returns an optional view representing the user interface for changing the setting.
 public protocol DCSettingViewProviding {
-    
+
     /// The type of view returned by the `content` method.
     associatedtype Content: View
-    
+
     /// Returns a view representing the user interface for changing the specified setting.
     ///
     /// This method takes a `DCSettable` instance as an argument and returns an optional view representing the user interface for managing the setting.
@@ -31,10 +31,10 @@ public protocol DCSettingViewProviding {
 /// `DCDefaultViewProvider` is a concrete implementation of the `DCSettingViewProviding` protocol that provides no custom views for settings.
 /// This type can be used as a placeholder when no custom views are needed.
 public struct DCDefaultViewProvider: DCSettingViewProviding {
-    
+
     /// Creates a new `DCDefaultViewProvider` instance.
     public init() {}
-    
+
     /// Returns a view representing the user interface for changing the specified setting.
     ///
     /// This default implementation of the `content` method always returns `nil`, indicating that no custom view is available for the specified setting.
