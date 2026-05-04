@@ -4,13 +4,15 @@ DCSettings is a Swift package that simplifies the configuration of user preferen
 
 ## Overview
 
-To configure settings, you can use the `configure` method on a ``DCSettingsManager`` instance, typically the shared singleton instance. This method takes a closure that returns an array of ``DCSettingGroup`` instances. Each ``DCSettingGroup`` can contain multiple ``DCSetting`` instances. Settings will be stored in `UserDefaults`, `NSUbiquitousKeyValueStore` or a custom key-value store depending on how they are configured.
+To configure settings, use the `configure` method on a ``DCSettingsManager`` instance, typically the shared singleton instance. ``DCSettingsManager`` is main-actor isolated, so call `configure` from the main actor. This method takes a closure that returns an array of ``DCSettingGroup`` instances. Each ``DCSettingGroup`` can contain multiple ``DCSetting`` instances. Settings will be stored in `UserDefaults`, `NSUbiquitousKeyValueStore` or a custom key-value store depending on how they are configured.
 
 Once your settings are set up, you can quickly add a settings view to your app using ``DCSettingsView``. This view displays a list of all the setting groups and settings that you’ve configured using the given ``DCSettingsManager``. You can create an instance of this view and add it to your app’s view hierarchy like any other SwiftUI view.
 
 > Note: The settings configuration and storage APIs support the package's minimum platform versions, except ``DCSettingStore/ubiquitous`` requires watchOS 9 or newer. ``DCSettingsView`` is available on iOS 14, macOS 11, tvOS 14, watchOS 7, and visionOS 2 or newer.
 
-DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. Custom ``DCKeyValueStore`` implementations should accept `Data` values to support custom `Codable` setting types.
+> Note: ``DCSettingsManager``, ``DCSetting``, the stored-value property wrappers, and the SwiftUI settings views are main-actor isolated. The lower-level ``DCSettingStore`` and ``DCKeyValueStore`` storage APIs remain actor-neutral.
+
+DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. Values that are neither property-list compatible nor `Codable` are rejected in debug builds with an assertion and are not persisted. Custom ``DCKeyValueStore`` implementations should accept `Data` values to support custom `Codable` setting types.
 
 *Example configuration:*
 

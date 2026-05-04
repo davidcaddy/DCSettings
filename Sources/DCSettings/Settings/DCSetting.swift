@@ -77,9 +77,10 @@ public extension DCSettable {
         }
         set {
             if _value != newValue {
-                _value = newValue
-                objectWillChange.send()
-                save()
+                if save(newValue) {
+                    _value = newValue
+                    objectWillChange.send()
+                }
             }
         }
     }
@@ -244,10 +245,11 @@ public extension DCSettable {
         setUpListener()
     }
 
-    private func save() {
+    private func save(_ value: ValueType) -> Bool {
         cancellable = nil
-        store?.set(value, forKey: key)
+        let didSave = store?.set(value, forKey: key) ?? true
         setUpListener()
+        return didSave
     }
 
     /// Returns a binding for the current value of the setting.

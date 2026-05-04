@@ -28,7 +28,7 @@ extension UserDefaults: DCKeyValueStore {
     ///
     /// - Returns: A publisher that emits the value associated with the specified key whenever it changes.
     public func valuePublisher(forKey key: String) -> AnyPublisher<Any?, Never> {
-        let notificationPublisher = NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+        let notificationPublisher = NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification, object: self)
             .map { _ in self.object(forKey: key) }
         let initialValuePublisher = Just(self.object(forKey: key))
         return initialValuePublisher.merge(with: notificationPublisher)

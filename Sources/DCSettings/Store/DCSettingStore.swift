@@ -7,6 +7,27 @@
 import Foundation
 import Combine
 
+private let userDefaultsCache = UserDefaultsCache()
+
+private final class UserDefaultsCache: @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var stores: [String: UserDefaults] = [:]
+
+    func userDefaults(suiteName: String) -> UserDefaults? {
+        lock.lock()
+        defer { lock.unlock() }
+
+        if let store = stores[suiteName] {
+            return store
+        }
+
+        let store = UserDefaults(suiteName: suiteName)
+        stores[suiteName] = store
+        return store
+    }
+}
+
 /// An enumeration that represents different types of key-value stores.
 public enum DCSettingStore {
 
@@ -34,7 +55,7 @@ public enum DCSettingStore {
         case .standard:
             return UserDefaults.standard
         case .userDefaults(let suiteName):
-            return UserDefaults.init(suiteName: suiteName) ?? .standard
+            return userDefaultsCache.userDefaults(suiteName: suiteName) ?? .standard
         case .ubiquitous:
             #if os(watchOS)
                 if #available(watchOS 9.0, *) {
@@ -75,7 +96,7 @@ public enum DCSettingStore {
     /// Sets the value of the specified key in the key-value store.
     ///
     /// Standard property-list compatible values are stored directly. Other values
-    /// must conform to `Encodable` and are stored as JSON-encoded `Data`.
+    /// must conform to `Codable` and are stored as JSON-encoded `Data`.
     ///
     /// - Parameters:
     ///   - value: The value to store in the key-value store.
@@ -92,9 +113,9 @@ public enum DCSettingStore {
             return true
         }
 
-        if let encodableValue = value as? Encodable {
+        if let codableValue = value as? Codable {
             do {
-                let data = try JSONEncoder().encode(encodableValue)
+                let data = try JSONEncoder().encode(codableValue)
                 backingStore.set(data, forKey: key)
                 return true
             }
@@ -104,7 +125,7 @@ public enum DCSettingStore {
             }
         }
 
-        assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible or Encodable.")
+        assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible or Codable.")
         return false
     }
 

@@ -14,7 +14,7 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 
 - Adds `configuration` as the correctly spelled setting configuration property.
 - Keeps the misspelled `configuation` property as deprecated compatibility API.
-- Builds in Swift 6 language mode with explicit main-actor isolation for the settings UI state layer.
+- Builds in Swift 6 language mode with explicit main-actor isolation for manager, setting, property-wrapper, and settings-view APIs.
 - Emits current values immediately from manager value publishers.
 - Supports Codable setting values by storing them as JSON-encoded `Data`.
 - De-duplicates unchanged UserDefaults publisher values and ignores unrelated ubiquitous-store key changes.
@@ -24,5 +24,6 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 ### Migration Notes
 
 - If you previously read `configuation`, move to `configuration`.
+- Configure, read, and write settings through `DCSettingsManager` from the main actor.
 - Custom `DCKeyValueStore` implementations should accept `Data` values to support custom Codable setting types.
-- Values that are neither property-list compatible nor `Encodable` are not persisted.
+- Values that are neither property-list compatible nor `Codable` are not persisted.

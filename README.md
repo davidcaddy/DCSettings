@@ -77,6 +77,8 @@ dependencies: [
 
 DCSettings requires Swift 6.0 or newer and supports iOS 14, macOS 11, tvOS 14, watchOS 7, and visionOS 2 or newer. `DCSettingStore.ubiquitous` requires watchOS 9 or newer.
 
+`DCSettingsManager`, `DCSetting`, the stored-value property wrappers, and the SwiftUI settings views are main-actor isolated. Configure, read, and write settings through `DCSettingsManager` from the main actor. The lower-level `DCSettingStore` and `DCKeyValueStore` storage APIs remain actor-neutral.
+
 ## Usage
 
 To use `DCSettings` in your project, you’ll need to import it at the top of your Swift file like so:
@@ -87,7 +89,7 @@ import DCSettings
 
 ## Configuring Settings
 
-To configure settings, you can use the `configure` method on a `DCSettingsManager` instance, typically the shared singleton instance. This method takes a closure that returns an array of `DCSettingGroup` instances. Each `DCSettingGroup` can contain multiple `DCSetting` instances.
+To configure settings, use the `configure` method on a `DCSettingsManager` instance, typically the shared singleton instance. `DCSettingsManager` is main-actor isolated, so call `configure` from the main actor. This method takes a closure that returns an array of `DCSettingGroup` instances. Each `DCSettingGroup` can contain multiple `DCSetting` instances.
 
 Here’s an example of how you might configure your settings:
 
@@ -196,7 +198,7 @@ DCSettingsManager.shared.configure {
 
 ### Storage contract
 
-DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. Values that are neither property-list compatible nor `Encodable` are rejected in debug builds with an assertion and are not persisted.
+DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. Values that are neither property-list compatible nor `Codable` are rejected in debug builds with an assertion and are not persisted.
 
 Custom `DCKeyValueStore` implementations should accept `Data` values if they need to support custom `Codable` setting types.
 
