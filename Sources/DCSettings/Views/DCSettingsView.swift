@@ -14,7 +14,7 @@ import SwiftUI
 /// The view uses a `DCSettingViewProviding` instance to provide custom views for individual settings.
 /// If no custom view is available for a specific setting, a default view will be used if the setting's value is a supported type.
 /// Supported types as standard are: `Bool`, `Int`, `Double`, `String`, `Date` and `Color`.
-public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: View {
+@MainActor public struct DCSettingsView<Provider: DCSettingViewProviding, S: ListStyle>: View {
 
     /// An enumeration that defines the available filters for the settings view.
     public enum Filter: Equatable {

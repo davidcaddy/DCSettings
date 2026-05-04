@@ -14,7 +14,7 @@ import Foundation
 /// You can create a `DCSettingGroup` using one of its initializers or by using the `@DCSettingsBuilder` result builder to build an array of settings.
 ///
 /// - Note: The `DCSettingGroup` conforms to the `Identifiable` protocol and uses its key as its `id`.
-public struct DCSettingGroup: Identifiable {
+@MainActor public struct DCSettingGroup: @MainActor Identifiable {
 
     /// The key for the setting group.
     public let key: String
@@ -66,7 +66,7 @@ public struct DCSettingGroup: Identifiable {
     ///   - label: The label for the setting group. Defaults to `nil`.
     ///   - store: The store for the setting group. Defaults to `.standard`.
     ///   - builder: A closure that builds an array of settings using the `@DCSettingsBuilder` result builder.
-    public init(key: DCKeyRepresentable?, label: String? = nil, store: DCSettingStore = .standard, @DCSettingsBuilder _ builder: () -> [any DCSettable]) {
+    public init(key: DCKeyRepresentable?, label: String? = nil, store: DCSettingStore = .standard, @DCSettingsBuilder _ builder: @MainActor () -> [any DCSettable]) {
         self.init(key: key, label: label, store: store, settings: builder())
     }
 
@@ -78,7 +78,7 @@ public struct DCSettingGroup: Identifiable {
     ///   - label: The label for the setting group. Defaults to `nil`.
     ///   - store: The store for the setting group. Defaults to `.standard`.
     ///   - builder: A closure that builds an array of settings using the `@DCSettingsBuilder` result builder.
-    public init(_ label: String? = nil, store: DCSettingStore = .standard, @DCSettingsBuilder _ builder: () -> [any DCSettable]) {
+    public init(_ label: String? = nil, store: DCSettingStore = .standard, @DCSettingsBuilder _ builder: @MainActor () -> [any DCSettable]) {
         self.init(key: nil, label: label, store: store, settings: builder())
     }
 }
@@ -112,7 +112,7 @@ extension DCSettingGroup {
 /// )
 /// ```
 @resultBuilder
-public struct DCSettingGroupsBuilder {
+@MainActor public struct DCSettingGroupsBuilder {
 
     /// Builds an array of setting groups from the provided setting group instances.
     ///

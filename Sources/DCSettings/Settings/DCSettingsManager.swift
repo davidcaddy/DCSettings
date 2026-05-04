@@ -31,7 +31,7 @@ import Combine
 /// let darkMode = manager.bool(forKey: "darkMode")
 /// manager.set(!darkMode, forKey: "darkMode")
 /// ```
-public class DCSettingsManager {
+@MainActor public class DCSettingsManager {
 
     /// A shared instance of `DCSettingsManager`.
     public static let shared = DCSettingsManager()
@@ -60,7 +60,7 @@ public class DCSettingsManager {
     ///
     /// - Parameter builder: A result builder that produces an array of `DCSettingGroup` values
     /// representing the setting groups to be managed by the manager.
-    public func configure(@DCSettingGroupsBuilder _ builder: () -> [DCSettingGroup]) {
+    public func configure(@DCSettingGroupsBuilder _ builder: @MainActor () -> [DCSettingGroup]) {
         configure(groups: builder())
     }
 
@@ -153,7 +153,7 @@ public class DCSettingsManager {
     ///
     /// - Returns: An `AnyPublisher` that emits the represented value of the setting with the specified key.
     /// Returns `nil` if the setting is not found or the represented value cannot be initialized from the raw value.
-    public func representedValuePublisher<ValueType>(forKey key: DCKeyRepresentable) -> AnyPublisher<ValueType?, Never>? where ValueType: RawRepresentable, ValueType.RawValue: Equatable{
+    public func representedValuePublisher<ValueType>(forKey key: DCKeyRepresentable) -> AnyPublisher<ValueType?, Never>? where ValueType: RawRepresentable, ValueType.RawValue: Equatable {
         guard let settable = setting(forKey: key) as? DCSetting<ValueType.RawValue> else {
             return nil
         }

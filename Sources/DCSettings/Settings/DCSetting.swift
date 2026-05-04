@@ -16,7 +16,7 @@ import SwiftUI
 /// It also includes a property for the `DCSettingStore` instance used to store the setting value.
 ///
 /// The protocol also includes a `refresh` method that can be used to refresh the setting value from the store.
-public protocol DCSettable<ValueType>: ObservableObject where ValueType: Equatable {
+@MainActor public protocol DCSettable<ValueType>: ObservableObject where ValueType: Equatable {
 
     /// The type of value associated with the setting.
     associatedtype ValueType
@@ -60,7 +60,7 @@ public extension DCSettable {
 /// The class also includes several convenience initializers that can be used to create new instances of `DCSetting` with different configurations.
 ///
 /// - Note: If the store is not set when the setting is configured by a manager instance, the store of the group in which the setting resides will be used.
-public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
+@MainActor public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
 
     /// The key used to identify the setting in the store.
     public let key: String
@@ -175,7 +175,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     ///   - label: An optional label for the setting. The default value is `nil`.
     ///   - store: An optional `DCSettingStore` instance used to store the setting value. The default value is `nil`.
     ///   - builder: A result builder closure that constructs an array of `DCSettingOption` instances.
-    public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, @DCSettingOptionsBuilder _ builder: () -> [DCSettingOption<ValueType>]) {
+    public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, @DCSettingOptionsBuilder _ builder: @MainActor () -> [DCSettingOption<ValueType>]) {
         self.init(key: key, label: label, store: store, options: builder())
     }
 
@@ -290,7 +290,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
 /// }
 /// ```
 @resultBuilder
-public struct DCSettingsBuilder {
+@MainActor public struct DCSettingsBuilder {
 
     /// Constructs an array of `DCSettable` instances from the provided expressions.
     ///

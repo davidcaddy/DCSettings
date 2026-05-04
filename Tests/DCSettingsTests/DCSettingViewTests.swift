@@ -7,7 +7,7 @@
 import XCTest
 @testable import DCSettings
 
-final class DCSettingViewTests: XCTestCase {
+@MainActor final class DCSettingViewTests: XCTestCase {
 
     func testDisplayLabelUsesExplicitLabel() {
         let setting = DCSetting(key: "articleListLayout", defaultValue: true, label: "Layout")

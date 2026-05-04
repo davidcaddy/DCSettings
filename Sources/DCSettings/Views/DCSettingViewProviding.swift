@@ -11,7 +11,7 @@ import SwiftUI
 /// The `DCSettingViewProviding` protocol defines the requirements for a type that provides custom views for settings.
 /// The protocol includes a `content` method that takes a `DCSettable` instance as an argument
 /// and returns an optional view representing the user interface for changing the setting.
-public protocol DCSettingViewProviding {
+@MainActor public protocol DCSettingViewProviding {
 
     /// The type of view returned by the `content` method.
     associatedtype Content: View

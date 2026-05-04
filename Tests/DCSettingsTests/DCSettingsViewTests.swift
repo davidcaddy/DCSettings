@@ -8,7 +8,7 @@ import XCTest
 import SwiftUI
 @testable import DCSettings
 
-final class DCSettingsViewTests: XCTestCase {
+@MainActor final class DCSettingsViewTests: XCTestCase {
 
     private struct CustomViewProvider: DCSettingViewProviding {
         func content(for setting: any DCSettable) -> Text? {

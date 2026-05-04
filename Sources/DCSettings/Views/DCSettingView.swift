@@ -374,7 +374,7 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
 /// If no specific view is available for the value type, the view will be empty.
 ///
 /// Supported types are: `Bool`, `Int`,  `Double`, `String`, `Date` and `Color`.
-public struct DCSettingView: View {
+@MainActor public struct DCSettingView: View {
 
     private let setting: any DCSettable
 

@@ -6,7 +6,7 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 
 ### Requirements
 
-- Requires Swift 5.9 or newer.
+- Requires Swift 6.0 or newer.
 - Supports iOS 14, macOS 11, tvOS 14, watchOS 7, and visionOS 2 or newer.
 - `DCSettingStore.ubiquitous` requires watchOS 9 or newer.
 
@@ -14,6 +14,7 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 
 - Adds `configuration` as the correctly spelled setting configuration property.
 - Keeps the misspelled `configuation` property as deprecated compatibility API.
+- Builds in Swift 6 language mode with explicit main-actor isolation for the settings UI state layer.
 - Emits current values immediately from manager value publishers.
 - Supports Codable setting values by storing them as JSON-encoded `Data`.
 - De-duplicates unchanged UserDefaults publisher values and ignores unrelated ubiquitous-store key changes.

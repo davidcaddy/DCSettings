@@ -8,7 +8,7 @@ import XCTest
 @testable import DCSettings
 import Combine
 
-final class DCSettingTests: XCTestCase {
+@MainActor final class DCSettingTests: XCTestCase {
 
     private struct CodableValue: Codable, Equatable {
         let name: String
@@ -30,8 +30,8 @@ final class DCSettingTests: XCTestCase {
     private var setting: DCSetting<String>!
     private var cancellables: Set<AnyCancellable> = []
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         backingStore = MockStore()
         store = .custom(backingStore: backingStore)
         setting = DCSetting(key: "testKey", defaultValue: "defaultValue", store: store)

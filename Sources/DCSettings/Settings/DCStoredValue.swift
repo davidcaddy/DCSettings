@@ -20,7 +20,7 @@ import SwiftUI
 ///
 /// @DCStoredValue("key3") var value3: Bool
 /// ```
-@propertyWrapper
+@MainActor @propertyWrapper
 public struct DCStoredValue<ValueType>: DynamicProperty where ValueType: Equatable {
 
     @StateObject private var setting: DCSetting<ValueType>

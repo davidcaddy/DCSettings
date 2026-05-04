@@ -9,7 +9,7 @@ import SwiftUI
 import Combine
 @testable import DCSettings
 
-final class DCStorageConvenienceTests: XCTestCase {
+@MainActor final class DCStorageConvenienceTests: XCTestCase {
 
     private enum TestMode: String {
         case list
@@ -30,9 +30,9 @@ final class DCStorageConvenienceTests: XCTestCase {
 
     private var cancellables: Set<AnyCancellable> = []
 
-    override func tearDown() {
+    override func tearDown() async throws {
         cancellables = []
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func testColorCodableRoundTrip() throws {

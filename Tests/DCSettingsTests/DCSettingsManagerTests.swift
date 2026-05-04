@@ -9,7 +9,7 @@ import XCTest
 import SwiftUI
 import Combine
 
-class DCSettingsManagerTests: XCTestCase {
+@MainActor class DCSettingsManagerTests: XCTestCase {
 
     private enum TestEnum: String, Equatable, CaseIterable {
         case case1
@@ -21,8 +21,8 @@ class DCSettingsManagerTests: XCTestCase {
     private var manager: DCSettingsManager!
     private var cancellables: Set<AnyCancellable> = []
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         backingStore = MockStore()
         store = .custom(backingStore: backingStore)
         manager = DCSettingsManager()

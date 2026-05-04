@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-    <img src="https://img.shields.io/badge/Swift-5.9-orange.svg" />
+    <img src="https://img.shields.io/badge/Swift-6.0-orange.svg" />
     <a href="https://swift.org/package-manager">
         <img src="https://img.shields.io/badge/swiftpm-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
     </a>
@@ -75,7 +75,7 @@ dependencies: [
 
 ### Requirements
 
-DCSettings requires Swift 5.9 or newer and supports iOS 14, macOS 11, tvOS 14, watchOS 7, and visionOS 2 or newer. `DCSettingStore.ubiquitous` requires watchOS 9 or newer.
+DCSettings requires Swift 6.0 or newer and supports iOS 14, macOS 11, tvOS 14, watchOS 7, and visionOS 2 or newer. `DCSettingStore.ubiquitous` requires watchOS 9 or newer.
 
 ## Usage
 

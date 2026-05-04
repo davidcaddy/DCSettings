@@ -7,7 +7,7 @@
 import XCTest
 @testable import DCSettings
 
-final class DCSettingOptionTests: XCTestCase {
+@MainActor final class DCSettingOptionTests: XCTestCase {
 
     private enum TestOption: String, DCSettingOptionProviding {
         case first
