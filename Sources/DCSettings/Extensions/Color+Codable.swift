@@ -13,6 +13,7 @@ import UIKit
 import AppKit
 #endif
 
+#if canImport(UIKit) || canImport(AppKit)
 extension Color {
 
     #if canImport(UIKit)
@@ -27,7 +28,18 @@ extension Color {
         var green: CGFloat = 0
         var blue: CGFloat = 0
         var alpha: CGFloat = 0
-        nativeColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+
+        #if canImport(UIKit)
+        guard nativeColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+            throw DCColorCodingError.unsupportedColorSpace
+        }
+        #elseif canImport(AppKit)
+        guard let rgbColor = nativeColor.usingColorSpace(.deviceRGB) else {
+            throw DCColorCodingError.unsupportedColorSpace
+        }
+
+        rgbColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        #endif
 
         let components = DCColorComponents(red: red, green: green, blue: blue, opacity: alpha)
         return try JSONEncoder().encode(components)
@@ -37,6 +49,10 @@ extension Color {
         let components = try JSONDecoder().decode(DCColorComponents.self, from: data)
         self.init(NativeColor(red: components.red, green: components.green, blue: components.blue, alpha: components.opacity))
     }
+}
+
+private enum DCColorCodingError: Error {
+    case unsupportedColorSpace
 }
 
 private struct DCColorComponents: Codable {
@@ -75,3 +91,4 @@ private struct DCColorComponents: Codable {
         opacity = try container.decode(CGFloat.self, forKey: .opacity)
     }
 }
+#endif

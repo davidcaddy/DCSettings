@@ -96,8 +96,9 @@ public enum DCSettingStore {
 
     /// Sets the value of the specified key in the key-value store.
     ///
-    /// Standard property-list compatible values are stored directly. `Color` values
-    /// and other `Codable` values are stored as JSON-encoded `Data`.
+    /// Standard property-list compatible values are stored directly. On platforms
+    /// with UIKit or AppKit, `Color` values are stored as JSON-encoded `Data`.
+    /// Other `Codable` values are also stored as JSON-encoded `Data`.
     ///
     /// - Parameters:
     ///   - value: The value to store in the key-value store.
@@ -114,17 +115,19 @@ public enum DCSettingStore {
             return true
         }
 
-        if let color = value as? Color {
-            do {
-                let data = try color.dcSettingsEncodedData()
-                backingStore.set(data, forKey: key)
-                return true
+        #if canImport(UIKit) || canImport(AppKit)
+            if let color = value as? Color {
+                do {
+                    let data = try color.dcSettingsEncodedData()
+                    backingStore.set(data, forKey: key)
+                    return true
+                }
+                catch {
+                    assertionFailure("[DCSettingStore] Failed to encode color for key '\(key)': \(error)")
+                    return false
+                }
             }
-            catch {
-                assertionFailure("[DCSettingStore] Failed to encode color for key '\(key)': \(error)")
-                return false
-            }
-        }
+        #endif
 
         if let codableValue = value as? Codable {
             do {
@@ -138,7 +141,11 @@ public enum DCSettingStore {
             }
         }
 
-        assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible, Color, or Codable.")
+        #if canImport(UIKit) || canImport(AppKit)
+            assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible, Color, or Codable.")
+        #else
+            assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible or Codable.")
+        #endif
         return false
     }
 
@@ -219,9 +226,11 @@ public enum DCSettingStore {
             return value
         }
 
-        if ValueType.self == Color.self, let data = object as? Data, let color = try? Color(dcSettingsData: data) {
-            return color as? ValueType
-        }
+        #if canImport(UIKit) || canImport(AppKit)
+            if ValueType.self == Color.self, let data = object as? Data, let color = try? Color(dcSettingsData: data) {
+                return color as? ValueType
+            }
+        #endif
 
         if let data = object as? Data, let decodableType = ValueType.self as? Decodable.Type {
             let value = try? JSONDecoder().decode(decodableType, from: data)

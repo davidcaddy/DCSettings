@@ -118,7 +118,7 @@ When configuring your settings you have several options available to you. First,
 
 Within each `DCSettingGroup`, you can create `DCSetting` instances to represent individual settings. Each `DCSetting` has a key, a default value, and an optional label. The key is used to uniquely identify the setting, while the default value is used as the initial value for the setting if no value has been previously set. The label is used to provide a human-readable name for the setting. If no label is provided, a sentence-cased string version of the key will be used as the label.
 
-> Note: `DCSetting` supports the following types by default: `Bool`, `Int`, `Double`, `String`, `Date`, and `Color` (SwiftUI). You can also use custom types when they conform to `Codable`.
+> Note: `DCSetting` supports the following types by default: `Bool`, `Int`, `Double`, `String`, `Date`, and `Color` (SwiftUI). `Color` storage is available on platforms with UIKit or AppKit. You can also use custom types when they conform to `Codable`.
 
 In addition to these basic properties, `DCSetting` instances can also have additional configuration options. These options are specified using the `DCSettingConfiguration` struct.
 
@@ -198,7 +198,7 @@ DCSettingsManager.shared.configure {
 
 ### Storage contract
 
-DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. `Color` values are handled as a built-in type and stored as JSON-encoded `Data`. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. Values that are neither property-list compatible nor `Color` or `Codable` are rejected in debug builds with an assertion and are not persisted.
+DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. On platforms with UIKit or AppKit, `Color` values are handled as a built-in type and stored as JSON-encoded `Data`. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. Values that are neither property-list compatible nor a supported `Color` or `Codable` value are rejected in debug builds with an assertion and are not persisted.
 
 Custom `DCKeyValueStore` implementations should accept `Data` values if they need to support custom `Codable` setting types.
 

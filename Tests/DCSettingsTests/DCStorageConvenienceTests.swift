@@ -16,16 +16,17 @@ import Combine
         case grid
     }
 
+    private struct StoredLayout: Codable, Equatable {
+        let name: String
+        let columns: Int
+    }
+
+    #if canImport(UIKit) || canImport(AppKit)
     private struct ColorComponents: Codable {
         let red: CGFloat
         let green: CGFloat
         let blue: CGFloat
         let opacity: CGFloat
-    }
-
-    private struct StoredLayout: Codable, Equatable {
-        let name: String
-        let columns: Int
     }
 
     @Test func colorSettingStoreRoundTrip() throws {
@@ -47,6 +48,7 @@ import Combine
         #expect(abs(decodedComponents.blue - components.blue) <= 0.001)
         #expect(abs(decodedComponents.opacity - components.opacity) <= 0.001)
     }
+    #endif
 
     @Test func userDefaultsValuePublisherEmitsInitialAndChangedValue() async throws {
         let suiteName = "DCStorageConvenienceTests.\(UUID().uuidString)"
