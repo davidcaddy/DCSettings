@@ -6,6 +6,7 @@
 
 import Foundation
 import Combine
+import SwiftUI
 
 private let userDefaultsCache = UserDefaultsCache()
 
@@ -95,8 +96,8 @@ public enum DCSettingStore {
 
     /// Sets the value of the specified key in the key-value store.
     ///
-    /// Standard property-list compatible values are stored directly. Other values
-    /// must conform to `Codable` and are stored as JSON-encoded `Data`.
+    /// Standard property-list compatible values are stored directly. `Color` values
+    /// and other `Codable` values are stored as JSON-encoded `Data`.
     ///
     /// - Parameters:
     ///   - value: The value to store in the key-value store.
@@ -113,6 +114,18 @@ public enum DCSettingStore {
             return true
         }
 
+        if let color = value as? Color {
+            do {
+                let data = try color.dcSettingsEncodedData()
+                backingStore.set(data, forKey: key)
+                return true
+            }
+            catch {
+                assertionFailure("[DCSettingStore] Failed to encode color for key '\(key)': \(error)")
+                return false
+            }
+        }
+
         if let codableValue = value as? Codable {
             do {
                 let data = try JSONEncoder().encode(codableValue)
@@ -125,7 +138,7 @@ public enum DCSettingStore {
             }
         }
 
-        assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible or Codable.")
+        assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible, Color, or Codable.")
         return false
     }
 
@@ -204,6 +217,10 @@ public enum DCSettingStore {
     private func decodedValue<ValueType>(_ object: Any?, as type: ValueType.Type) -> ValueType? {
         if let value = object as? ValueType {
             return value
+        }
+
+        if ValueType.self == Color.self, let data = object as? Data, let color = try? Color(dcSettingsData: data) {
+            return color as? ValueType
         }
 
         if let data = object as? Data, let decodableType = ValueType.self as? Decodable.Type {

@@ -24,7 +24,7 @@ enum DCOptionControlStyle: Equatable {
 
 extension DCSettingOption {
 
-    public func labelView() -> some View {
+    func labelView() -> some View {
         return HStack {
             if let string = label {
                 if let imageName = image {
@@ -167,8 +167,9 @@ struct DCDateSettingView: View {
 
     var body: some View {
         #if os(watchOS)
-            // TODO: watchOS implementation
             Text(setting.displayLabel)
+                .foregroundColor(isEnabled ? .primary : .secondary)
+                .accessibilityIdentifier(setting.key)
         #else
             if let bounds = setting.configuration?.bounds {
                 DatePicker(selection: $setting.value, in: Self.datePickerRange(for: bounds), displayedComponents: .date) {
@@ -195,8 +196,9 @@ struct DCColorSettingView: View {
 
     var body: some View {
         #if os(watchOS)
-            // TODO: watchOS implementation
             Text(setting.displayLabel)
+                .foregroundColor(isEnabled ? .primary : .secondary)
+                .accessibilityIdentifier(setting.key)
         #else
             ColorPicker(setting.displayLabel, selection: $setting.value)
             .foregroundColor(isEnabled ? .primary : .secondary)

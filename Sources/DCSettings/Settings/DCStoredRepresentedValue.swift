@@ -34,8 +34,8 @@ public struct DCStoredRepresentedValue<ValueType>: DynamicProperty where ValueTy
 
     /// Initializes a new `DCStoredRepresentedValue` instance with the specified key and settings manager.
     ///
-    /// This initializer creates a new instance of `DCStoredRepresentedValue` with the specified key, and settings manager.
-    /// The key and default value are required, while the settings manager is optional and defaults to the `.shared` singleton instance.
+    /// This initializer creates a new instance of `DCStoredRepresentedValue` with the specified key and settings manager.
+    /// The key is required, while the settings manager is optional and defaults to the `.shared` singleton instance.
     ///
     /// If a `DCSetting` instance with the specified key already exists in the settings manager, it will be used to initialize the `StateObject` property.
     /// Otherwise, a runtime error will occur.

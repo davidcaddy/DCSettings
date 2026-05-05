@@ -65,4 +65,80 @@ import Testing
 
         #expect(groups.map(\.label) == ["General", "Appearance"])
     }
+
+    @Test func settingsBuilderSupportsEmptyBody() {
+        let group = DCSettingGroup("Empty") {
+        }
+
+        #expect(group.settings.isEmpty)
+    }
+
+    @Test func settingsBuilderSupportsControlFlow() {
+        let includeSecondSetting = false
+        let loopedKeys = ["loop1", "loop2"]
+        let selectedKey = "switch"
+
+        let group = DCSettingGroup("Control Flow") {
+            setting1
+
+            if includeSecondSetting {
+                setting2
+            }
+            else {
+                DCSetting(key: "fallback", defaultValue: "fallback")
+            }
+
+            for key in loopedKeys {
+                DCSetting(key: key, defaultValue: key)
+            }
+
+            switch selectedKey {
+            case "switch":
+                DCSetting(key: "switch", defaultValue: "switch")
+            default:
+                DCSetting(key: "default", defaultValue: "default")
+            }
+        }
+
+        #expect(group.settings.map(\.key) == ["testKey1", "fallback", "loop1", "loop2", "switch"])
+    }
+
+    @Test func groupsBuilderSupportsControlFlow() {
+        let includeAppearance = false
+        let selectedGroup = "Labs"
+
+        let manager = DCSettingsManager()
+        manager.configure {
+            DCSettingGroup("General", settings: [setting1])
+
+            if includeAppearance {
+                DCSettingGroup("Appearance", settings: [setting2])
+            }
+            else {
+                DCSettingGroup("Fallback", settings: [])
+            }
+
+            for label in ["Advanced", "Debug"] {
+                DCSettingGroup(label, settings: [])
+            }
+
+            switch selectedGroup {
+            case "Labs":
+                DCSettingGroup("Labs", settings: [])
+            default:
+                DCSettingGroup("Other", settings: [])
+            }
+        }
+
+        #expect(manager.groups.map(\.label) == ["General", "Fallback", "Advanced", "Debug", "Labs"])
+    }
+
+    @Test func groupsBuilderSupportsEmptyBody() {
+        let manager = DCSettingsManager()
+
+        manager.configure {
+        }
+
+        #expect(manager.groups.isEmpty)
+    }
 }

@@ -10,13 +10,19 @@ import DCSettings
 
 class MockStore: DCKeyValueStore {
     var storage: [String: Any] = [:]
+    private var setCounts: [String: Int] = [:]
     private let subject = PassthroughSubject<(String, Any?), Never>()
+
+    func setCallCount(forKey key: String) -> Int {
+        setCounts[key, default: 0]
+    }
 
     func valuePublisher(forKey key: String) -> AnyPublisher<Any?, Never> {
         return subject.filter { $0.0 == key }.map { $0.1 }.eraseToAnyPublisher()
     }
 
     func set(_ value: Any?, forKey defaultName: String) {
+        setCounts[defaultName, default: 0] += 1
         storage[defaultName] = value
         subject.send((defaultName, value))
     }
@@ -26,6 +32,7 @@ class MockStore: DCKeyValueStore {
     }
 
     func set(_ value: Bool, forKey defaultName: String) {
+        setCounts[defaultName, default: 0] += 1
         storage[defaultName] = value
         subject.send((defaultName, value))
     }
@@ -35,6 +42,7 @@ class MockStore: DCKeyValueStore {
     }
 
     func set(_ value: Int, forKey defaultName: String) {
+        setCounts[defaultName, default: 0] += 1
         storage[defaultName] = value
         subject.send((defaultName, value))
     }
@@ -44,6 +52,7 @@ class MockStore: DCKeyValueStore {
     }
 
     func set(_ value: Double, forKey defaultName: String) {
+        setCounts[defaultName, default: 0] += 1
         storage[defaultName] = value
         subject.send((defaultName, value))
     }

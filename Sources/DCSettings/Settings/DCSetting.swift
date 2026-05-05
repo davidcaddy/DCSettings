@@ -31,7 +31,7 @@ import SwiftUI
     var value: ValueType { get set }
 
     /// An optional configuration for the setting.
-    var configuation: DCSettingConfiguration<ValueType>? { get }
+    var configuration: DCSettingConfiguration<ValueType>? { get }
 
     /// An optional `DCSettingStore` instance used to store the setting value.
     var store: DCSettingStore? { get set }
@@ -43,8 +43,9 @@ import SwiftUI
 public extension DCSettable {
 
     /// An optional configuration for the setting.
-    var configuration: DCSettingConfiguration<ValueType>? {
-        configuation
+    @available(*, deprecated, renamed: "configuration")
+    var configuation: DCSettingConfiguration<ValueType>? {
+        configuration
     }
 }
 
@@ -166,7 +167,7 @@ public extension DCSettable {
     ///
     /// If no options are provided in the result builder closure, this initializer will return `nil`.
     ///
-    /// If no default option in the result builder has be set as the default, the first option will be used as default.
+    /// If no default option in the result builder has been set as the default, the first option will be used as default.
     /// If multiple options are set as default in the result builder, the first default option will be used as default.
     ///
     /// If a store is not provided, the store of the group in which the setting resides will be used once configured.
@@ -186,7 +187,7 @@ public extension DCSettable {
     ///
     /// If the option array is empty, this initializer will return `nil`.
     ///
-    /// If no default option in the array has be set as the default, the first option will be used as default.
+    /// If no default option in the array has been set as the default, the first option will be used as default.
     /// If multiple options are set as default in the array, the first default option will be used as default.
     ///
     /// If a store is not provided, the store of the group in which the setting resides will be used once configured.
@@ -235,7 +236,7 @@ public extension DCSettable {
     /// This method refreshes the current value of the setting from the store.
     /// If a new value is found in the store and is different from the current value, the current value will be updated.
     ///
-    /// This is called during the initial configuatrion of the setting by the managing `DCSettingsManager` instance.
+    /// This is called during the initial configuration of the setting by the managing `DCSettingsManager` instance.
     /// Calling this directly on a setting should be avoided.
     public func refresh() {
         if let newValue: ValueType = store?.object(forKey: key), value != newValue {
@@ -271,9 +272,12 @@ public extension DCSettable {
         cancellable = store.valuePublisher(forKey: key, as: ValueType.self)
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
-                if let newValue = newValue, self?.value != newValue {
-                    self?.value = newValue
+                guard let self, let newValue, self._value != newValue else {
+                    return
                 }
+
+                self._value = newValue
+                self.objectWillChange.send()
             }
     }
 }
@@ -301,7 +305,35 @@ public extension DCSettable {
     ///
     /// - Parameter settings: A variadic list of optional `DCSettable` instances.
     /// - Returns: An array of `DCSettable` instances.
+    public static func buildBlock() -> [any DCSettable] {
+        []
+    }
+
     public static func buildBlock(_ settings: (any DCSettable)?...) -> [any DCSettable] {
         settings.compactMap { $0 }
+    }
+
+    public static func buildExpression(_ setting: (any DCSettable)?) -> [any DCSettable] {
+        setting.map { [$0] } ?? []
+    }
+
+    public static func buildBlock(_ components: [any DCSettable]...) -> [any DCSettable] {
+        components.flatMap { $0 }
+    }
+
+    public static func buildOptional(_ component: [any DCSettable]?) -> [any DCSettable] {
+        component ?? []
+    }
+
+    public static func buildEither(first component: [any DCSettable]) -> [any DCSettable] {
+        component
+    }
+
+    public static func buildEither(second component: [any DCSettable]) -> [any DCSettable] {
+        component
+    }
+
+    public static func buildArray(_ components: [[any DCSettable]]) -> [any DCSettable] {
+        components.flatMap { $0 }
     }
 }

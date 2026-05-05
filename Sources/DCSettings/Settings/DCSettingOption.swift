@@ -86,7 +86,7 @@ public struct DCSettingOption<ValueType>: Equatable where ValueType: Equatable {
 
     /// Initializes a new `DCSettingOption` instance with the specified value and default status.
     ///
-    /// This initializer creates a new instance of `DCSettingOption` with the label property being set to a string representation of the provided value.
+    /// This initializer creates a new instance of `DCSettingOption` with the label set to a string representation of the provided value.
     ///
     /// - Parameters:
     ///   - value: The value associated with the setting option conforming to `LosslessStringConvertible`.
@@ -180,7 +180,35 @@ public struct DCSettingOptionsBuilder {
     ///     - settings: A variadic list of `DCSettingOption` instances.
     ///
     /// - Returns: An array of `DCSettingOption` instances.
+    public static func buildBlock<ValueType>() -> [DCSettingOption<ValueType>] {
+        []
+    }
+
     public static func buildBlock<ValueType>(_ settings: DCSettingOption<ValueType>...) -> [DCSettingOption<ValueType>] {
         settings
+    }
+
+    public static func buildExpression<ValueType>(_ option: DCSettingOption<ValueType>?) -> [DCSettingOption<ValueType>] {
+        option.map { [$0] } ?? []
+    }
+
+    public static func buildBlock<ValueType>(_ components: [DCSettingOption<ValueType>]...) -> [DCSettingOption<ValueType>] {
+        components.flatMap { $0 }
+    }
+
+    public static func buildOptional<ValueType>(_ component: [DCSettingOption<ValueType>]?) -> [DCSettingOption<ValueType>] {
+        component ?? []
+    }
+
+    public static func buildEither<ValueType>(first component: [DCSettingOption<ValueType>]) -> [DCSettingOption<ValueType>] {
+        component
+    }
+
+    public static func buildEither<ValueType>(second component: [DCSettingOption<ValueType>]) -> [DCSettingOption<ValueType>] {
+        component
+    }
+
+    public static func buildArray<ValueType>(_ components: [[DCSettingOption<ValueType>]]) -> [DCSettingOption<ValueType>] {
+        components.flatMap { $0 }
     }
 }

@@ -28,13 +28,18 @@ import Combine
         let columns: Int
     }
 
-    @Test func colorCodableRoundTrip() throws {
+    @Test func colorSettingStoreRoundTrip() throws {
         let components = ColorComponents(red: 0.25, green: 0.5, blue: 0.75, opacity: 0.6)
         let color = Color(red: components.red, green: components.green, blue: components.blue, opacity: components.opacity)
+        let backingStore = MockStore()
+        let store = DCSettingStore.custom(backingStore: backingStore)
+        let key = "color"
 
-        let encodedColor = try JSONEncoder().encode(color)
-        let decodedColor = try JSONDecoder().decode(Color.self, from: encodedColor)
-        let encodedDecodedColor = try JSONEncoder().encode(decodedColor)
+        #expect(store.set(color, forKey: key))
+        #expect(backingStore.storage[key] is Data)
+
+        let decodedColor = try #require(store.object(forKey: key) as Color?)
+        let encodedDecodedColor = try decodedColor.dcSettingsEncodedData()
         let decodedComponents = try JSONDecoder().decode(ColorComponents.self, from: encodedDecodedColor)
 
         #expect(abs(decodedComponents.red - components.red) <= 0.001)

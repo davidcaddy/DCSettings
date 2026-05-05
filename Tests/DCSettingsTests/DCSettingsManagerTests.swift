@@ -66,11 +66,44 @@ import Combine
         #expect(!manager.set("newValue", forKey: "nonExistentKey"))
     }
 
+    @Test func setReturnsFalseForMismatchedValueType() {
+        #expect(!manager.set(42, forKey: "key1"))
+        #expect(manager.string(forKey: "key1") == "value1")
+        #expect(backingStore.storage["key1"] == nil)
+    }
+
+    @Test func configureReplacesCachedSettings() {
+        manager.configure {
+            DCSettingGroup("Replacement", store: store) {
+                DCSetting(key: "replacementKey", defaultValue: "replacement")
+            }
+        }
+
+        #expect(manager.setting(forKey: "key1") == nil)
+        #expect(manager.string(forKey: "replacementKey") == "replacement")
+    }
+
     @Test func settingForKey() throws {
         let setting = try #require(manager.setting(forKey: "key1") as? DCSetting<String>)
 
         #expect(setting.value == "value1")
         #expect(manager.setting(forKey: "nonExistentKey") == nil)
+    }
+
+    @Test func duplicateSettingKeysKeepFirstConfiguredSetting() throws {
+        let manager = DCSettingsManager()
+
+        manager.configure {
+            DCSettingGroup("Group 1", store: store) {
+                DCSetting(key: "duplicateKey", defaultValue: "first")
+            }
+            DCSettingGroup("Group 2", store: store) {
+                DCSetting(key: "duplicateKey", defaultValue: "second")
+            }
+        }
+
+        let setting = try #require(manager.setting(forKey: "duplicateKey") as? DCSetting<String>)
+        #expect(setting.value == "first")
     }
 
     @Test func valueForKey() {

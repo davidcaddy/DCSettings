@@ -20,7 +20,7 @@ import Combine
         let label: String? = nil
         let key = "legacy"
         var value = 1
-        let configuation: DCSettingConfiguration<Int>? = DCSettingConfiguration(options: nil, bounds: nil, step: 1)
+        let configuration: DCSettingConfiguration<Int>? = DCSettingConfiguration(options: nil, bounds: nil, step: 1)
         var store: DCSettingStore?
 
         func refresh() {}
@@ -67,10 +67,16 @@ import Combine
         #expect(setting.configuration?.bounds == DCValueBounds(lowerBound: 0, upperBound: 10))
     }
 
-    @Test func configurationCompatibilityForLegacySettableConformer() {
+    @Test func configurationPropertyIsAccessible() {
         let setting = LegacySettable()
 
         #expect(setting.configuration?.step == 1)
+    }
+
+    @Test func deprecatedConfiguationAliasForwardToConfiguration() {
+        let setting = LegacySettable()
+
+        #expect(setting.configuation?.step == setting.configuration?.step)
     }
 
     @Test func valueBinding() {
@@ -136,5 +142,14 @@ import Combine
 
         #expect(await waitUntil { didChange })
         #expect(setting.value == updatedValue)
+    }
+
+    @Test func externalStoreUpdateDoesNotWriteValueBackToStore() async {
+        setting.refresh()
+
+        store.set("externalValue", forKey: "testKey")
+
+        #expect(await waitUntil { setting.value == "externalValue" })
+        #expect(backingStore.setCallCount(forKey: "testKey") == 1)
     }
 }

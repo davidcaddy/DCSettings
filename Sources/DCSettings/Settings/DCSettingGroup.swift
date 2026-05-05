@@ -118,7 +118,35 @@ extension DCSettingGroup {
     ///
     /// - Parameter settings: The setting group instances to include in the array.
     /// - Returns: An array of setting groups.
+    public static func buildBlock() -> [DCSettingGroup] {
+        []
+    }
+
     public static func buildBlock(_ settings: DCSettingGroup...) -> [DCSettingGroup] {
         settings
+    }
+
+    public static func buildExpression(_ group: DCSettingGroup?) -> [DCSettingGroup] {
+        group.map { [$0] } ?? []
+    }
+
+    public static func buildBlock(_ components: [DCSettingGroup]...) -> [DCSettingGroup] {
+        components.flatMap { $0 }
+    }
+
+    public static func buildOptional(_ component: [DCSettingGroup]?) -> [DCSettingGroup] {
+        component ?? []
+    }
+
+    public static func buildEither(first component: [DCSettingGroup]) -> [DCSettingGroup] {
+        component
+    }
+
+    public static func buildEither(second component: [DCSettingGroup]) -> [DCSettingGroup] {
+        component
+    }
+
+    public static func buildArray(_ components: [[DCSettingGroup]]) -> [DCSettingGroup] {
+        components.flatMap { $0 }
     }
 }

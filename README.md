@@ -116,7 +116,7 @@ When configuring your settings you have several options available to you. First,
 
 > It is recommended to avoid setting-specific keys for groups.
 
-Within each `DCSettingGroup`, you can create `DCSetting` instances to represent individual settings. Each `DCSetting` has a key, a default value, and an optional label. The key is used to uniquely identify the setting, while the default value is used as the initial value for the setting if no value has been previously set. The label is used to provide a human-readable name for the setting. If no label is provided, a sentence cased string version of the key will be used as the label.
+Within each `DCSettingGroup`, you can create `DCSetting` instances to represent individual settings. Each `DCSetting` has a key, a default value, and an optional label. The key is used to uniquely identify the setting, while the default value is used as the initial value for the setting if no value has been previously set. The label is used to provide a human-readable name for the setting. If no label is provided, a sentence-cased string version of the key will be used as the label.
 
 > Note: `DCSetting` supports the following types by default: `Bool`, `Int`, `Double`, `String`, `Date`, and `Color` (SwiftUI). You can also use custom types when they conform to `Codable`.
 
@@ -155,16 +155,16 @@ In this example, we’ve created a setting group for general settings and added 
 
 ## Accessing Settings
 
-Once you’ve configured your settings, you can access them elsewhere using the `DCStoredValue` property wrapper. Here’s an example of how you might access the ShowNotifications setting from the previous example:
+Once you’ve configured your settings, you can access them elsewhere using the `DCStoredValue` property wrapper. Here’s an example of how you might access the `showNotifications` setting from the previous example:
 
 ```swift
-@DCStoredValue("ShowNotifications") var showNotifications: Bool
+@DCStoredValue("showNotifications") var showNotifications: Bool
 ```
 
-You can also access settings directly using the `DCSettingsManager` `value(forKey:)` method. Here’s an example of how you might do this:
+You can also access settings directly using `DCSettingsManager` convenience methods. Here’s an example of how you might do this:
 
 ```swift
-let showNotifications = DCSettingsManager.shared.bool(forKey: "ShowNotifications")
+let showNotifications = DCSettingsManager.shared.bool(forKey: "showNotifications")
 ```
 
 ## Backing Stores
@@ -176,7 +176,7 @@ Here’s an example that shows how to use a custom key-value store backed by a `
 ```swift
 DCSettingsManager.shared.configure {
     DCSettingGroup(key: "General") {
-        DCSetting(key: "ShowNotifications", defaultValue: true)
+        DCSetting(key: "showNotifications", defaultValue: true)
     }
     .store(.userDefaults(suiteName: "com.example.myapp"))
 }
@@ -189,7 +189,7 @@ You can also specify a custom key-value store for individual settings. Here’s 
 ```swift
 DCSettingsManager.shared.configure {
     DCSettingGroup(key: "General") {
-        DCSetting(key: "ShowNotifications", defaultValue: true, store: .userDefaults(suiteName: "com.example.myapp"))
+        DCSetting(key: "showNotifications", defaultValue: true, store: .userDefaults(suiteName: "com.example.myapp"))
     }
 }
 ```
@@ -198,7 +198,7 @@ DCSettingsManager.shared.configure {
 
 ### Storage contract
 
-DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. Values that are neither property-list compatible nor `Codable` are rejected in debug builds with an assertion and are not persisted.
+DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. `Color` values are handled as a built-in type and stored as JSON-encoded `Data`. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. Values that are neither property-list compatible nor `Color` or `Codable` are rejected in debug builds with an assertion and are not persisted.
 
 Custom `DCKeyValueStore` implementations should accept `Data` values if they need to support custom `Codable` setting types.
 
@@ -209,8 +209,8 @@ Custom `DCKeyValueStore` implementations should accept `Data` values if they nee
 ```swift
 DCSettingsManager.shared.configure {
     DCSettingGroup(key: "General") {
-        DCSetting(key: "ShowNotifications", defaultValue: true)
-        DCSetting(key: "SoundEffects", defaultValue: true)
+        DCSetting(key: "showNotifications", defaultValue: true)
+        DCSetting(key: "soundEffects", defaultValue: true)
     }
     .store(.ubiquitous)
 }
@@ -230,7 +230,7 @@ struct ContentView: View {
 }
 ```
 
-> Note: By default, `DCSettingsView` will display **all** settings. If you want to display settings only settings that have a label, you can set the filter parameter to `.labelled`.
+> Note: By default, `DCSettingsView` will display **all** settings. If you want to display only settings that have a label, set the filter parameter to `.labelled`.
 
 `DCSettingsView` has several customization options available. For example, you can specify a filter to include or exclude certain setting groups or individual settings. You can also provide a custom content provider to control how each setting is displayed.
 
@@ -262,7 +262,7 @@ When configuring a `DCSetting`, you can provide several additional options that 
 - `label`: The label property allows you to specify a human-readable name for the setting. This label is displayed next to the control for the setting within the `DCSettingsView`.
 - `image`: The image property allows you to specify the name of an image to display next to the label for the setting within the `DCSettingsView`. This image should be included in your app’s asset catalog.
 - `systemImage`: The systemImage property allows you to specify the name of a system-provided image to display next to the label for the setting within the `DCSettingsView`. This image should be one of the system-provided SF Symbols.
-- `valueBounds`: The value bounds property allows you to specify a range of valid values for the setting. If you provide value bounds for a setting, the control for that setting within the `DCSettingsView` will be constrained to only allow values within that range. For example, if you provide value bounds for a numeric setting, the control for that setting will be a slider that only allows values within the specified range.
+- `bounds`: The bounds configuration allows you to specify a range of valid values for the setting. If you provide bounds for a setting, the control for that setting within the `DCSettingsView` will be constrained to only allow values within that range. For example, if you provide bounds for a numeric setting, the control for that setting will be a slider that only allows values within the specified range.
 - `step`: The step property allows you to specify the increment between valid values for a numeric setting. If you provide a step value for a numeric setting, the control for that setting within the `DCSettingsView` will only allow values that are multiples of the step value.
 
 ### DCSettingViewProviding
@@ -275,15 +275,17 @@ Here’s an example that shows how you might create a custom `DCSettingViewProvi
 
 ```swift
 struct MySettingViewProvider: DCSettingViewProviding {
-    @ViewBuilder func content(for setting: any DCSettable) -> some View {
-        if setting.key == "ShowNotifications", let concreteSetting = setting as? DCSetting<Bool> {
-            Toggle("Show Notifications", isOn: concreteSetting.valueBinding())
+    func content(for setting: any DCSettable) -> AnyView? {
+        if setting.key == "showNotifications", let concreteSetting = setting as? DCSetting<Bool> {
+            return AnyView(Toggle("Show Notifications", isOn: concreteSetting.valueBinding()))
         }
+
+        return nil
     }
 }
 ```
 
-In this example, we’ve created a `MySettingViewProvider` type that conforms to the `DCSettingViewProviding` protocol. In our implementation of the `content(for:)` method, we’re checking if the key of the setting is "ShowNotifications" and is a setting with a `Bool` value type. If it is, we’re returning a custom toggle view for the setting. For all other settings, we’re returning `nil`, which means that the default view for those settings will be used.
+In this example, we’ve created a `MySettingViewProvider` type that conforms to the `DCSettingViewProviding` protocol. In our implementation of the `content(for:)` method, we’re checking if the key of the setting is "showNotifications" and is a setting with a `Bool` value type. If it is, we’re returning a custom toggle view for the setting. For all other settings, we’re returning `nil`, which means that the default view for those settings will be used.
 
 Once you’ve created your custom `DCSettingViewProviding` type, you can pass an instance of it to the `DCSettingsView` initializer to use it. Here’s an example that shows how you might do this:
 
@@ -297,6 +299,6 @@ struct ContentView: View {
 
 ## Contributions
 
-Before you start using **DCSettings**, it’s recommended you spend a few minutes familiarizing yourself with its documentation. Since this is a very young project, it’s likely to have some rough edges. Please do send through feedback on any issues you encounter.
+Before you start using **DCSettings**, it’s recommended you spend a few minutes familiarizing yourself with its documentation. Please do send through feedback on any issues you encounter.
 
 Depending on scope and direction your contributions are more than welcome. If you wish to make a change, please open a Pull Request - even if just a rough draft of the proposed changes - and we can discuss it further.

@@ -92,6 +92,42 @@ import Testing
         #expect(setting.configuration?.options?.first?.image == .system("first"))
     }
 
+    @Test func optionsBuilderSupportsEmptyBody() {
+        let setting: DCSetting<String>? = DCSetting(key: "emptyOptions") {
+        }
+
+        #expect(setting == nil)
+    }
+
+    @Test func optionsBuilderSupportsControlFlow() throws {
+        let includeSecond = false
+        let selectedValue = "switch"
+        let setting = try #require(DCSetting(key: "controlFlowOptions") {
+            DCSettingOption(value: "first", label: "First")
+
+            if includeSecond {
+                DCSettingOption(value: "second", label: "Second").default()
+            }
+            else {
+                DCSettingOption(value: "fallback", label: "Fallback").default()
+            }
+
+            for value in ["third", "fourth"] {
+                DCSettingOption(value: value, label: value.sentenceFormatted)
+            }
+
+            switch selectedValue {
+            case "switch":
+                DCSettingOption(value: "switch", label: "Switch")
+            default:
+                DCSettingOption(value: "default", label: "Default")
+            }
+        })
+
+        #expect(setting.value == "fallback")
+        #expect(setting.configuration?.options?.map(\.value) == ["first", "fallback", "third", "fourth", "switch"])
+    }
+
     private enum StringDefaultOption: String, DCSettingOptionProviding {
         case sample
     }

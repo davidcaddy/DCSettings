@@ -22,7 +22,7 @@ import Combine
 ///
 /// // Configure the manager with setting groups
 /// manager.configure {
-///     DCSettingGroup(label: "General") {
+///     DCSettingGroup("General") {
 ///         DCSetting(key: "darkMode", defaultValue: false)
 ///     }
 /// }
@@ -38,7 +38,7 @@ import Combine
 
     public private(set) var groups: [DCSettingGroup] = []
 
-    private var cancellables = Set<AnyCancellable>()
+    private var settingsByKey: [String: any DCSettable] = [:]
 
     public init() {}
 
@@ -47,11 +47,15 @@ import Combine
     /// - Parameter settingGroups: An array of `DCSettingGroup` values representing the setting groups to be managed by the manager.
     public func configure(groups settingGroups: [DCSettingGroup]) {
         groups = settingGroups
+        settingsByKey = [:]
         for group in groups {
             for setting in group.settings {
                 let store = setting.store ?? group.store
                 setting.store = store
                 setting.refresh()
+                if settingsByKey[setting.key] == nil {
+                    settingsByKey[setting.key] = setting
+                }
             }
         }
     }
@@ -74,7 +78,7 @@ import Combine
     @discardableResult public func set<ValueType>(_ value: ValueType, forKey key: DCKeyRepresentable) -> Bool where ValueType: Equatable {
         if let setting = setting(forKey: key) as? DCSetting<ValueType> {
             setting.value = value
-            return true
+            return setting.value == value
         }
         return false
     }
@@ -85,8 +89,7 @@ import Combine
     ///
     /// - Returns: The desired `(any DCSettable)` if it has been configured by the manager, otherwise returns `nil`.
     public func setting(forKey key: DCKeyRepresentable) -> (any DCSettable)? {
-        let existingSettings = groups.flatMap({ $0.settings })
-        return existingSettings.first(where: { $0.key == key.keyValue })
+        return settingsByKey[key.keyValue]
     }
 
     /// Returns the value for a setting with the specified key.
@@ -106,7 +109,7 @@ import Combine
     ///
     /// - Parameter key: The key of the desired setting value.
     ///
-    /// - Returns: The desired represented value has been configured by the manager and can be converted, otherwise returns `nil`.
+    /// - Returns: The desired represented value if it has been configured by the manager and can be converted, otherwise returns `nil`.
     public func representedValue<ValueType>(forKey key: DCKeyRepresentable) -> ValueType? where ValueType: RawRepresentable, ValueType.RawValue: Equatable {
         if let settingRawValue: ValueType.RawValue = value(forKey: key), let option = ValueType(rawValue: settingRawValue) {
             return option
@@ -136,7 +139,7 @@ import Combine
     ///   - key: The key for the value to observe.
     ///
     /// - Returns: An `AnyPublisher` that emits the current value of the setting with the specified key.
-    /// Returns `nil` if the setting is not found or the value not of the expected type.
+    /// Returns `nil` if the setting is not found or the value is not of the expected type.
     public func valuePublisher<ValueType>(forKey key: DCKeyRepresentable) -> AnyPublisher<ValueType, Never>? where ValueType: Equatable {
         guard let settable = setting(forKey: key) as? DCSetting<ValueType> else {
             return nil
@@ -166,7 +169,7 @@ import Combine
     ///
     /// - Parameter key: The key of the desired setting value.
     ///
-    /// - Returns: The desired boolean value if has been configured by the manager, otherwise returns `false`.
+    /// - Returns: The desired boolean value if it has been configured by the manager, otherwise returns `false`.
     public func bool(forKey key: DCKeyRepresentable) -> Bool {
         return value(forKey: key) ?? false
     }
