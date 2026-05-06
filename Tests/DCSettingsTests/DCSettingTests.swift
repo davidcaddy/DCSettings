@@ -40,6 +40,11 @@ import Combine
         #expect(setting.value == "defaultValue")
     }
 
+    @Test func optionalValueTypesAreUnsupported() {
+        #expect(DCSetting<String>.supportsValueType)
+        #expect(!DCSetting<String?>.supportsValueType)
+    }
+
     @Test func valueChange() {
         setting.value = "newValue"
 

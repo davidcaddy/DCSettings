@@ -7,6 +7,10 @@
 import Combine
 import SwiftUI
 
+private protocol DCOptionalValue {}
+
+extension Optional: DCOptionalValue {}
+
 /// A protocol that represents a settable value with a specific type.
 ///
 /// The `DCSettable` protocol defines the requirements for a type that represents a settable value with a specific type.
@@ -60,6 +64,7 @@ public extension DCSettable {
 ///
 /// The class also includes several convenience initializers that can be used to create new instances of `DCSetting` with different configurations.
 ///
+/// - Important: Optional value types, such as `String?`, are not supported. Model unset, inherited, or system-default states with a concrete default value or an explicit enum case.
 /// - Note: If the store is not set when the setting is configured by a manager instance, the store of the group in which the setting resides will be used.
 @MainActor public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
 
@@ -102,7 +107,13 @@ public extension DCSettable {
 
     private var cancellable: AnyCancellable?
 
+    static var supportsValueType: Bool {
+        !(ValueType.self is DCOptionalValue.Type)
+    }
+
     private init(key: DCKeyRepresentable, value: ValueType, label: String?, configuration: DCSettingConfiguration<ValueType>?, store: DCSettingStore?) {
+        precondition(Self.supportsValueType, "DCSetting optional value types are not supported. Use a concrete default value or an explicit enum case instead.")
+
         self.key = key.keyValue
         self._value = value
         self.label = label
