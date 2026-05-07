@@ -79,6 +79,10 @@ DCSettings requires Swift 6.0 or newer and supports iOS 14, macOS 11, tvOS 14, w
 
 `DCSettingsManager`, `DCSetting`, the stored-value property wrappers, and the SwiftUI settings views are main-actor isolated. Configure, read, and write settings through `DCSettingsManager` from the main actor. The lower-level `DCSettingStore` and `DCKeyValueStore` storage APIs remain actor-neutral.
 
+### Migration Notes
+
+`DCSettingOption.labelView()` is internal in 1.0. Use the option's public `label` and `image` properties, or provide custom option UI through your own views.
+
 ## Usage
 
 To use `DCSettings` in your project, you’ll need to import it at the top of your Swift file like so:

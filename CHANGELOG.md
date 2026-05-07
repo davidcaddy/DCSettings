@@ -16,7 +16,8 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 - Keeps the misspelled `configuation` property as deprecated compatibility API.
 - Builds in Swift 6 language mode with explicit main-actor isolation for manager, setting, property-wrapper, and settings-view APIs.
 - Emits current values immediately from manager value publishers.
-- Supports Color and Codable setting values by storing them as JSON-encoded `Data`.
+- Supports Codable setting values by storing them as JSON-encoded `Data`.
+- Supports Color setting values on platforms with UIKit or AppKit.
 - De-duplicates unchanged UserDefaults publisher values and ignores unrelated ubiquitous-store key changes.
 - Adds `if`/`switch`/`for` control-flow support to settings result builders.
 - Refines default settings controls, option pickers, date ranges, and platform list styles.
@@ -25,6 +26,8 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 ### Migration Notes
 
 - If you previously read `configuation`, move to `configuration`.
+- `DCSettingOption.labelView()` is now internal. Use the option's public `label` and `image` properties, or provide custom option UI through your own views.
 - Configure, read, and write settings through `DCSettingsManager` from the main actor.
 - Custom `DCKeyValueStore` implementations should accept `Data` values to support custom Codable setting types.
-- Values that are neither property-list compatible nor `Color` or `Codable` are not persisted.
+- `DCSetting` value types must be non-optional. Model unset, inherited, or system-default states with a concrete default value or an explicit enum case.
+- Values that are neither property-list compatible nor a supported `Color` or `Codable` value are not persisted.
