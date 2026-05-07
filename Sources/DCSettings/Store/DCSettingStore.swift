@@ -111,7 +111,7 @@ public enum DCSettingStore {
         }
 
         if isStandardType(ValueType.self) {
-            backingStore.set(value, forKey: key)
+            setStandardValue(value, forKey: key)
             return true
         }
 
@@ -219,6 +219,19 @@ public enum DCSettingStore {
 
     private func isStandardType<T>(_ type: T.Type) -> Bool {
         return type == Bool.self || type == Int.self || type == Double.self || type == String.self || type == Date.self || type == Data.self
+    }
+
+    private func setStandardValue<ValueType>(_ value: ValueType, forKey key: String) {
+        switch value {
+        case let value as Bool:
+            backingStore.set(value, forKey: key)
+        case let value as Int:
+            backingStore.set(value, forKey: key)
+        case let value as Double:
+            backingStore.set(value, forKey: key)
+        default:
+            backingStore.set(value, forKey: key)
+        }
     }
 
     private func decodedValue<ValueType>(_ object: Any?, as type: ValueType.Type) -> ValueType? {

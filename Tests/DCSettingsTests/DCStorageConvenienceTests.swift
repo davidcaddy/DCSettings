@@ -195,6 +195,21 @@ import Combine
         #expect((store.object(forKey: key) as StoredLayout?) == nil)
     }
 
+    @Test func settingStoreGenericSetUsesTypedStandardScalarSetters() {
+        let backingStore = MockStore()
+        let store = DCSettingStore.custom(backingStore: backingStore)
+
+        #expect(setGeneric(true, forKey: "bool", in: store))
+        #expect(setGeneric(12, forKey: "int", in: store))
+        #expect(setGeneric(1.25, forKey: "double", in: store))
+        #expect(setGeneric("grid", forKey: "string", in: store))
+
+        #expect(backingStore.setMethod(forKey: "bool") == .bool)
+        #expect(backingStore.setMethod(forKey: "int") == .int)
+        #expect(backingStore.setMethod(forKey: "double") == .double)
+        #expect(backingStore.setMethod(forKey: "string") == .object)
+    }
+
     @Test func ubiquitousValuePublisherIgnoresUnrelatedChangedKeysNotification() async {
         #if os(watchOS)
             if #unavailable(watchOS 9.0) {
@@ -225,6 +240,10 @@ import Combine
 
         try? await Task.sleep(for: .milliseconds(200))
         #expect(receivedValueCount == 1)
+    }
+
+    private func setGeneric<ValueType>(_ value: ValueType, forKey key: String, in store: DCSettingStore) -> Bool {
+        store.set(value, forKey: key)
     }
 
     @Test func storedValueReadsAndWritesConfiguredSetting() {
