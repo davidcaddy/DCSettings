@@ -14,7 +14,7 @@ Once your settings are set up, you can quickly add a settings view to your app u
 
 > Note: ``DCSettingsManager``, ``DCSetting``, the stored-value property wrappers, and the SwiftUI settings views are main-actor isolated. The lower-level ``DCSettingStore`` and ``DCKeyValueStore`` storage APIs remain actor-neutral.
 
-DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. On platforms with UIKit or AppKit, `Color` values are handled as a built-in type and stored as JSON-encoded `Data`. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. ``DCSetting`` value types must be non-optional; model unset, inherited, or system-default states with a concrete default value or an explicit enum case. Values that are neither property-list compatible nor a supported `Color` or `Codable` value are rejected in debug builds with an assertion and are not persisted. Custom ``DCKeyValueStore`` implementations should accept `Data` values to support custom `Codable` setting types.
+DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. On platforms with UIKit or AppKit, `Color` values are handled as a built-in type and stored as JSON-encoded `Data`; on watchOS, the default settings UI displays `Color` values without editing and built-in `Color` storage is not available. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. ``DCSetting`` value types must be non-optional; model unset, inherited, or system-default states with a concrete default value or an explicit enum case. Values that are neither property-list compatible nor a supported `Color` or `Codable` value are rejected in debug builds with an assertion and are not persisted. Custom ``DCKeyValueStore`` implementations should accept `Data` values to support custom `Codable` setting types.
 
 Group keys and setting keys must be unique across all groups configured in a ``DCSettingsManager``. `DCSettingGroup("General")` uses `"General"` as both the group label and group key. Prefer ``DCSettingGroup/init(key:label:store:settings:)`` when the key is persisted, filtered, localized, or otherwise part of app behavior. `DCSettingGroup()` uses a generated key and is best reserved for groups that never need stable identity.
 
@@ -70,7 +70,9 @@ DCSettingsManager.shared.configure {
             DCSettingOption(value: 20, label: "20 pt")
         }
         DCSetting(key: "lineSpacing", defaultValue: 1.2, lowerBound: 1.0, upperBound: 1.6, step: 0.1)
+        #if !os(watchOS)
         DCSetting(key: "highlightColor", defaultValue: Color.blue)
+        #endif
     }
 }
 ```

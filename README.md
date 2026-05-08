@@ -49,7 +49,9 @@ DCSettingsManager.shared.configure {
             DCSettingOption(value: 20, label: "20 pt")
         }
         DCSetting(key: "lineSpacing", defaultValue: 1.2, lowerBound: 1.0, upperBound: 1.6, step: 0.1)
+        #if !os(watchOS)
         DCSetting(key: "highlightColor", defaultValue: Color.blue)
+        #endif
     }
 }
 ```
@@ -246,7 +248,7 @@ DCSettingsManager.shared.configure {
 
 ### Storage contract
 
-DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. On platforms with UIKit or AppKit, `Color` values are handled as a built-in type and stored as JSON-encoded `Data`. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. `DCSetting` value types must be non-optional; model unset, inherited, or system-default states with a concrete default value or an explicit enum case. Values that are neither property-list compatible nor a supported `Color` or `Codable` value are rejected in debug builds with an assertion and are not persisted.
+DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. On platforms with UIKit or AppKit, `Color` values are handled as a built-in type and stored as JSON-encoded `Data`; on watchOS, the default settings UI displays `Color` values without editing and built-in `Color` storage is not available. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. `DCSetting` value types must be non-optional; model unset, inherited, or system-default states with a concrete default value or an explicit enum case. Values that are neither property-list compatible nor a supported `Color` or `Codable` value are rejected in debug builds with an assertion and are not persisted.
 
 Custom `DCKeyValueStore` implementations should accept `Data` values if they need to support custom `Codable` setting types.
 
@@ -307,7 +309,7 @@ When you use a `DCSettingsView` to display your settings, each setting will be p
 - `Double`: Settings with a Double value type are presented in several different ways depending on their configuration. If the setting has options, it will be presented as a segmented control or a popover menu, depending on the number of options. Otherwise, it will be presented as a slider. Unbounded Double sliders use SwiftUI's default slider range; provide bounds for domain-specific ranges.
 - `String`: Settings with a String value type are presented in several different ways depending on their configuration. If the setting has options, it will be presented as a segmented control or a menu, depending on the number of options. Otherwise, it will be presented as a text field.
 - `Date`: Settings with a Date value type are presented as a date picker. On watchOS, date editing is available on watchOS 10 or newer; earlier watchOS versions display the current date without editing.
-- `Color`: Settings with a Color value type are presented as a color picker on supported platforms. On watchOS, color settings display the current color without editing.
+- `Color`: Settings with a Color value type are presented as a color picker on iOS, macOS, and visionOS. On watchOS, color settings display the current color without editing.
 
 ### Customization
 
