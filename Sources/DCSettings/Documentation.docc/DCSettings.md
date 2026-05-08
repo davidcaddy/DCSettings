@@ -20,6 +20,22 @@ Group keys and setting keys must be unique across all groups configured in a ``D
 
 Configured options and comparable bounds are treated as validation rules when a ``DCSetting`` is initialized, written, or refreshed. Values outside the configured option list or bounds are ignored. The configuration `step` value is used by editing controls as a positive increment hint; bounded ``DCSetting`` initializers reject non-positive or non-finite step values.
 
+### Migrating to 1.0
+
+DCSettings 1.0 stabilizes the public API and includes source-breaking changes from 0.3.x:
+
+- Replace `configuation` with ``DCSettable/configuration``. The old spelling remains as a deprecated compatibility alias for reads.
+- Custom ``DCSettable`` conformers must provide ``DCSettable/configuration``.
+- `DCSettingStore.set(_:forKey:)` returns `Bool`; check the return value when persistence failure matters.
+- ``DCSetting`` value types must be non-optional, and bounded defaults must satisfy configured options and bounds.
+- Numeric bounded settings now require `ValueType: Numeric & Comparable`.
+- ``DCSettingsView/Filter`` now separates group and setting filtering. Use `.excludeGroups(_:)`, `.excludeSettings(_:)`, or `.exclude(groupKeys:settingKeys:)` instead of the old combined `.excludeKeys(_:)` case.
+- `Color` no longer conforms to `Codable` through DCSettings. Built-in Color storage is handled internally on platforms with UIKit or AppKit.
+- ``DCSettingView``, ``DCSettingsView``, and ``DCSettingViewProviding`` are unavailable on tvOS in 1.0.
+- ``DCStoredValue``, ``DCStoredRepresentedValue``, ``DCSettingView``, and ``DCSettingsView`` expose their main-actor isolation directly in Swift 6. Use them from the main actor.
+- The fully generic `DCSettingsView(settingsManager:filter:contentProvider:listStyle:)` initializer no longer supplies default `contentProvider` or `listStyle` arguments. Use the platform-default convenience initializers when you want package defaults.
+- `DCSettingOption.labelView()` and `Text.monospacedDigitIfAvailable()` are internal implementation details in 1.0.
+
 *Example configuration:*
 
 ```swift

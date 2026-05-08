@@ -87,10 +87,41 @@ DCSettings requires Swift 6.0 or newer and supports iOS 14, macOS 11, tvOS 14, w
 - `Color` no longer conforms to `Codable` publicly through DCSettings. Color storage is handled internally on platforms with UIKit or AppKit.
 - `DCSettingOption.labelView()` is internal in 1.0. Use the option's public `label` and `image` properties, or provide custom option UI through your own views.
 - `DCSettingView`, `DCSettingsView`, and `DCSettingViewProviding` are not available on tvOS in 1.0. The core settings and storage APIs still support tvOS.
+- `DCStoredValue`, `DCStoredRepresentedValue`, `DCSettingView`, and `DCSettingsView` now expose their main-actor isolation directly in Swift 6. Use them from the main actor.
 - `DCSetting` value types must be non-optional, and bounded defaults must satisfy their configured bounds.
+- Bounded numeric settings now require `ValueType: Numeric & Comparable`.
 - Group keys and setting keys must be unique across configured groups.
 - `DCSettingGroup("Label")` now uses the label as the group key. Prefer `DCSettingGroup(key:label:)` when the key is persisted, filtered, localized, or otherwise part of app behavior.
 - `DCSettingsView.Filter` now separates `.excludeGroups(_:)` and `.excludeSettings(_:)`; use `.exclude(groupKeys:settingKeys:)` to hide both.
+- The fully generic `DCSettingsView(settingsManager:filter:contentProvider:listStyle:)` initializer no longer supplies default `contentProvider` or `listStyle` arguments. Use the convenience initializers, such as `DCSettingsView()`, `DCSettingsView(filter:)`, `DCSettingsView(contentProvider:)`, or `DCSettingsView(listStyle:)`, for the default provider and platform list style.
+- `DCDefaultViewProvider.content(for:)` now returns `EmptyView?`, which keeps the default provider as a nil-only placeholder.
+- `Text.monospacedDigitIfAvailable()` is no longer public API. Use SwiftUI's `monospacedDigit()` with an availability check in app code if needed.
+
+#### Updating Common 0.3.x Code
+
+If you used the old combined settings-view filter, choose the new key type explicitly:
+
+```swift
+// 0.3.x
+DCSettingsView(filter: .excludeKeys(["general"]))
+
+// 1.0
+DCSettingsView(filter: .excludeGroups(["general"]))
+DCSettingsView(filter: .excludeSettings(["showNotifications"]))
+DCSettingsView(filter: .exclude(groupKeys: ["general"], settingKeys: ["showNotifications"]))
+```
+
+If you set values directly through `DCSettingStore`, decide whether to handle persistence failure:
+
+```swift
+let didSave = DCSettingStore.standard.set(value, forKey: "settingKey")
+```
+
+Custom `DCSettable` conformers need the correctly spelled configuration property:
+
+```swift
+var configuration: DCSettingConfiguration<Value>? { nil }
+```
 
 ## Usage
 

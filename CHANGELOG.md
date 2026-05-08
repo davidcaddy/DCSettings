@@ -39,10 +39,15 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 - `DCSettingOption.labelView()` is now internal. Use the option's public `label` and `image` properties, or provide custom option UI through your own views.
 - `DCSettingView`, `DCSettingsView`, and `DCSettingViewProviding` are not available on tvOS in 1.0. The core settings and storage APIs still support tvOS.
 - Configure, read, and write settings through `DCSettingsManager` from the main actor.
+- `DCStoredValue`, `DCStoredRepresentedValue`, `DCSettingView`, and `DCSettingsView` now expose their main-actor isolation directly in Swift 6. If you use them from nonisolated or background contexts, hop to the main actor first.
 - Custom `DCKeyValueStore` implementations should accept `Data` values to support custom Codable setting types.
 - `DCSetting` value types must be non-optional. Model unset, inherited, or system-default states with a concrete default value or an explicit enum case.
 - Bounded defaults must satisfy their configured bounds.
+- Numeric bounded settings now require `ValueType: Numeric & Comparable`. This matches the new bounds validation behavior and may affect custom numeric-like types.
 - Group keys and setting keys must be unique across configured groups.
 - `DCSettingGroup("Label")` now uses the label as the group key. Prefer `DCSettingGroup(key:label:)` when the key is persisted, filtered, localized, or otherwise part of app behavior.
 - `DCSettingsView.Filter` now separates `.excludeGroups(_:)` and `.excludeSettings(_:)`; use `.exclude(groupKeys:settingKeys:)` to hide both.
+- The fully generic `DCSettingsView(settingsManager:filter:contentProvider:listStyle:)` initializer no longer provides default values for `contentProvider` or `listStyle`. Use `DCSettingsView()`, `DCSettingsView(filter:)`, `DCSettingsView(contentProvider:)`, or `DCSettingsView(listStyle:)` when you want the package defaults.
+- `DCDefaultViewProvider.content(for:)` now returns `EmptyView?`. If you used this concrete provider directly, treat it as a nil-only placeholder.
+- The package no longer exposes `Text.monospacedDigitIfAvailable()` as public API. Use SwiftUI's `monospacedDigit()` with your own availability guard if you need the same behavior in app code.
 - Values that are neither property-list compatible nor a supported `Color` or `Codable` value are not persisted.
