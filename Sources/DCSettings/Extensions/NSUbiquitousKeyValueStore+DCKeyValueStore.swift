@@ -16,7 +16,7 @@ extension NSUbiquitousKeyValueStore: DCKeyValueStore {
     ///   - value: The integer value to store in the key-value store.
     ///   - key: The key with which to associate with the value.
     public func set(_ value: Int, forKey key: String) {
-        setValue(Int64(value), forKey: key)
+        set(Int64(value), forKey: key)
     }
 
     /// Returns the integer value associated with the specified key.

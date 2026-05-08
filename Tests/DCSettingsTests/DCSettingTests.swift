@@ -51,11 +51,53 @@ import Combine
         #expect(setting.value == "newValue")
     }
 
+    @Test func optionSettingRejectsValuesOutsideConfiguredOptions() throws {
+        let setting = try #require(DCSetting(key: "optionKey", store: store) {
+            DCSettingOption(value: "first")
+            DCSettingOption(value: "second")
+        })
+
+        setting.value = "third"
+
+        #expect(setting.value == "first")
+        #expect(backingStore.storage["optionKey"] == nil)
+    }
+
+    @Test func boundedSettingRejectsValuesOutsideConfiguredBounds() {
+        let setting = DCSetting(key: "boundedKey", defaultValue: 5, store: store, lowerBound: 0, upperBound: 10)
+
+        setting.value = 11
+
+        #expect(setting.value == 5)
+        #expect(backingStore.storage["boundedKey"] == nil)
+    }
+
     @Test func refresh() {
         backingStore.set("anotherValue", forKey: "testKey")
         setting.refresh()
 
         #expect(setting.value == "anotherValue")
+    }
+
+    @Test func refreshIgnoresStoredValuesOutsideConfiguredOptions() throws {
+        let setting = try #require(DCSetting(key: "optionKey", store: store) {
+            DCSettingOption(value: "first")
+            DCSettingOption(value: "second")
+        })
+        backingStore.storage["optionKey"] = "third"
+
+        setting.refresh()
+
+        #expect(setting.value == "first")
+    }
+
+    @Test func refreshIgnoresStoredValuesOutsideConfiguredBounds() {
+        let setting = DCSetting(key: "boundedKey", defaultValue: 5, store: store, lowerBound: 0, upperBound: 10)
+        backingStore.storage["boundedKey"] = 11
+
+        setting.refresh()
+
+        #expect(setting.value == 5)
     }
 
     @Test func initWithOptions() throws {
@@ -70,6 +112,25 @@ import Combine
 
         #expect(setting.value == 5)
         #expect(setting.configuration?.bounds == DCValueBounds(lowerBound: 0, upperBound: 10))
+    }
+
+    @Test func initWithBoundsStoresPositiveStep() {
+        let setting = DCSetting(key: "testKey", defaultValue: 5, store: store, lowerBound: 0, upperBound: 10, step: 2)
+
+        #expect(setting.configuration?.step == 2)
+    }
+
+    @Test func stepValidationRequiresPositiveNumericSteps() {
+        #expect(DCSetting<Int>.isValidStep(nil))
+        #expect(DCSetting<Int>.isValidStep(1))
+        #expect(!DCSetting<Int>.isValidStep(0))
+        #expect(!DCSetting<Int>.isValidStep(-1))
+        #expect(DCSetting<Double>.isValidStep(0.1))
+        #expect(!DCSetting<Double>.isValidStep(0.0))
+        #expect(!DCSetting<Double>.isValidStep(.nan))
+        #expect(!DCSetting<Double>.isValidStep(.infinity))
+        #expect(DCSetting<Float>.isValidStep(0.1))
+        #expect(!DCSetting<Float>.isValidStep(.infinity))
     }
 
     @Test func configurationPropertyIsAccessible() {
@@ -156,5 +217,15 @@ import Combine
 
         #expect(await waitUntil { setting.value == "externalValue" })
         #expect(backingStore.setCallCount(forKey: "testKey") == 1)
+    }
+
+    @Test func externalStoreUpdateIgnoresValuesOutsideConfiguredBounds() async {
+        let setting = DCSetting(key: "boundedKey", defaultValue: 5, store: store, lowerBound: 0, upperBound: 10)
+        setting.refresh()
+
+        store.set(11, forKey: "boundedKey")
+
+        #expect(!(await waitUntil(timeout: .milliseconds(100)) { setting.value == 11 }))
+        #expect(setting.value == 5)
     }
 }

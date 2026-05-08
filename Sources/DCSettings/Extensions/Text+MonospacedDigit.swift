@@ -8,7 +8,7 @@ import SwiftUI
 
 extension Text {
 
-    public func monospacedDigitIfAvailable() -> Text {
+    func monospacedDigitIfAvailable() -> Text {
         if #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 9.0, visionOS 1.0, *) {
             return self.monospacedDigit()
         } else {

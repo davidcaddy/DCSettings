@@ -22,7 +22,10 @@ let package = Package(
     targets: [
         .target(
             name: "DCSettings",
-            dependencies: []),
+            dependencies: [],
+            resources: [
+                .process("PrivacyInfo.xcprivacy")
+            ]),
         .testTarget(
             name: "DCSettingsTests",
             dependencies: ["DCSettings"]),

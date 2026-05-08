@@ -11,6 +11,21 @@ private protocol DCOptionalValue {}
 
 extension Optional: DCOptionalValue {}
 
+private protocol DCComparableValueBounds {
+    func contains(_ value: Any) -> Bool
+}
+
+extension DCValueBounds: DCComparableValueBounds where ValueType: Comparable {
+
+    func contains(_ value: Any) -> Bool {
+        guard let typedValue = value as? ValueType else {
+            return false
+        }
+
+        return lowerBound <= typedValue && typedValue <= upperBound
+    }
+}
+
 /// A protocol that represents a settable value with a specific type.
 ///
 /// The `DCSettable` protocol defines the requirements for a type that represents a settable value with a specific type.
@@ -53,6 +68,62 @@ public extension DCSettable {
     }
 }
 
+extension DCSettable {
+
+    func _typedValue<T>(as type: T.Type) -> T? where T: Equatable {
+        value as? T
+    }
+
+    func _typedConfiguration<T>(as type: T.Type) -> DCSettingConfiguration<T>? where T: Equatable {
+        configuration as? DCSettingConfiguration<T>
+    }
+
+    @discardableResult func _setTypedValue<T>(_ newValue: T) -> Bool where T: Equatable {
+        guard let typedValue = newValue as? ValueType, _isValidConfiguredValue(typedValue) else {
+            return false
+        }
+
+        value = typedValue
+        return value == typedValue
+    }
+
+    func _typedBinding<T>(as type: T.Type) -> Binding<T>? where T: Equatable {
+        guard let currentValue = value as? T else {
+            return nil
+        }
+
+        return Binding {
+            self.value as? T ?? currentValue
+        } set: { newValue in
+            self._setTypedValue(newValue)
+        }
+    }
+
+    func _typedPublisher<T>(as type: T.Type) -> AnyPublisher<T, Never>? where T: Equatable {
+        guard let currentValue = value as? T else {
+            return nil
+        }
+
+        return Just(currentValue)
+            .merge(with: _objectWillChangePublisher().compactMap { [weak self] in
+                self?.value as? T
+            })
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    func _objectWillChangePublisher() -> AnyPublisher<Void, Never> {
+        objectWillChange
+            .receive(on: RunLoop.main)
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
+
+    func _isValidConfiguredValue(_ value: ValueType) -> Bool {
+        DCSetting<ValueType>.isValid(value, configuration: configuration)
+    }
+}
+
 /// A class that represents a settable value with a specific type.
 ///
 /// The `DCSetting` class is a concrete implementation of the `DCSettable` protocol that represents a settable value with a specific type.
@@ -82,7 +153,7 @@ public extension DCSettable {
             _value
         }
         set {
-            if _value != newValue {
+            if _value != newValue, isValid(newValue) {
                 if save(newValue) {
                     _value = newValue
                     objectWillChange.send()
@@ -111,8 +182,45 @@ public extension DCSettable {
         !(ValueType.self is DCOptionalValue.Type)
     }
 
+    fileprivate static func isValid(_ value: ValueType, configuration: DCSettingConfiguration<ValueType>?) -> Bool {
+        guard let configuration else {
+            return true
+        }
+
+        if let options = configuration.options, !options.contains(where: { $0.value == value }) {
+            return false
+        }
+
+        if let bounds = configuration.bounds as? any DCComparableValueBounds, !bounds.contains(value) {
+            return false
+        }
+
+        return true
+    }
+
+    static func isValidStep(_ step: ValueType?) -> Bool where ValueType: Numeric & Comparable {
+        guard let step else {
+            return true
+        }
+
+        if let step = step as? Double {
+            return step > 0.0 && step.isFinite
+        }
+
+        if let step = step as? Float {
+            return step > 0.0 && step.isFinite
+        }
+
+        if let step = step as? CGFloat {
+            return step > 0.0 && step.isFinite
+        }
+
+        return step > .zero
+    }
+
     private init(key: DCKeyRepresentable, value: ValueType, label: String?, configuration: DCSettingConfiguration<ValueType>?, store: DCSettingStore?) {
         precondition(Self.supportsValueType, "DCSetting optional value types are not supported. Use a concrete default value or an explicit enum case instead.")
+        precondition(Self.isValid(value, configuration: configuration), "DCSetting default value must satisfy configured options and bounds.")
 
         self.key = key.keyValue
         self._value = value
@@ -167,8 +275,10 @@ public extension DCSettable {
     ///   - store: An optional `DCSettingStore` instance used to store the setting value. The default value is `.standard`.
     ///   - lowerBound: The lower bound of the range of valid values for the setting.
     ///   - upperBound: The upper bound of the range of valid values for the setting.
-    ///   - step: An optional step value that specifies the increment or decrement between valid values. The default value is `nil`.
-    public convenience init(key: DCKeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = nil, lowerBound: ValueType, upperBound: ValueType, step: ValueType? = nil) where ValueType: Numeric {
+    ///   - step: An optional positive step value that controls the editing increment. The default value is `nil`.
+    ///   This value must be greater than zero when provided. Floating-point steps must also be finite.
+    public convenience init(key: DCKeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = nil, lowerBound: ValueType, upperBound: ValueType, step: ValueType? = nil) where ValueType: Numeric & Comparable {
+        precondition(Self.isValidStep(step), "DCSetting step must be greater than zero and finite.")
         self.init(key: key, value: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: nil, bounds: DCValueBounds(lowerBound: lowerBound, upperBound: upperBound), step: step), store: store)
     }
 
@@ -250,7 +360,7 @@ public extension DCSettable {
     /// This is called during the initial configuration of the setting by the managing `DCSettingsManager` instance.
     /// Calling this directly on a setting should be avoided.
     public func refresh() {
-        if let newValue: ValueType = store?.object(forKey: key), value != newValue {
+        if let newValue: ValueType = store?.object(forKey: key), value != newValue, isValid(newValue) {
             _value = newValue
             objectWillChange.send()
         }
@@ -262,6 +372,10 @@ public extension DCSettable {
         let didSave = store?.set(value, forKey: key) ?? true
         setUpListener()
         return didSave
+    }
+
+    private func isValid(_ value: ValueType) -> Bool {
+        _isValidConfiguredValue(value)
     }
 
     /// Returns a binding for the current value of the setting.
@@ -283,7 +397,7 @@ public extension DCSettable {
         cancellable = store.valuePublisher(forKey: key, as: ValueType.self)
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
-                guard let self, let newValue, self._value != newValue else {
+                guard let self, let newValue, self._value != newValue, self.isValid(newValue) else {
                     return
                 }
 

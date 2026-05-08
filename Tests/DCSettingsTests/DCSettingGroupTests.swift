@@ -43,8 +43,16 @@ import Testing
     @Test func labelInitializerCreatesGroupWithSettings() {
         let group = DCSettingGroup("General", store: store, settings: [setting1, setting2])
 
+        #expect(group.key == "General")
         #expect(group.label == "General")
         #expect(group.settings.count == 2)
+    }
+
+    @Test func nilLabelInitializerUsesGeneratedKey() {
+        let group = DCSettingGroup(store: store, settings: [setting1])
+
+        #expect(!group.key.isEmpty)
+        #expect(group.label == nil)
     }
 
     @Test func storeModifierReturnsCopyWithNewStore() {

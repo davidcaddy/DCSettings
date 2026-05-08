@@ -22,9 +22,9 @@ import Combine
 ///
 /// // Configure the manager with setting groups
 /// manager.configure {
-///     DCSettingGroup("General") {
-///         DCSetting(key: "darkMode", defaultValue: false)
-///     }
+    ///     DCSettingGroup(key: "general", label: "General") {
+    ///         DCSetting(key: "darkMode", defaultValue: false)
+    ///     }
 /// }
 ///
 /// // Access and modify a setting
@@ -46,6 +46,12 @@ import Combine
     ///
     /// - Parameter settingGroups: An array of `DCSettingGroup` values representing the setting groups to be managed by the manager.
     public func configure(groups settingGroups: [DCSettingGroup]) {
+        let duplicateGroupKeys = Self.duplicateGroupKeys(in: settingGroups)
+        precondition(duplicateGroupKeys.isEmpty, "DCSettingsManager group keys must be unique. Duplicate keys: \(duplicateGroupKeys.joined(separator: ", ")).")
+
+        let duplicateKeys = Self.duplicateSettingKeys(in: settingGroups)
+        precondition(duplicateKeys.isEmpty, "DCSettingsManager setting keys must be unique. Duplicate keys: \(duplicateKeys.joined(separator: ", ")).")
+
         groups = settingGroups
         settingsByKey = [:]
         for group in groups {
@@ -58,6 +64,34 @@ import Combine
                 }
             }
         }
+    }
+
+    static func duplicateGroupKeys(in groups: [DCSettingGroup]) -> [String] {
+        var seenKeys: Set<String> = []
+        var duplicateKeys: Set<String> = []
+
+        for group in groups {
+            if !seenKeys.insert(group.key).inserted {
+                duplicateKeys.insert(group.key)
+            }
+        }
+
+        return duplicateKeys.sorted()
+    }
+
+    static func duplicateSettingKeys(in groups: [DCSettingGroup]) -> [String] {
+        var seenKeys: Set<String> = []
+        var duplicateKeys: Set<String> = []
+
+        for group in groups {
+            for setting in group.settings {
+                if !seenKeys.insert(setting.key).inserted {
+                    duplicateKeys.insert(setting.key)
+                }
+            }
+        }
+
+        return duplicateKeys.sorted()
     }
 
     /// Configures the manager with a result builder that produces an array of setting groups.
@@ -76,11 +110,7 @@ import Combine
     ///
     /// - Returns: A boolean value indicating whether or not the value was successfully set. Returns `true` if successful, otherwise returns `false`.
     @discardableResult public func set<ValueType>(_ value: ValueType, forKey key: DCKeyRepresentable) -> Bool where ValueType: Equatable {
-        if let setting = setting(forKey: key) as? DCSetting<ValueType> {
-            setting.value = value
-            return setting.value == value
-        }
-        return false
+        setting(forKey: key)?._setTypedValue(value) ?? false
     }
 
     /// Returns the setting with the specified key.
@@ -98,8 +128,7 @@ import Combine
     ///
     /// - Returns: The desired value if it has been configured by the manager, otherwise returns `nil`.
     public func value<ValueType>(forKey key: DCKeyRepresentable) -> ValueType? where ValueType: Equatable {
-        let setting = setting(forKey: key) as? DCSetting<ValueType>
-        return setting?.value
+        setting(forKey: key)?._typedValue(as: ValueType.self)
     }
 
     /// Returns the represented value for a setting with the specified key.
@@ -123,14 +152,7 @@ import Combine
     ///
     /// - Returns: A binding to the desired value if it has been configured by the manager, otherwise returns `nil`.
     public func valueBinding<ValueType>(forKey key: DCKeyRepresentable) -> Binding<ValueType>? where ValueType: Equatable {
-        if let setting = setting(forKey: key) as? DCSetting<ValueType> {
-            return Binding {
-                setting.value
-            } set: { newValue in
-                setting.value = newValue
-            }
-        }
-        return nil
+        setting(forKey: key)?._typedBinding(as: ValueType.self)
     }
 
     /// Returns a publisher that emits the current value of the setting with the specified key.
@@ -141,12 +163,7 @@ import Combine
     /// - Returns: An `AnyPublisher` that emits the current value of the setting with the specified key.
     /// Returns `nil` if the setting is not found or the value is not of the expected type.
     public func valuePublisher<ValueType>(forKey key: DCKeyRepresentable) -> AnyPublisher<ValueType, Never>? where ValueType: Equatable {
-        guard let settable = setting(forKey: key) as? DCSetting<ValueType> else {
-            return nil
-        }
-        return Just(settable.value)
-            .merge(with: settable.objectWillChange.map { settable.value })
-            .eraseToAnyPublisher()
+        setting(forKey: key)?._typedPublisher(as: ValueType.self)
     }
 
     /// Returns a publisher that emits the represented value of the setting with the specified key.
@@ -157,11 +174,12 @@ import Combine
     /// - Returns: An `AnyPublisher` that emits the represented value of the setting with the specified key.
     /// Returns `nil` if the setting is not found or the represented value cannot be initialized from the raw value.
     public func representedValuePublisher<ValueType>(forKey key: DCKeyRepresentable) -> AnyPublisher<ValueType?, Never>? where ValueType: RawRepresentable, ValueType.RawValue: Equatable {
-        guard let settable = setting(forKey: key) as? DCSetting<ValueType.RawValue> else {
+        guard let publisher = setting(forKey: key)?._typedPublisher(as: ValueType.RawValue.self) else {
             return nil
         }
-        return Just(ValueType(rawValue: settable.value))
-            .merge(with: settable.objectWillChange.map { ValueType(rawValue: settable.value) })
+
+        return publisher
+            .map { ValueType(rawValue: $0) }
             .eraseToAnyPublisher()
     }
 

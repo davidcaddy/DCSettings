@@ -6,9 +6,30 @@
 
 import Testing
 import Foundation
+import SwiftUI
 @testable import DCSettings
+import Combine
+
+#if !os(tvOS)
 
 @Suite @MainActor struct DCSettingViewTests {
+
+    @MainActor private final class CustomSettable<ValueType: Equatable>: DCSettable {
+        let label: String?
+        let key: String
+        let configuration: DCSettingConfiguration<ValueType>?
+        var store: DCSettingStore?
+        var value: ValueType
+
+        init(key: String, value: ValueType, label: String? = nil, configuration: DCSettingConfiguration<ValueType>? = nil) {
+            self.key = key
+            self.value = value
+            self.label = label
+            self.configuration = configuration
+        }
+
+        func refresh() {}
+    }
 
     @Test func displayLabelUsesExplicitLabel() {
         let setting = DCSetting(key: "articleListLayout", defaultValue: true, label: "Layout")
@@ -20,6 +41,19 @@ import Foundation
         let setting = DCSetting(key: "articleListLayout", defaultValue: true)
 
         #expect(setting.displayLabel == "Article list layout")
+    }
+
+    @Test func displayLabelSupportsCustomSettableConformers() {
+        let setting = CustomSettable(key: "articleListLayout", value: true)
+
+        #expect(setting.displayLabel == "Article list layout")
+    }
+
+    @Test func settingViewAcceptsCustomSettableConformers() {
+        let setting = CustomSettable(key: "showImages", value: true)
+        let view = DCSettingView(setting)
+
+        _ = view.body
     }
 
     @Test func optionControlStyleUsesPickerForTwoOrFewerOptions() {
@@ -43,4 +77,27 @@ import Foundation
         #expect(range.lowerBound == lowerBound)
         #expect(range.upperBound == upperBound)
     }
+
+    @Test func sliderUsableStepIgnoresInvalidSteps() {
+        #expect(DCSliderView.usableStep(nil) == nil)
+        #expect(DCSliderView.usableStep(0.0) == nil)
+        #expect(DCSliderView.usableStep(-1.0) == nil)
+        #expect(DCSliderView.usableStep(.nan) == nil)
+        #expect(DCSliderView.usableStep(.infinity) == nil)
+        #expect(DCSliderView.usableStep(0.25) == 0.25)
+    }
+
+    @Test func displayOnlyDateViewExposesBody() {
+        let view = DCDisplayOnlyDateView(key: "publishedDate", label: "Published Date", value: Date(timeIntervalSince1970: 1_704_067_200))
+
+        _ = view.body
+    }
+
+    @Test func displayOnlyColorViewExposesBody() {
+        let view = DCDisplayOnlyColorView(key: "highlightColor", label: "Highlight Color", value: .blue)
+
+        _ = view.body
+    }
 }
+
+#endif

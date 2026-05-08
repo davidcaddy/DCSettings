@@ -4,9 +4,12 @@
 //  MIT license, see LICENSE file for details
 //
 
+import Combine
 import SwiftUI
 
-extension DCSetting {
+#if !os(tvOS)
+
+extension DCSettable {
 
     var displayLabel: String {
         return label ?? key.sentenceFormatted
@@ -51,15 +54,29 @@ extension DCSettingOption {
     }
 }
 
+@MainActor private final class DCSettableObservation: ObservableObject {
+
+    private var cancellable: AnyCancellable?
+
+    init(setting: any DCSettable) {
+        cancellable = setting._objectWillChangePublisher()
+            .sink { [weak self] in
+                self?.objectWillChange.send()
+            }
+    }
+}
+
 struct DCBoolSettingView: View {
     @Environment(\.isEnabled) var isEnabled
 
-    @ObservedObject var setting: DCSetting<Bool>
+    let key: String
+    let label: String
+    @Binding var value: Bool
 
     var body: some View {
-        Toggle(setting.displayLabel, isOn: $setting.value)
+        Toggle(label, isOn: $value)
             .toggleStyle(SwitchToggleStyle())
-            .accessibilityIdentifier(setting.key)
+            .accessibilityIdentifier(key)
             .foregroundColor(isEnabled ? .primary : .secondary)
             #if os(macOS)
                 .controlSize(.mini)
@@ -70,55 +87,58 @@ struct DCBoolSettingView: View {
 struct DCIntSettingView: View {
     @Environment(\.isEnabled) var isEnabled
 
-    @ObservedObject var setting: DCSetting<Int>
+    let key: String
+    let label: String
+    let configuration: DCSettingConfiguration<Int>?
+    @Binding var value: Int
 
     var body: some View {
-        if let options = setting.configuration?.options {
-            DCOptionPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
+        if let options = configuration?.options {
+            DCOptionPickerView(key: key, label: label, options: options, value: $value)
         }
-        else if let bounds = setting.configuration?.bounds {
-            DCSliderView(key: setting.key, label: setting.displayLabel, value: Binding(get: {
-                Double(setting.value)
+        else if let bounds = configuration?.bounds {
+            DCSliderView(key: key, label: label, value: Binding(get: {
+                Double(value)
             }, set: { newValue in
-                setting.value = Int(newValue)
-            }), bounds: DCValueBounds(lowerBound: Double(bounds.lowerBound), upperBound: Double(bounds.upperBound)), step: setting.configuration?.step.map { Double($0) }, specifier: "%.0f")
+                value = Int(newValue)
+            }), bounds: DCValueBounds(lowerBound: Double(bounds.lowerBound), upperBound: Double(bounds.upperBound)), step: configuration?.step.map { Double($0) }, specifier: "%.0f")
         }
         else {
             HStack {
-                Text(setting.displayLabel)
+                Text(label)
                     .foregroundColor(isEnabled ? .primary : .secondary)
                 Spacer()
-                Text(String(setting.value))
+                Text(String(value))
                     .padding(.trailing, 8.0)
                 #if os(watchOS)
                     if #available(watchOS 9.0, *) {
-                        Stepper(setting.displayLabel, value: $setting.value)
+                        Stepper(label, value: $value)
                             .labelsHidden()
-                            .accessibilityIdentifier(setting.key)
+                            .accessibilityIdentifier(key)
                     }
                     else {
                         HStack(spacing: 8.0) {
                             Button {
-                                setting.value -= 1
+                                value -= 1
                             } label: {
                                 Image(systemName: "minus")
                             }
-                            .accessibilityLabel("Decrease \(setting.displayLabel)")
-                            .accessibilityIdentifier("\(setting.key).decrement")
+                            .accessibilityLabel("Decrease \(label)")
+                            .accessibilityIdentifier("\(key).decrement")
 
                             Button {
-                                setting.value += 1
+                                value += 1
                             } label: {
                                 Image(systemName: "plus")
                             }
-                            .accessibilityLabel("Increase \(setting.displayLabel)")
-                            .accessibilityIdentifier("\(setting.key).increment")
+                            .accessibilityLabel("Increase \(label)")
+                            .accessibilityIdentifier("\(key).increment")
                         }
                     }
                 #else
-                    Stepper(setting.displayLabel, value: $setting.value)
+                    Stepper(label, value: $value)
                         .labelsHidden()
-                        .accessibilityIdentifier(setting.key)
+                        .accessibilityIdentifier(key)
                 #endif
             }
             .foregroundColor(isEnabled ? .primary : .secondary)
@@ -127,14 +147,17 @@ struct DCIntSettingView: View {
 }
 
 struct DCDoubleSettingView: View {
-    @ObservedObject var setting: DCSetting<Double>
+    let key: String
+    let label: String
+    let configuration: DCSettingConfiguration<Double>?
+    @Binding var value: Double
 
     var body: some View {
-        if let options = setting.configuration?.options {
-            DCOptionPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
+        if let options = configuration?.options {
+            DCOptionPickerView(key: key, label: label, options: options, value: $value)
         }
         else {
-            DCSliderView(key: setting.key, label: setting.displayLabel, value: $setting.value, bounds: setting.configuration?.bounds, step: setting.configuration?.step, specifier: "%.2f")
+            DCSliderView(key: key, label: label, value: $value, bounds: configuration?.bounds, step: configuration?.step, specifier: "%.2f")
         }
     }
 }
@@ -142,16 +165,19 @@ struct DCDoubleSettingView: View {
 struct DCStringSettingView: View {
     @Environment(\.isEnabled) var isEnabled
 
-    @ObservedObject var setting: DCSetting<String>
+    let key: String
+    let label: String
+    let configuration: DCSettingConfiguration<String>?
+    @Binding var value: String
 
     var body: some View {
-        if let options = setting.configuration?.options {
-            DCOptionPickerView(key: setting.key, label: setting.displayLabel, options: options, value: $setting.value)
+        if let options = configuration?.options {
+            DCOptionPickerView(key: key, label: label, options: options, value: $value)
         }
         else {
-            TextField(setting.displayLabel, text: $setting.value)
+            TextField(label, text: $value)
                 .foregroundColor(isEnabled ? .primary : .secondary)
-                .accessibilityIdentifier(setting.key)
+                .accessibilityIdentifier(key)
         }
     }
 }
@@ -159,7 +185,10 @@ struct DCStringSettingView: View {
 struct DCDateSettingView: View {
     @Environment(\.isEnabled) var isEnabled
 
-    @ObservedObject var setting: DCSetting<Date>
+    let key: String
+    let label: String
+    let configuration: DCSettingConfiguration<Date>?
+    @Binding var value: Date
 
     static func datePickerRange(for bounds: DCValueBounds<Date>) -> ClosedRange<Date> {
         return bounds.lowerBound...bounds.upperBound
@@ -167,43 +196,96 @@ struct DCDateSettingView: View {
 
     var body: some View {
         #if os(watchOS)
-            Text(setting.displayLabel)
-                .foregroundColor(isEnabled ? .primary : .secondary)
-                .accessibilityIdentifier(setting.key)
-        #else
-            if let bounds = setting.configuration?.bounds {
-                DatePicker(selection: $setting.value, in: Self.datePickerRange(for: bounds), displayedComponents: .date) {
-                    Text(setting.displayLabel)
-                }
-                .foregroundColor(isEnabled ? .primary : .secondary)
-                .accessibilityIdentifier(setting.key)
+            if #available(watchOS 10.0, *) {
+                picker
             }
             else {
-                DatePicker(selection: $setting.value, in: ...Date(), displayedComponents: .date) {
-                    Text(setting.displayLabel)
-                }
-                .foregroundColor(isEnabled ? .primary : .secondary)
-                .accessibilityIdentifier(setting.key)
+                DCDisplayOnlyDateView(key: key, label: label, value: value)
             }
+        #else
+            picker
         #endif
+    }
+
+    @available(watchOS 10.0, *)
+    @ViewBuilder private var picker: some View {
+        if let bounds = configuration?.bounds {
+            DatePicker(selection: $value, in: Self.datePickerRange(for: bounds), displayedComponents: .date) {
+                Text(label)
+            }
+            .foregroundColor(isEnabled ? .primary : .secondary)
+            .accessibilityIdentifier(key)
+        }
+        else {
+            DatePicker(selection: $value, displayedComponents: .date) {
+                Text(label)
+            }
+            .foregroundColor(isEnabled ? .primary : .secondary)
+            .accessibilityIdentifier(key)
+        }
+    }
+}
+
+struct DCDisplayOnlyDateView: View {
+    @Environment(\.isEnabled) var isEnabled
+
+    let key: String
+    let label: String
+    let value: Date
+
+    var body: some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Text(value, style: .date)
+                .foregroundColor(.secondary)
+        }
+        .foregroundColor(isEnabled ? .primary : .secondary)
+        .accessibilityIdentifier(key)
     }
 }
 
 struct DCColorSettingView: View {
     @Environment(\.isEnabled) var isEnabled
 
-    @ObservedObject var setting: DCSetting<Color>
+    let key: String
+    let label: String
+    @Binding var value: Color
 
     var body: some View {
         #if os(watchOS)
-            Text(setting.displayLabel)
-                .foregroundColor(isEnabled ? .primary : .secondary)
-                .accessibilityIdentifier(setting.key)
+            DCDisplayOnlyColorView(key: key, label: label, value: value)
         #else
-            ColorPicker(setting.displayLabel, selection: $setting.value)
+            ColorPicker(label, selection: $value)
             .foregroundColor(isEnabled ? .primary : .secondary)
-            .accessibilityIdentifier(setting.key)
+            .accessibilityIdentifier(key)
         #endif
+    }
+}
+
+struct DCDisplayOnlyColorView: View {
+    @Environment(\.isEnabled) var isEnabled
+
+    let key: String
+    let label: String
+    let value: Color
+
+    var body: some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Circle()
+                .fill(value)
+                .frame(width: 22.0, height: 22.0)
+                .overlay(
+                    Circle()
+                        .stroke(Color.secondary.opacity(0.6), lineWidth: 1.0)
+                )
+                .opacity(isEnabled ? 1.0 : 0.5)
+                .accessibilityLabel(label)
+        }
+        .foregroundColor(isEnabled ? .primary : .secondary)
+        .accessibilityIdentifier(key)
     }
 }
 
@@ -217,6 +299,14 @@ struct DCSliderView: View {
     let step: Double?
     let specifier: String
 
+    static func usableStep(_ step: Double?) -> Double? {
+        guard let step, step > 0.0, step.isFinite else {
+            return nil
+        }
+
+        return step
+    }
+
     var body: some View {
         VStack {
             HStack {
@@ -226,7 +316,7 @@ struct DCSliderView: View {
                     .monospacedDigitIfAvailable()
             }
             if let valueBounds = bounds {
-                if let valueStep = step {
+                if let valueStep = Self.usableStep(step) {
                     Slider(value: $value, in: valueBounds.lowerBound...valueBounds.upperBound, step: valueStep) {
                         Text(label)
                     } minimumValueLabel: {
@@ -372,13 +462,14 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
 /// `DCSettingView` is a view that displays a user interface for changing a setting. The view takes a `DCSettable` instance as an argument
 /// and displays the appropriate user interface for the value type of the setting,  if the setting's value is a supported type.
 ///
-/// The view uses type casting to determine the value type of the setting and displays the appropriate view for that type.
+/// The view inspects the value type of the setting and displays the appropriate view for that type.
 /// If no specific view is available for the value type, the view will be empty.
 ///
 /// Supported types are: non-optional `Bool`, `Int`,  `Double`, `String`, `Date` and `Color`.
 @MainActor public struct DCSettingView: View {
 
     private let setting: any DCSettable
+    @ObservedObject private var observation: DCSettableObservation
 
     /// Initializes a new `DCSettingView` instance with the specified setting.
     ///
@@ -387,26 +478,29 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
     /// - Parameter setting: A `DCSettable` instance representing the setting to be managed.
     public init(_ setting: any DCSettable) {
         self.setting = setting
+        _observation = ObservedObject(wrappedValue: DCSettableObservation(setting: setting))
     }
 
     public var body: some View {
-        if let concreteSetting = setting as? DCSetting<Bool> {
-            DCBoolSettingView(setting: concreteSetting)
+        let _ = observation
+
+        if let value = setting._typedBinding(as: Bool.self) {
+            DCBoolSettingView(key: setting.key, label: setting.displayLabel, value: value)
         }
-        else if let concreteSetting = setting as? DCSetting<Int> {
-            DCIntSettingView(setting: concreteSetting)
+        else if let value = setting._typedBinding(as: Int.self) {
+            DCIntSettingView(key: setting.key, label: setting.displayLabel, configuration: setting._typedConfiguration(as: Int.self), value: value)
         }
-        else if let concreteSetting = setting as? DCSetting<Double> {
-            DCDoubleSettingView(setting: concreteSetting)
+        else if let value = setting._typedBinding(as: Double.self) {
+            DCDoubleSettingView(key: setting.key, label: setting.displayLabel, configuration: setting._typedConfiguration(as: Double.self), value: value)
         }
-        else if let concreteSetting = setting as? DCSetting<String> {
-            DCStringSettingView(setting: concreteSetting)
+        else if let value = setting._typedBinding(as: String.self) {
+            DCStringSettingView(key: setting.key, label: setting.displayLabel, configuration: setting._typedConfiguration(as: String.self), value: value)
         }
-        else if let concreteSetting = setting as? DCSetting<Date> {
-            DCDateSettingView(setting: concreteSetting)
+        else if let value = setting._typedBinding(as: Date.self) {
+            DCDateSettingView(key: setting.key, label: setting.displayLabel, configuration: setting._typedConfiguration(as: Date.self), value: value)
         }
-        else if let concreteSetting = setting as? DCSetting<Color> {
-            DCColorSettingView(setting: concreteSetting)
+        else if let value = setting._typedBinding(as: Color.self) {
+            DCColorSettingView(key: setting.key, label: setting.displayLabel, value: value)
         }
     }
 }
@@ -425,3 +519,5 @@ struct DCSettingView_Previews: PreviewProvider {
         .padding()
     }
 }
+
+#endif

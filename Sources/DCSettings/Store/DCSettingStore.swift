@@ -24,6 +24,11 @@ private final class UserDefaultsCache: @unchecked Sendable {
         }
 
         let store = UserDefaults(suiteName: suiteName)
+        guard let store else {
+            assertionFailure("Unable to create UserDefaults suite named '\(suiteName)'. Values for this suite will not be written to UserDefaults.standard.")
+            return nil
+        }
+
         stores[suiteName] = store
         return store
     }
@@ -51,12 +56,12 @@ public enum DCSettingStore {
     /// - Parameter backingStore: The custom key-value store to use.
     case custom(backingStore: DCKeyValueStore)
 
-    private var backingStore: DCKeyValueStore {
+    private var backingStore: DCKeyValueStore? {
         switch self {
         case .standard:
             return UserDefaults.standard
         case .userDefaults(let suiteName):
-            return userDefaultsCache.userDefaults(suiteName: suiteName) ?? .standard
+            return userDefaultsCache.userDefaults(suiteName: suiteName)
         case .ubiquitous:
             #if os(watchOS)
                 if #available(watchOS 9.0, *) {
@@ -77,6 +82,10 @@ public enum DCSettingStore {
     /// - Parameter key: The key for the value to observe.
     /// - Returns: A publisher that emits the value for the given key whenever it changes.
     public func valuePublisher(forKey key: String) -> AnyPublisher<Any?, Never> {
+        guard let backingStore else {
+            return Just(nil).eraseToAnyPublisher()
+        }
+
         return backingStore.valuePublisher(forKey: key)
     }
 
@@ -105,6 +114,10 @@ public enum DCSettingStore {
     ///   - key: The key with which to associate the value.
     /// - Returns: `true` when the value could be stored, otherwise `false`.
     @discardableResult public func set<ValueType>(_ value: ValueType?, forKey key: String) -> Bool {
+        guard let backingStore else {
+            return false
+        }
+
         guard let value else {
             backingStore.set(nil, forKey: key)
             return true
@@ -154,7 +167,7 @@ public enum DCSettingStore {
     /// - Parameter key: A key in the key-value store.
     /// - Returns: The value associated with the specified key, or `nil` if the key does not exist.
     public func object<ValueType>(forKey key: String) -> ValueType? {
-        return decodedValue(backingStore.object(forKey: key), as: ValueType.self)
+        return decodedValue(backingStore?.object(forKey: key), as: ValueType.self)
     }
 
     /// Sets a boolean value for the specified key in the key-value store.
@@ -163,7 +176,7 @@ public enum DCSettingStore {
     ///   - value: The boolean value to store in the key-value store.
     ///   - key: The key with which to associate the value.
     public func set(_ value: Bool, forKey key: String) {
-        backingStore.set(value, forKey: key)
+        backingStore?.set(value, forKey: key)
     }
 
     /// Returns a boolean value associated with the specified key.
@@ -171,7 +184,7 @@ public enum DCSettingStore {
     /// - Parameter key: A key in the key-value store.
     /// - Returns: The boolean value associated with the specified key, or `false` if the key does not exist or its value is not a boolean.
     public func bool(forKey key: String) -> Bool {
-        return backingStore.bool(forKey: key)
+        return backingStore?.bool(forKey: key) ?? false
     }
 
     /// Sets an integer value for the specified key in the key-value store.
@@ -180,7 +193,7 @@ public enum DCSettingStore {
     ///   - value: The integer value to store in the key-value store.
     ///   - key: The key with which to associate the value.
     public func set(_ value: Int, forKey key: String) {
-        backingStore.set(value, forKey: key)
+        backingStore?.set(value, forKey: key)
     }
 
     /// Returns an integer value associated with the specified key.
@@ -188,7 +201,7 @@ public enum DCSettingStore {
     /// - Parameter key: A key in the key-value store.
     /// - Returns: The integer value associated with the specified key, or `0` if the key does not exist or its value is not an integer.
     public func integer(forKey key: String) -> Int {
-        return backingStore.integer(forKey: key)
+        return backingStore?.integer(forKey: key) ?? 0
     }
 
     /// Sets a double-precision floating-point value for the specified key in the key-value store.
@@ -197,7 +210,7 @@ public enum DCSettingStore {
     ///   - value: The double-precision floating-point value to store in the key-value store.
     ///   - key: The key with which to associate the value.
     public func set(_ value: Double, forKey key: String) {
-        backingStore.set(value, forKey: key)
+        backingStore?.set(value, forKey: key)
     }
 
     /// Returns a double-precision floating-point value associated with the specified key.
@@ -206,7 +219,7 @@ public enum DCSettingStore {
     /// - Returns: The double-precision floating-point value associated with the specified key,
     /// or `0.0` if the key does not exist or its value is not a double-precision floating-point number.
     public func double(forKey key: String) -> Double {
-        return backingStore.double(forKey: key)
+        return backingStore?.double(forKey: key) ?? 0.0
     }
 
     /// Returns a string associated with the specified key.
@@ -214,7 +227,7 @@ public enum DCSettingStore {
     /// - Parameter key: A key in the key-value store.
     /// - Returns: The string associated with the specified key, or `nil` if the key does not exist or its value is not a string.
     public func string(forKey key: String) -> String? {
-        return backingStore.string(forKey: key)
+        return backingStore?.string(forKey: key)
     }
 
     private func isStandardType<T>(_ type: T.Type) -> Bool {
@@ -224,13 +237,13 @@ public enum DCSettingStore {
     private func setStandardValue<ValueType>(_ value: ValueType, forKey key: String) {
         switch value {
         case let value as Bool:
-            backingStore.set(value, forKey: key)
+            backingStore?.set(value, forKey: key)
         case let value as Int:
-            backingStore.set(value, forKey: key)
+            backingStore?.set(value, forKey: key)
         case let value as Double:
-            backingStore.set(value, forKey: key)
+            backingStore?.set(value, forKey: key)
         default:
-            backingStore.set(value, forKey: key)
+            backingStore?.set(value, forKey: key)
         }
     }
 

@@ -49,14 +49,14 @@ import Foundation
 
     /// Creates a new setting group with the specified label, store, and settings.
     ///
-    /// A new `UUID` will be used as the group's key.
+    /// If a label is provided, the label is also used as the group's key. If no label is provided, a new `UUID` will be used as the group's key.
     ///
     /// - Parameters:
     ///   - label: The label for the setting group. Defaults to `nil`.
     ///   - store: The store for the setting group. Defaults to `.standard`.
     ///   - settings: An array of settings to include in the setting group.
     public init(_ label: String? = nil, store: DCSettingStore = .standard, settings: [any DCSettable]) {
-        self.init(key: nil, label: label, store: store, settings: settings)
+        self.init(key: label, label: label, store: store, settings: settings)
     }
 
     /// Creates a new setting group with the specified key, label, store, and settings.
@@ -72,14 +72,14 @@ import Foundation
 
     /// Creates a new setting group with the specified label, store, and settings.
     ///
-    /// A new `UUID` will be used as the group's key.
+    /// If a label is provided, the label is also used as the group's key. If no label is provided, a new `UUID` will be used as the group's key.
     ///
     /// - Parameters:
     ///   - label: The label for the setting group. Defaults to `nil`.
     ///   - store: The store for the setting group. Defaults to `.standard`.
     ///   - builder: A closure that builds an array of settings using the `@DCSettingsBuilder` result builder.
     public init(_ label: String? = nil, store: DCSettingStore = .standard, @DCSettingsBuilder _ builder: @MainActor () -> [any DCSettable]) {
-        self.init(key: nil, label: label, store: store, settings: builder())
+        self.init(key: label, label: label, store: store, settings: builder())
     }
 }
 
@@ -102,10 +102,10 @@ extension DCSettingGroup {
 ///
 /// ```swift
 /// let groups = DCSettingGroupsBuilder.buildBlock(
-///     DCSettingGroup("General") {
+///     DCSettingGroup(key: "general", label: "General") {
 ///         DCSetting(key: "darkMode", defaultValue: false)
 ///     },
-///     DCSettingGroup("Appearance") {
+///     DCSettingGroup(key: "appearance", label: "Appearance") {
 ///         DCSetting(key: "fontSize", defaultValue: 14)
 ///         DCSetting(key: "fontFamily", defaultValue: "Helvetica")
 ///     }

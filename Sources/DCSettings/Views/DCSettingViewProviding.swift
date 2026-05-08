@@ -6,6 +6,8 @@
 
 import SwiftUI
 
+#if !os(tvOS)
+
 /// A protocol that defines the requirements for a type that provides custom views for settings.
 ///
 /// The `DCSettingViewProviding` protocol defines the requirements for a type that provides custom views for settings.
@@ -41,5 +43,9 @@ public struct DCDefaultViewProvider: DCSettingViewProviding {
     ///
     /// - Parameter setting: A `DCSettable` instance representing the setting to be changed.
     /// - Returns: An optional view representing the user interface for changing the specified setting. The default implementation always returns `nil`.
-    @ViewBuilder public func content(for setting: any DCSettable) -> (some View)? {}
+    public func content(for setting: any DCSettable) -> EmptyView? {
+        return nil
+    }
 }
+
+#endif

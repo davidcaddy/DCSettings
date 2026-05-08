@@ -16,6 +16,29 @@ import Combine
         case case2
     }
 
+    @MainActor private final class CustomSettable<ValueType: Equatable>: DCSettable {
+        let label: String?
+        let key: String
+        let configuration: DCSettingConfiguration<ValueType>?
+        var store: DCSettingStore?
+        var value: ValueType {
+            willSet {
+                if value != newValue {
+                    objectWillChange.send()
+                }
+            }
+        }
+
+        init(key: String, value: ValueType, label: String? = nil, configuration: DCSettingConfiguration<ValueType>? = nil) {
+            self.key = key
+            self.value = value
+            self.label = label
+            self.configuration = configuration
+        }
+
+        func refresh() {}
+    }
+
     private let backingStore: MockStore
     private let store: DCSettingStore
     private let manager: DCSettingsManager
@@ -72,6 +95,20 @@ import Combine
         #expect(backingStore.storage["key1"] == nil)
     }
 
+    @Test func setReturnsFalseForInvalidConfiguredValue() {
+        let manager = DCSettingsManager()
+
+        manager.configure {
+            DCSettingGroup("Validation", store: store) {
+                DCSetting(key: "boundedKey", defaultValue: 5, lowerBound: 0, upperBound: 10)
+            }
+        }
+
+        #expect(!manager.set(11, forKey: "boundedKey"))
+        #expect(manager.int(forKey: "boundedKey") == 5)
+        #expect(backingStore.storage["boundedKey"] == nil)
+    }
+
     @Test func configureReplacesCachedSettings() {
         manager.configure {
             DCSettingGroup("Replacement", store: store) {
@@ -90,20 +127,30 @@ import Combine
         #expect(manager.setting(forKey: "nonExistentKey") == nil)
     }
 
-    @Test func duplicateSettingKeysKeepFirstConfiguredSetting() throws {
-        let manager = DCSettingsManager()
-
-        manager.configure {
+    @Test func duplicateSettingKeysAreDetectedBeforeConfiguration() {
+        let groups = DCSettingGroupsBuilder.buildBlock(
             DCSettingGroup("Group 1", store: store) {
                 DCSetting(key: "duplicateKey", defaultValue: "first")
-            }
+            },
             DCSettingGroup("Group 2", store: store) {
                 DCSetting(key: "duplicateKey", defaultValue: "second")
             }
-        }
+        )
 
-        let setting = try #require(manager.setting(forKey: "duplicateKey") as? DCSetting<String>)
-        #expect(setting.value == "first")
+        #expect(DCSettingsManager.duplicateSettingKeys(in: groups) == ["duplicateKey"])
+    }
+
+    @Test func duplicateGroupKeysAreDetectedBeforeConfiguration() {
+        let groups = DCSettingGroupsBuilder.buildBlock(
+            DCSettingGroup("Duplicate", store: store) {
+                DCSetting(key: "first", defaultValue: "first")
+            },
+            DCSettingGroup("Duplicate", store: store) {
+                DCSetting(key: "second", defaultValue: "second")
+            }
+        )
+
+        #expect(DCSettingsManager.duplicateGroupKeys(in: groups) == ["Duplicate"])
     }
 
     @Test func valueForKey() {
@@ -111,6 +158,47 @@ import Combine
 
         #expect(value == "value1")
         #expect((manager.value(forKey: "nonExistentKey") as String?) == nil)
+    }
+
+    @Test func accessorsSupportCustomSettableConformers() throws {
+        let customSetting = CustomSettable(key: "customKey", value: "customValue")
+        let manager = DCSettingsManager()
+
+        manager.configure {
+            DCSettingGroup("Custom") {
+                customSetting
+            }
+        }
+
+        #expect(manager.value(forKey: "customKey") == "customValue")
+        #expect(manager.set("updatedValue", forKey: "customKey"))
+        #expect(customSetting.value == "updatedValue")
+
+        let binding = try #require(manager.valueBinding(forKey: "customKey") as Binding<String>?)
+        binding.wrappedValue = "boundValue"
+
+        #expect(customSetting.value == "boundValue")
+    }
+
+    @Test func setRejectsInvalidConfiguredValueForCustomSettableConformers() {
+        let customSetting = CustomSettable(
+            key: "customKey",
+            value: "first",
+            configuration: DCSettingConfiguration(options: [
+                DCSettingOption(value: "first"),
+                DCSettingOption(value: "second")
+            ])
+        )
+        let manager = DCSettingsManager()
+
+        manager.configure {
+            DCSettingGroup("Custom") {
+                customSetting
+            }
+        }
+
+        #expect(!manager.set("third", forKey: "customKey"))
+        #expect(customSetting.value == "first")
     }
 
     @Test func valuePublisherEmitsCurrentAndChangedValue() async {
@@ -127,6 +215,30 @@ import Combine
 
         #expect(await waitUntil { receivedValues.count == 2 })
         #expect(receivedValues == ["value1", "newValue"])
+    }
+
+    @Test func valuePublisherSupportsCustomSettableConformers() async {
+        let customSetting = CustomSettable(key: "customKey", value: "customValue")
+        let manager = DCSettingsManager()
+        var receivedValues: [String] = []
+        var cancellables: Set<AnyCancellable> = []
+
+        manager.configure {
+            DCSettingGroup("Custom") {
+                customSetting
+            }
+        }
+
+        manager.valuePublisher(forKey: "customKey")?
+            .sink { value in
+                receivedValues.append(value)
+            }
+            .store(in: &cancellables)
+
+        manager.set("updatedValue", forKey: "customKey")
+
+        #expect(await waitUntil { receivedValues.count == 2 })
+        #expect(receivedValues == ["customValue", "updatedValue"])
     }
 
     @Test func representedValueForKey() {

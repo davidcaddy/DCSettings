@@ -242,6 +242,23 @@ import Combine
         #expect(receivedValueCount == 1)
     }
 
+    @Test func ubiquitousStoreAcceptsIntegerValuesWithSettingKeys() {
+        #if os(watchOS)
+            if #unavailable(watchOS 9.0) {
+                return
+            }
+        #endif
+
+        let store = NSUbiquitousKeyValueStore.default
+        let key = "DCStorageConvenienceTests.\(UUID().uuidString).integer"
+
+        defer {
+            store.removeObject(forKey: key)
+        }
+
+        store.set(42, forKey: key)
+    }
+
     private func setGeneric<ValueType>(_ value: ValueType, forKey key: String, in store: DCSettingStore) -> Bool {
         store.set(value, forKey: key)
     }

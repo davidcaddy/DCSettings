@@ -6,6 +6,8 @@
 
 import SwiftUI
 
+#if !os(tvOS)
+
 /// A view that displays a list of grouped settings.
 ///
 /// `DCSettingsView` is a view that displays a list of grouped settings.
@@ -22,8 +24,14 @@ import SwiftUI
         /// A filter that includes only settings with labels.
         case labelled
 
+        /// A filter that excludes groups with the specified keys.
+        case excludeGroups([String])
+
         /// A filter that excludes settings with the specified keys.
-        case excludeKeys([String])
+        case excludeSettings([String])
+
+        /// A filter that excludes groups and settings with the specified keys.
+        case exclude(groupKeys: [String], settingKeys: [String])
     }
 
     private let settingsManager: DCSettingsManager
@@ -31,11 +39,37 @@ import SwiftUI
     private let contentProvider: Provider?
     private let listStyle: S
 
-    private var hiddenKeys: [String] {
-        if case .excludeKeys(let keys) = filter {
-            return keys
+    var visibleGroups: [DCVisibleSettingGroup] {
+        settingsManager.groups.compactMap { group in
+            guard !hiddenGroupKeys.contains(group.key.keyValue) else {
+                return nil
+            }
+
+            let visibleSettings = group.settings.filter(isVisibleSetting)
+            guard !visibleSettings.isEmpty else {
+                return nil
+            }
+
+            return DCVisibleSettingGroup(key: group.key, label: group.label, settings: visibleSettings)
         }
-        return []
+    }
+
+    private var hiddenGroupKeys: [String] {
+        switch filter {
+        case .excludeGroups(let keys), .exclude(groupKeys: let keys, settingKeys: _):
+            return keys
+        default:
+            return []
+        }
+    }
+
+    private var hiddenSettingKeys: [String] {
+        switch filter {
+        case .excludeSettings(let keys), .exclude(groupKeys: _, settingKeys: let keys):
+            return keys
+        default:
+            return []
+        }
     }
 
     /// Initializes a new `DCSettingsView` instance with the specified settings manager, filter, and content provider.
@@ -57,25 +91,39 @@ import SwiftUI
     }
 
     public var body: some View {
-        List(settingsManager.groups) { group in
-            if !hiddenKeys.contains(group.key.keyValue) {
-                Section {
-                    ForEach(group.settings, id: \.key) { setting in
-                        if ((setting.label != nil) || (filter != .labelled)) && !hiddenKeys.contains(setting.key.keyValue) {
-                            if let content = contentProvider?.content(for: setting), !(content is EmptyView) {
-                                content
-                            }
-                            else {
-                                DCSettingView(setting)
-                            }
-                        }
-                    }
-                } header: {
-                    Text(group.label?.sentenceFormatted ?? "")
+        List(visibleGroups) { group in
+            Section {
+                ForEach(group.settings, id: \.key) { setting in
+                    content(for: setting)
                 }
+            } header: {
+                Text(group.label?.sentenceFormatted ?? "")
             }
         }
         .listStyle(listStyle)
+    }
+
+    private func isVisibleSetting(_ setting: any DCSettable) -> Bool {
+        ((setting.label != nil) || (filter != .labelled)) && !hiddenSettingKeys.contains(setting.key.keyValue)
+    }
+
+    @ViewBuilder private func content(for setting: any DCSettable) -> some View {
+        if let content = contentProvider?.content(for: setting) {
+            content
+        }
+        else {
+            DCSettingView(setting)
+        }
+    }
+}
+
+struct DCVisibleSettingGroup: Identifiable {
+    let key: String
+    let label: String?
+    let settings: [any DCSettable]
+
+    var id: String {
+        return key
     }
 }
 
@@ -143,3 +191,5 @@ struct DCSettingsView_Previews: PreviewProvider {
         DCSettingsView()
     }
 }
+
+#endif
