@@ -152,13 +152,54 @@ struct DCDoubleSettingView: View {
     let configuration: DCSettingConfiguration<Double>?
     @Binding var value: Double
 
+    static func usesSlider(configuration: DCSettingConfiguration<Double>?) -> Bool {
+        return configuration?.options == nil && configuration?.bounds != nil
+    }
+
+    static func usesNumericTextField(configuration: DCSettingConfiguration<Double>?) -> Bool {
+        return configuration?.options == nil && configuration?.bounds == nil
+    }
+
     var body: some View {
         if let options = configuration?.options {
             DCOptionPickerView(key: key, label: label, options: options, value: $value)
         }
-        else {
-            DCSliderView(key: key, label: label, value: $value, bounds: configuration?.bounds, step: configuration?.step, specifier: "%.2f")
+        else if let bounds = configuration?.bounds {
+            DCSliderView(key: key, label: label, value: $value, bounds: bounds, step: configuration?.step, specifier: "%.2f")
         }
+        else {
+            DCDoubleTextFieldView(key: key, label: label, value: $value)
+        }
+    }
+}
+
+struct DCDoubleTextFieldView: View {
+    @Environment(\.isEnabled) var isEnabled
+
+    let key: String
+    let label: String
+    @Binding var value: Double
+
+    static let formatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 6
+        return formatter
+    }()
+
+    var body: some View {
+        HStack {
+            Text(label)
+            Spacer()
+            TextField(label, value: $value, formatter: Self.formatter)
+                .multilineTextAlignment(.trailing)
+                .accessibilityIdentifier(key)
+            #if os(iOS) || os(visionOS)
+                .keyboardType(.decimalPad)
+            #endif
+        }
+        .foregroundColor(isEnabled ? .primary : .secondary)
     }
 }
 
@@ -295,7 +336,7 @@ struct DCSliderView: View {
     let key: String
     let label: String
     @Binding var value: Double
-    let bounds: DCValueBounds<Double>?
+    let bounds: DCValueBounds<Double>
     let step: Double?
     let specifier: String
 
@@ -315,45 +356,39 @@ struct DCSliderView: View {
                 Text("\(value, specifier: specifier)")
                     .monospacedDigitIfAvailable()
             }
-            if let valueBounds = bounds {
-                if let valueStep = Self.usableStep(step) {
-                    Slider(value: $value, in: valueBounds.lowerBound...valueBounds.upperBound, step: valueStep) {
-                        Text(label)
-                    } minimumValueLabel: {
-                        Text("\(valueBounds.lowerBound, specifier: specifier)")
-                            .monospacedDigitIfAvailable()
-                            .foregroundColor(.secondary)
-                            .font(.footnote)
-                    } maximumValueLabel: {
-                        Text("\(valueBounds.upperBound, specifier: specifier)")
-                            .monospacedDigitIfAvailable()
-                            .foregroundColor(.secondary)
-                            .font(.footnote)
-                    }
-                    .labelsHidden()
-                    .accessibilityIdentifier(key)
+            if let valueStep = Self.usableStep(step) {
+                Slider(value: $value, in: bounds.lowerBound...bounds.upperBound, step: valueStep) {
+                    Text(label)
+                } minimumValueLabel: {
+                    Text("\(bounds.lowerBound, specifier: specifier)")
+                        .monospacedDigitIfAvailable()
+                        .foregroundColor(.secondary)
+                        .font(.footnote)
+                } maximumValueLabel: {
+                    Text("\(bounds.upperBound, specifier: specifier)")
+                        .monospacedDigitIfAvailable()
+                        .foregroundColor(.secondary)
+                        .font(.footnote)
                 }
-                else {
-                    Slider(value: $value, in: valueBounds.lowerBound...valueBounds.upperBound) {
-                        Text(label)
-                    } minimumValueLabel: {
-                        Text("\(valueBounds.lowerBound, specifier: specifier)")
-                            .monospacedDigitIfAvailable()
-                            .foregroundColor(.secondary)
-                            .font(.footnote)
-                    } maximumValueLabel: {
-                        Text("\(valueBounds.upperBound, specifier: specifier)")
-                            .monospacedDigitIfAvailable()
-                            .foregroundColor(.secondary)
-                            .font(.footnote)
-                    }
-                    .labelsHidden()
-                    .accessibilityIdentifier(key)
-                }
+                .labelsHidden()
+                .accessibilityIdentifier(key)
             }
             else {
-                Slider(value: $value)
-                    .accessibilityIdentifier(key)
+                Slider(value: $value, in: bounds.lowerBound...bounds.upperBound) {
+                    Text(label)
+                } minimumValueLabel: {
+                    Text("\(bounds.lowerBound, specifier: specifier)")
+                        .monospacedDigitIfAvailable()
+                        .foregroundColor(.secondary)
+                        .font(.footnote)
+                } maximumValueLabel: {
+                    Text("\(bounds.upperBound, specifier: specifier)")
+                        .monospacedDigitIfAvailable()
+                        .foregroundColor(.secondary)
+                        .font(.footnote)
+                }
+                .labelsHidden()
+                .accessibilityIdentifier(key)
             }
         }
         .foregroundColor(isEnabled ? .primary : .secondary)
@@ -466,6 +501,7 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
 /// If no specific view is available for the value type, the view will be empty.
 ///
 /// Supported types are: non-optional `Bool`, `Int`,  `Double`, `String`, `Date` and `Color`.
+/// Color settings are intended for RGB-resolvable user-selected colors.
 @MainActor public struct DCSettingView: View {
 
     private let setting: any DCSettable

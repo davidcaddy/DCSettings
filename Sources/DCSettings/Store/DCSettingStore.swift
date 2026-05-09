@@ -106,8 +106,9 @@ public enum DCSettingStore {
     /// Sets the value of the specified key in the key-value store.
     ///
     /// Standard property-list compatible values are stored directly. On platforms
-    /// with UIKit or AppKit, `Color` values are stored as JSON-encoded `Data`.
-    /// Other `Codable` values are also stored as JSON-encoded `Data`.
+    /// with UIKit or AppKit, RGB-resolvable `Color` values are stored as
+    /// JSON-encoded RGBA component `Data`. Other `Codable` values are also stored
+    /// as JSON-encoded `Data`.
     ///
     /// - Parameters:
     ///   - value: The value to store in the key-value store.
@@ -155,7 +156,7 @@ public enum DCSettingStore {
         }
 
         #if canImport(UIKit) || canImport(AppKit)
-            assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible, Color, or Codable.")
+            assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible, RGB-resolvable Color, or Codable.")
         #else
             assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible or Codable.")
         #endif

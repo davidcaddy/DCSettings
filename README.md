@@ -86,13 +86,15 @@ DCSettings requires Swift 6.0 or newer and supports iOS 14, macOS 11, tvOS 14, w
 - If you previously read `configuation`, move to `configuration`.
 - `DCSettable` conformers must now provide `configuration`.
 - `DCSettingStore.set(_:forKey:)` now returns `Bool` to indicate whether the value was persisted.
-- `Color` no longer conforms to `Codable` publicly through DCSettings. Color storage is handled internally on platforms with UIKit or AppKit.
+- `Color` no longer conforms to `Codable` publicly through DCSettings. RGB-resolvable colors are stored internally as RGBA components on platforms with UIKit or AppKit.
 - `DCSettingOption.labelView()` is internal in 1.0. Use the option's public `label` and `image` properties, or provide custom option UI through your own views.
 - `DCSettingView`, `DCSettingsView`, and `DCSettingViewProviding` are not available on tvOS in 1.0. The core settings and storage APIs still support tvOS.
 - `DCStoredValue`, `DCStoredRepresentedValue`, `DCSettingView`, and `DCSettingsView` now expose their main-actor isolation directly in Swift 6. Use them from the main actor.
 - `DCSetting` value types must be non-optional, and bounded defaults must satisfy their configured bounds.
 - Bounded numeric settings now require `ValueType: Numeric & Comparable`.
+- Unbounded `Double` settings now use numeric text entry in the default settings UI. Define bounds when you want a slider.
 - Group keys and setting keys must be unique across configured groups.
+- Setting option values must be unique.
 - `DCSettingGroup("Label")` now uses the label as the group key. Prefer `DCSettingGroup(key:label:)` when the key is persisted, filtered, localized, or otherwise part of app behavior.
 - `DCSettingsView.Filter` now separates `.excludeGroups(_:)` and `.excludeSettings(_:)`; use `.exclude(groupKeys:settingKeys:)` to hide both.
 - The fully generic `DCSettingsView(settingsManager:filter:contentProvider:listStyle:)` initializer no longer supplies default `contentProvider` or `listStyle` arguments. Use the convenience initializers, such as `DCSettingsView()`, `DCSettingsView(filter:)`, `DCSettingsView(contentProvider:)`, or `DCSettingsView(listStyle:)`, for the default provider and platform list style.
@@ -168,11 +170,11 @@ Group keys and setting keys must be unique across all groups configured in a `DC
 
 `DCSettingGroup("General")` uses `"General"` as both the group label and the group key. Prefer `DCSettingGroup(key:label:)` when the key is persisted, filtered, localized, or otherwise part of app behavior. `DCSettingGroup()` uses a generated key and is best reserved for groups that never need stable identity.
 
-> Note: `DCSetting` supports non-optional values for the following types by default: `Bool`, `Int`, `Double`, `String`, `Date`, and `Color` (SwiftUI). `Color` storage is available on platforms with UIKit or AppKit. You can also use custom non-optional types when they conform to `Codable`.
+> Note: `DCSetting` supports non-optional values for the following types by default: `Bool`, `Int`, `Double`, `String`, `Date`, and `Color` (SwiftUI). `Color` storage is available for RGB-resolvable colors on platforms with UIKit or AppKit. You can also use custom non-optional types when they conform to `Codable`.
 
 In addition to these basic properties, `DCSetting` instances can also have additional configuration options. These options are specified using the `DCSettingConfiguration` struct.
 
-One of the options available in `DCSettingConfiguration` is the options property. This property allows you to specify an array of `DCSettingOption` instances that represent the valid values for the setting. Values outside this option list are ignored. Each `DCSettingOption` has a value and can also have an optional label and image.
+One of the options available in `DCSettingConfiguration` is the options property. This property allows you to specify an array of `DCSettingOption` instances that represent the valid values for the setting. Option values must be unique, and values outside this option list are ignored. Each `DCSettingOption` has a value and can also have an optional label and image.
 
 Another configuration option available in `DCSettingConfiguration` is the bounds property. This property allows you to specify a range of valid values for the setting using a `DCValueBounds` instance. A `DCValueBounds` instance has a lower bound and an upper bound that define the range of valid values. Comparable values outside this range are ignored.
 
@@ -248,7 +250,7 @@ DCSettingsManager.shared.configure {
 
 ### Storage contract
 
-DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. On platforms with UIKit or AppKit, `Color` values are handled as a built-in type and stored as JSON-encoded `Data`; on watchOS, the default settings UI displays `Color` values without editing and built-in `Color` storage is not available. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. `DCSetting` value types must be non-optional; model unset, inherited, or system-default states with a concrete default value or an explicit enum case. Values that are neither property-list compatible nor a supported `Color` or `Codable` value are rejected in debug builds with an assertion and are not persisted.
+DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. On platforms with UIKit or AppKit, RGB-resolvable `Color` values are handled as a built-in type and stored as JSON-encoded RGBA component `Data`; on watchOS, the default settings UI displays `Color` values without editing and built-in `Color` storage is not available. Dynamic, semantic, asset catalog, pattern, or otherwise non-RGB-resolvable colors may not persist, and stored colors do not preserve named or dynamic color semantics. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. `DCSetting` value types must be non-optional; model unset, inherited, or system-default states with a concrete default value or an explicit enum case. Values that are neither property-list compatible nor a supported RGB-resolvable `Color` or `Codable` value are rejected in debug builds with an assertion and are not persisted.
 
 Custom `DCKeyValueStore` implementations should accept `Data` values if they need to support custom `Codable` setting types.
 
@@ -306,10 +308,10 @@ When you use a `DCSettingsView` to display your settings, each setting will be p
 
 - `Bool`: Settings with a Bool value type are presented as a toggle switch. The user can tap the switch to turn the setting on or off.
 - `Int`: Settings with an Int value type are presented in several different ways depending on their configuration. If the setting has options, it will be presented as a segmented control or a popover menu, depending on the number of options. If the setting has value bounds, it will be presented as a slider. Otherwise, it will be presented as a stepper control.
-- `Double`: Settings with a Double value type are presented in several different ways depending on their configuration. If the setting has options, it will be presented as a segmented control or a popover menu, depending on the number of options. Otherwise, it will be presented as a slider. Unbounded Double sliders use SwiftUI's default slider range; provide bounds for domain-specific ranges.
+- `Double`: Settings with a Double value type are presented in several different ways depending on their configuration. If the setting has options, it will be presented as a segmented control or a popover menu, depending on the number of options. If the setting has value bounds, it will be presented as a slider. Otherwise, it will be presented as numeric text entry.
 - `String`: Settings with a String value type are presented in several different ways depending on their configuration. If the setting has options, it will be presented as a segmented control or a menu, depending on the number of options. Otherwise, it will be presented as a text field.
 - `Date`: Settings with a Date value type are presented as a date picker. On watchOS, date editing is available on watchOS 10 or newer; earlier watchOS versions display the current date without editing.
-- `Color`: Settings with a Color value type are presented as a color picker on iOS, macOS, and visionOS. On watchOS, color settings display the current color without editing.
+- `Color`: Settings with a Color value type are presented as a color picker on iOS, macOS, and visionOS. On watchOS, color settings display the current color without editing. Use Color settings for user-selected RGB-resolvable colors; persist a custom `Codable` token or enum for stable named themes, semantic colors, dynamic colors, or asset colors.
 
 ### Customization
 

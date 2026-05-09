@@ -87,6 +87,37 @@ import Combine
         #expect(DCSliderView.usableStep(0.25) == 0.25)
     }
 
+    @Test func doubleSettingViewUsesSliderOnlyWhenBoundsAreDefined() {
+        let boundedConfiguration = DCSettingConfiguration<Double>(bounds: DCValueBounds(lowerBound: 0.0, upperBound: 1.0))
+        let optionConfiguration = DCSettingConfiguration<Double>(options: [
+            DCSettingOption(value: 0.5, label: "Half"),
+            DCSettingOption(value: 1.0, label: "Full")
+        ])
+        let optionAndBoundsConfiguration = DCSettingConfiguration<Double>(
+            options: [
+                DCSettingOption(value: 0.5, label: "Half"),
+                DCSettingOption(value: 1.0, label: "Full")
+            ],
+            bounds: DCValueBounds(lowerBound: 0.0, upperBound: 1.0)
+        )
+
+        #expect(DCDoubleSettingView.usesSlider(configuration: boundedConfiguration))
+        #expect(!DCDoubleSettingView.usesNumericTextField(configuration: boundedConfiguration))
+        #expect(!DCDoubleSettingView.usesSlider(configuration: optionConfiguration))
+        #expect(!DCDoubleSettingView.usesNumericTextField(configuration: optionConfiguration))
+        #expect(!DCDoubleSettingView.usesSlider(configuration: optionAndBoundsConfiguration))
+        #expect(!DCDoubleSettingView.usesNumericTextField(configuration: optionAndBoundsConfiguration))
+        #expect(!DCDoubleSettingView.usesSlider(configuration: nil))
+        #expect(DCDoubleSettingView.usesNumericTextField(configuration: nil))
+    }
+
+    @Test func doubleTextFieldFormatterSupportsDecimalValues() {
+        let value = DCDoubleTextFieldView.formatter.string(from: NSNumber(value: 1.25))
+        let decimalSeparator = DCDoubleTextFieldView.formatter.decimalSeparator ?? "."
+
+        #expect(value == "1\(decimalSeparator)25")
+    }
+
     @Test func displayOnlyDateViewExposesBody() {
         let view = DCDisplayOnlyDateView(key: "publishedDate", label: "Published Date", value: Date(timeIntervalSince1970: 1_704_067_200))
 

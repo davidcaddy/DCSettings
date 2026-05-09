@@ -21,6 +21,21 @@ import Testing
         #expect(configuration.options == options)
     }
 
+    @Test func duplicateOptionValuesAreDetected() {
+        let uniqueOptions = [
+            DCSettingOption(value: "option1"),
+            DCSettingOption(value: "option2")
+        ]
+        let duplicateOptions = [
+            DCSettingOption(value: "option1", label: "First"),
+            DCSettingOption(value: "option1", label: "Duplicate")
+        ]
+
+        #expect(!DCSettingConfiguration<String>.hasDuplicateOptionValues(nil))
+        #expect(!DCSettingConfiguration.hasDuplicateOptionValues(uniqueOptions))
+        #expect(DCSettingConfiguration.hasDuplicateOptionValues(duplicateOptions))
+    }
+
     @Test func initWithBounds() {
         let bounds = DCValueBounds(lowerBound: 0, upperBound: 10)
         let configuration = DCSettingConfiguration(options: nil, bounds: bounds, step: nil)
