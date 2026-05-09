@@ -87,6 +87,13 @@ import Combine
         #expect(DCSliderView.usableStep(0.25) == 0.25)
     }
 
+    @Test func intSettingViewDefaultsInvalidStepsToOne() {
+        #expect(DCIntSettingView.usableStep(nil) == 1)
+        #expect(DCIntSettingView.usableStep(0) == 1)
+        #expect(DCIntSettingView.usableStep(-1) == 1)
+        #expect(DCIntSettingView.usableStep(2) == 2)
+    }
+
     @Test func doubleSettingViewUsesSliderOnlyWhenBoundsAreDefined() {
         let boundedConfiguration = DCSettingConfiguration<Double>(bounds: DCValueBounds(lowerBound: 0.0, upperBound: 1.0))
         let optionConfiguration = DCSettingConfiguration<Double>(options: [

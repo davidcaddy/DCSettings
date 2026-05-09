@@ -92,6 +92,14 @@ struct DCIntSettingView: View {
     let configuration: DCSettingConfiguration<Int>?
     @Binding var value: Int
 
+    static func usableStep(_ step: Int?) -> Int {
+        guard let step, step > 0 else {
+            return 1
+        }
+
+        return step
+    }
+
     var body: some View {
         if let options = configuration?.options {
             DCOptionPickerView(key: key, label: label, options: options, value: $value)
@@ -101,9 +109,10 @@ struct DCIntSettingView: View {
                 Double(value)
             }, set: { newValue in
                 value = Int(newValue)
-            }), bounds: DCValueBounds(lowerBound: Double(bounds.lowerBound), upperBound: Double(bounds.upperBound)), step: configuration?.step.map { Double($0) }, specifier: "%.0f")
+            }), bounds: DCValueBounds(lowerBound: Double(bounds.lowerBound), upperBound: Double(bounds.upperBound)), step: Double(Self.usableStep(configuration?.step)), specifier: "%.0f")
         }
         else {
+            let step = Self.usableStep(configuration?.step)
             HStack {
                 Text(label)
                     .foregroundColor(isEnabled ? .primary : .secondary)
@@ -112,14 +121,14 @@ struct DCIntSettingView: View {
                     .padding(.trailing, 8.0)
                 #if os(watchOS)
                     if #available(watchOS 9.0, *) {
-                        Stepper(label, value: $value)
+                        Stepper(label, value: $value, step: step)
                             .labelsHidden()
                             .accessibilityIdentifier(key)
                     }
                     else {
                         HStack(spacing: 8.0) {
                             Button {
-                                value -= 1
+                                value -= step
                             } label: {
                                 Image(systemName: "minus")
                             }
@@ -127,7 +136,7 @@ struct DCIntSettingView: View {
                             .accessibilityIdentifier("\(key).decrement")
 
                             Button {
-                                value += 1
+                                value += step
                             } label: {
                                 Image(systemName: "plus")
                             }
@@ -136,7 +145,7 @@ struct DCIntSettingView: View {
                         }
                     }
                 #else
-                    Stepper(label, value: $value)
+                    Stepper(label, value: $value, step: step)
                         .labelsHidden()
                         .accessibilityIdentifier(key)
                 #endif
