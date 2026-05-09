@@ -265,6 +265,8 @@ Custom `DCKeyValueStore` implementations should accept `Data` values if they nee
 
 > Note: `DCSettingStore.userDefaults(suiteName:)` requires the named suite to be creatable. Invalid suite names fail loudly in debug builds rather than falling back to `.standard`.
 
+Set `DCSETTINGS_RUN_ICLOUD_TESTS=1` when running tests to include the `NSUbiquitousKeyValueStore` integration checks.
+
 ```swift
 DCSettingsManager.shared.configure {
     DCSettingGroup(key: "general", label: "General") {
