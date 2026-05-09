@@ -79,13 +79,16 @@ dependencies: [
 
 DCSettings requires Swift 6.0 or newer and supports iOS 14, macOS 11, tvOS 14, watchOS 7, and visionOS 2 or newer. The settings configuration and storage APIs are available on tvOS, but `DCSettingView`, `DCSettingsView`, and the default SwiftUI settings UI are not available on tvOS in 1.0. `DCSettingStore.ubiquitous` requires watchOS 9 or newer.
 
-`DCSettingsManager`, `DCSetting`, the stored-value property wrappers, and the SwiftUI settings views are main-actor isolated. Configure, read, and write settings through `DCSettingsManager` from the main actor. The lower-level `DCSettingStore` and `DCKeyValueStore` storage APIs remain actor-neutral.
+`DCSettingsManager`, `DCSetting`, the stored-value property wrappers, and the SwiftUI settings views are main-actor isolated. Configure, read, and write settings through `DCSettingsManager` from the main actor. The lower-level `DCSettingStore` and `DCKeyValueStore` storage APIs remain actor-neutral and are `Sendable`; custom `DCKeyValueStore` implementations must also be safe to pass across concurrency domains.
+
+Configure a `DCSettingsManager` once before presenting `DCSettingsView` or constructing `DCStoredValue` and `DCStoredRepresentedValue` wrappers. Calling `configure` again replaces manager lookup state, but already-created views and stored-value wrappers keep observing the setting instances they were created with.
 
 ### Migration Notes
 
 - If you previously read `configuation`, move to `configuration`.
 - `DCSettable` conformers must now provide `configuration`.
 - `DCSettingStore.set(_:forKey:)` now returns `Bool` to indicate whether the value was persisted.
+- `DCKeyValueStore` now requires `Sendable`; custom stores should be thread-safe or explicitly audited.
 - `Color` no longer conforms to `Codable` publicly through DCSettings. RGB-resolvable colors are stored internally as RGBA components on platforms with UIKit or AppKit.
 - `DCSettingOption.labelView()` is internal in 1.0. Use the option's public `label` and `image` properties, or provide custom option UI through your own views.
 - `DCSettingView`, `DCSettingsView`, and `DCSettingViewProviding` are not available on tvOS in 1.0. The core settings and storage APIs still support tvOS.
@@ -138,6 +141,8 @@ import DCSettings
 ## Configuring Settings
 
 To configure settings, use the `configure` method on a `DCSettingsManager` instance, typically the shared singleton instance. `DCSettingsManager` is main-actor isolated, so call `configure` from the main actor. This method takes a closure that returns an array of `DCSettingGroup` instances. Each `DCSettingGroup` can contain multiple `DCSetting` instances.
+
+Configure the manager before creating settings UI or stored-value wrappers. `configure` can replace the manager's lookup state, but existing `DCSettingsView`, `DCStoredValue`, and `DCStoredRepresentedValue` instances do not rebind to newly-created setting objects.
 
 Here’s an example of how you might configure your settings:
 
@@ -252,7 +257,7 @@ DCSettingsManager.shared.configure {
 
 DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. On platforms with UIKit or AppKit, RGB-resolvable `Color` values are handled as a built-in type and stored as JSON-encoded RGBA component `Data`; on watchOS, the default settings UI displays `Color` values without editing and built-in `Color` storage is not available. Dynamic, semantic, asset catalog, pattern, or otherwise non-RGB-resolvable colors may not persist, and stored colors do not preserve named or dynamic color semantics. Other values must conform to `Codable`; they are JSON-encoded to `Data` before storage and decoded when read back. `DCSetting` value types must be non-optional; model unset, inherited, or system-default states with a concrete default value or an explicit enum case. Values that are neither property-list compatible nor a supported RGB-resolvable `Color` or `Codable` value are rejected in debug builds with an assertion and are not persisted.
 
-Custom `DCKeyValueStore` implementations should accept `Data` values if they need to support custom `Codable` setting types.
+Custom `DCKeyValueStore` implementations should accept `Data` values if they need to support custom `Codable` setting types. Custom stores must also be `Sendable`; use internal synchronization or another concurrency-safe design when storing mutable state.
 
 **DCSettings** also supports using `NSUbiquitousKeyValueStore` as a key-value store for your settings, which is a key-value store that stores data in iCloud, allowing settings to be shared across multiple devices. Here’s an example that shows how to use `NSUbiquitousKeyValueStore` for a setting group:
 
@@ -333,9 +338,9 @@ Here’s an example that shows how you might create a custom `DCSettingViewProvi
 
 ```swift
 struct MySettingViewProvider: DCSettingViewProviding {
-    func content(for setting: any DCSettable) -> (some View)? {
+    func content(for setting: any DCSettable) -> AnyView? {
         if setting.key == "showNotifications", let concreteSetting = setting as? DCSetting<Bool> {
-            return Toggle("Show Notifications", isOn: concreteSetting.valueBinding())
+            return AnyView(Toggle("Show Notifications", isOn: concreteSetting.valueBinding()))
         }
 
         return nil

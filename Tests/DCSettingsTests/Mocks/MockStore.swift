@@ -8,7 +8,7 @@ import Foundation
 import Combine
 import DCSettings
 
-class MockStore: DCKeyValueStore {
+final class MockStore: DCKeyValueStore, @unchecked Sendable {
     enum SetMethod {
         case object
         case bool

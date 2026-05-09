@@ -5,6 +5,7 @@
 //
 
 import Testing
+import Foundation
 import SwiftUI
 import Combine
 @testable import DCSettings
@@ -19,6 +20,10 @@ import Combine
     private struct StoredLayout: Codable, Equatable {
         let name: String
         let columns: Int
+    }
+
+    private static var runsICloudIntegrationTests: Bool {
+        ProcessInfo.processInfo.environment["DCSETTINGS_RUN_ICLOUD_TESTS"] == "1"
     }
 
     #if canImport(UIKit) || canImport(AppKit)
@@ -211,6 +216,10 @@ import Combine
     }
 
     @Test func ubiquitousValuePublisherIgnoresUnrelatedChangedKeysNotification() async {
+        guard Self.runsICloudIntegrationTests else {
+            return
+        }
+
         #if os(watchOS)
             if #unavailable(watchOS 9.0) {
                 return
@@ -243,6 +252,10 @@ import Combine
     }
 
     @Test func ubiquitousStoreAcceptsIntegerValuesWithSettingKeys() {
+        guard Self.runsICloudIntegrationTests else {
+            return
+        }
+
         #if os(watchOS)
             if #unavailable(watchOS 9.0) {
                 return

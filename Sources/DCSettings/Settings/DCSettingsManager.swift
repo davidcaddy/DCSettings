@@ -15,6 +15,11 @@ import Combine
 ///
 /// `DCSettingsManager` also provides convenience methods for accessing and modifying settings directly.
 ///
+/// Configure a manager before presenting `DCSettingsView` or constructing `DCStoredValue`
+/// and `DCStoredRepresentedValue` wrappers. Reconfiguring a manager replaces its lookup
+/// state, but already-created views and stored-value wrappers keep observing the setting
+/// instances they were created with.
+///
 /// Example usage:
 ///
 /// ```swift
@@ -43,6 +48,10 @@ import Combine
     public init() {}
 
     /// Configures the manager with an array of setting groups.
+    ///
+    /// Call this before presenting settings UI or constructing stored-value property wrappers.
+    /// Calling it again replaces manager lookup state, but does not update already-created
+    /// `DCSettingsView`, `DCStoredValue`, or `DCStoredRepresentedValue` instances.
     ///
     /// - Parameter settingGroups: An array of `DCSettingGroup` values representing the setting groups to be managed by the manager.
     public func configure(groups settingGroups: [DCSettingGroup]) {
@@ -95,6 +104,10 @@ import Combine
     }
 
     /// Configures the manager with a result builder that produces an array of setting groups.
+    ///
+    /// Call this before presenting settings UI or constructing stored-value property wrappers.
+    /// Calling it again replaces manager lookup state, but does not update already-created
+    /// `DCSettingsView`, `DCStoredValue`, or `DCStoredRepresentedValue` instances.
     ///
     /// - Parameter builder: A result builder that produces an array of `DCSettingGroup` values
     /// representing the setting groups to be managed by the manager.

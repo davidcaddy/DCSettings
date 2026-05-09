@@ -21,6 +21,7 @@ public struct DCStoredRepresentedValue<ValueType>: DynamicProperty where ValueTy
     /// The current represented value of the wrapped property.
     ///
     /// When this property is accessed or modified, the value will be automatically loaded from or saved to the store using the `DCSetting` instance.
+    /// Assigning `nil` is ignored because the underlying setting stores a non-optional raw value.
     public var wrappedValue: ValueType? {
         get {
             ValueType(rawValue: setting.value)
@@ -39,6 +40,7 @@ public struct DCStoredRepresentedValue<ValueType>: DynamicProperty where ValueTy
     ///
     /// If a `DCSetting` instance with the specified key already exists in the settings manager, it will be used to initialize the `StateObject` property.
     /// Otherwise, a runtime error will occur.
+    /// The wrapper captures this setting instance when it is initialized; configure the settings manager before constructing the wrapper.
     ///
     /// - Parameters:
     ///   - key: The key used to identify the setting in the store.

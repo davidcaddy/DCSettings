@@ -35,7 +35,7 @@ private final class UserDefaultsCache: @unchecked Sendable {
 }
 
 /// An enumeration that represents different types of key-value stores.
-public enum DCSettingStore {
+public enum DCSettingStore: Sendable {
 
     /// The standard `UserDefaults` key-value store.
     case standard
@@ -68,7 +68,8 @@ public enum DCSettingStore {
                     return NSUbiquitousKeyValueStore.default
                 }
 
-                return UserDefaults.standard
+                assertionFailure("DCSettingStore.ubiquitous requires watchOS 9.0 or newer.")
+                return nil
             #else
                 return NSUbiquitousKeyValueStore.default
             #endif

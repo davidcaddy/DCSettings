@@ -256,7 +256,9 @@ extension DCSettable {
     ///   - defaultIndex: The index of the default option in the options array.
     public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, options: [ValueType], defaultIndex: Int) where ValueType: LosslessStringConvertible {
         if let defaultValue = options.get(defaultIndex) {
-            let configuredOptions = options.map { DCSettingOption(value: $0, label: String($0)) }
+            let configuredOptions = options.enumerated().map { index, value in
+                DCSettingOption(value: value, label: String(value), isDefault: index == defaultIndex)
+            }
             self.init(key: key, value: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
         }
         else {

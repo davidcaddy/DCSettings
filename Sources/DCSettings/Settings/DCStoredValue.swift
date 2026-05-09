@@ -44,6 +44,7 @@ public struct DCStoredValue<ValueType>: DynamicProperty where ValueType: Equatab
     ///
     /// If a `DCSetting` instance with the specified key already exists in the settings manager, it will be used to initialize the `StateObject` property.
     /// Otherwise, a runtime error will occur.
+    /// The wrapper captures this setting instance when it is initialized; configure the settings manager before constructing the wrapper.
     ///
     /// - Parameters:
     ///   - key: The key used to identify the setting in the store.

@@ -105,6 +105,7 @@ import Combine
         let setting = try #require(DCSetting(key: "testKey", store: store, options: options, defaultIndex: 1))
 
         #expect(setting.value == "option2")
+        #expect(setting.configuration?.options?[1].isDefault == true)
     }
 
     @Test func initWithBounds() {

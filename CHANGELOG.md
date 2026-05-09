@@ -37,12 +37,14 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 - If you previously read `configuation`, move to `configuration`.
 - Custom `DCSettable` conformers must provide `configuration`.
 - `DCSettingStore.set(_:forKey:)` now returns `Bool` to indicate whether the value was persisted.
+- `DCKeyValueStore` now requires `Sendable`; custom stores should be thread-safe or explicitly audited.
 - `Color` no longer conforms to `Codable` publicly through DCSettings. RGB-resolvable colors are stored internally as RGBA components on platforms with UIKit or AppKit; persist a custom `Codable` token or enum for stable named themes, semantic colors, dynamic colors, or asset colors.
 - `DCSettingOption.labelView()` is now internal. Use the option's public `label` and `image` properties, or provide custom option UI through your own views.
 - `DCSettingView`, `DCSettingsView`, and `DCSettingViewProviding` are not available on tvOS in 1.0. The core settings and storage APIs still support tvOS.
 - Configure, read, and write settings through `DCSettingsManager` from the main actor.
+- Configure a `DCSettingsManager` before presenting settings UI or constructing stored-value wrappers. Reconfiguring replaces manager lookup state, but already-created views and wrappers keep observing their original setting instances.
 - `DCStoredValue`, `DCStoredRepresentedValue`, `DCSettingView`, and `DCSettingsView` now expose their main-actor isolation directly in Swift 6. If you use them from nonisolated or background contexts, hop to the main actor first.
-- Custom `DCKeyValueStore` implementations should accept `Data` values to support custom Codable setting types.
+- Custom `DCKeyValueStore` implementations should be concurrency-safe and accept `Data` values to support custom Codable setting types.
 - `DCSetting` value types must be non-optional. Model unset, inherited, or system-default states with a concrete default value or an explicit enum case.
 - Bounded defaults must satisfy their configured bounds.
 - Numeric bounded settings now require `ValueType: Numeric & Comparable`. This matches the new bounds validation behavior and may affect custom numeric-like types.
