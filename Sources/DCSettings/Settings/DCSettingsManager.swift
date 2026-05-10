@@ -8,31 +8,27 @@ import Foundation
 import SwiftUI
 import Combine
 
-/// `DCSettingsManager` is a class that manages the settings for an application.
+/// Manages an application's settings as a collection of `DCSettingGroup`s.
 ///
-/// It provides a way to configure and access settings through a set of `DCSettingGroup`s.
-/// Each group contains a set of `DCSettable` settings that can be accessed and modified.
-///
-/// `DCSettingsManager` also provides convenience methods for accessing and modifying settings directly.
+/// `DCSettingsManager` configures setting groups, exposes the contained `DCSettable`
+/// instances by key, and offers convenience accessors for reading and writing values.
 ///
 /// Configure a manager before presenting `DCSettingsView` or constructing `DCStoredValue`
-/// and `DCStoredRepresentedValue` wrappers. Reconfiguring a manager replaces its lookup
-/// state, but already-created views and stored-value wrappers keep observing the setting
-/// instances they were created with.
+/// and `DCStoredRepresentedValue` wrappers. Reconfiguring replaces the manager's lookup
+/// state, but already-created views and stored-value wrappers continue to observe their
+/// original setting instances.
 ///
 /// Example usage:
 ///
 /// ```swift
 /// let manager = DCSettingsManager.shared
 ///
-/// // Configure the manager with setting groups
 /// manager.configure {
-    ///     DCSettingGroup(key: "general", label: "General") {
-    ///         DCSetting(key: "darkMode", defaultValue: false)
-    ///     }
+///     DCSettingGroup(key: "general", label: "General") {
+///         DCSetting(key: "darkMode", defaultValue: false)
+///     }
 /// }
 ///
-/// // Access and modify a setting
 /// let darkMode = manager.bool(forKey: "darkMode")
 /// manager.set(!darkMode, forKey: "darkMode")
 /// ```
@@ -50,8 +46,9 @@ import Combine
     /// Configures the manager with an array of setting groups.
     ///
     /// Call this before presenting settings UI or constructing stored-value property wrappers.
-    /// Calling it again replaces manager lookup state, but does not update already-created
-    /// `DCSettingsView`, `DCStoredValue`, or `DCStoredRepresentedValue` instances.
+    /// Calling it again replaces manager lookup state, but already-created `DCSettingsView`,
+    /// `DCStoredValue`, and `DCStoredRepresentedValue` instances continue to observe their
+    /// original setting objects.
     ///
     /// - Parameter settingGroups: An array of `DCSettingGroup` values representing the setting groups to be managed by the manager.
     public func configure(groups settingGroups: [DCSettingGroup]) {
@@ -106,8 +103,9 @@ import Combine
     /// Configures the manager with a result builder that produces an array of setting groups.
     ///
     /// Call this before presenting settings UI or constructing stored-value property wrappers.
-    /// Calling it again replaces manager lookup state, but does not update already-created
-    /// `DCSettingsView`, `DCStoredValue`, or `DCStoredRepresentedValue` instances.
+    /// Calling it again replaces manager lookup state, but already-created `DCSettingsView`,
+    /// `DCStoredValue`, and `DCStoredRepresentedValue` instances continue to observe their
+    /// original setting objects.
     ///
     /// - Parameter builder: A result builder that produces an array of `DCSettingGroup` values
     /// representing the setting groups to be managed by the manager.

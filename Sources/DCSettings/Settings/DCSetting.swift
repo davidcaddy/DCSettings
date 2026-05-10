@@ -26,15 +26,11 @@ extension DCValueBounds: DCComparableValueBounds where ValueType: Comparable {
     }
 }
 
-/// A protocol that represents a settable value with a specific type.
+/// A type-erased view of a settable value backed by a `DCSettingStore`.
 ///
-/// The `DCSettable` protocol defines the requirements for a type that represents a settable value with a specific type.
-/// The value type must conform to the `Equatable` protocol.
-///
-/// The protocol includes properties for the label and key of the setting, as well as the current value and configuration of the setting.
-/// It also includes a property for the `DCSettingStore` instance used to store the setting value.
-///
-/// The protocol also includes a `refresh` method that can be used to refresh the setting value from the store.
+/// Conformers expose a `value` of `ValueType: Equatable`, an identifying `key`, an optional
+/// `label`, an optional `configuration` (options/bounds/step), and the `store` used for
+/// persistence. Call `refresh()` to reload the current value from the store.
 @MainActor public protocol DCSettable<ValueType>: ObservableObject where ValueType: Equatable {
 
     /// The type of value associated with the setting.
@@ -124,19 +120,15 @@ extension DCSettable {
     }
 }
 
-/// A class that represents a settable value with a specific type.
+/// The default `DCSettable` implementation: a settable value of a specific type, persisted via a `DCSettingStore`.
 ///
-/// The `DCSetting` class is a concrete implementation of the `DCSettable` protocol that represents a settable value with a specific type.
-/// The value type must conform to the `Equatable` protocol.
+/// `DCSetting` provides convenience initializers for plain default values, fixed option lists,
+/// numeric bounds, and result-builder option DSLs.
 ///
-/// The class includes properties for the label and key of the setting, as well as the current value and configuration of the setting.
-///
-/// It also includes a property for the `DCSettingStore` instance used to store the setting value.
-///
-/// The class also includes several convenience initializers that can be used to create new instances of `DCSetting` with different configurations.
-///
-/// - Important: Optional value types, such as `String?`, are not supported. Model unset, inherited, or system-default states with a concrete default value or an explicit enum case.
-/// - Note: If the store is not set when the setting is configured by a manager instance, the store of the group in which the setting resides will be used.
+/// - Important: Optional value types, such as `String?`, are not supported. Model unset, inherited,
+///   or system-default states with a concrete default value or an explicit enum case.
+/// - Note: When `store` is `nil` at configuration time, the manager assigns the containing
+///   group's store.
 @MainActor public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
 
     /// The key used to identify the setting in the store.
@@ -354,13 +346,9 @@ extension DCSettable {
         }
     }
 
-    /// Refreshes the setting value from the store.
+    /// Reloads the setting's value from its store and starts observing further changes.
     ///
-    /// This method refreshes the current value of the setting from the store.
-    /// If a new value is found in the store and is different from the current value, the current value will be updated.
-    ///
-    /// This is called during the initial configuration of the setting by the managing `DCSettingsManager` instance.
-    /// Calling this directly on a setting should be avoided.
+    /// `DCSettingsManager` calls this during configuration. Avoid invoking it directly.
     public func refresh() {
         if let newValue: ValueType = store?.object(forKey: key), value != newValue, isValid(newValue) {
             _value = newValue
@@ -380,12 +368,7 @@ extension DCSettable {
         _isValidConfiguredValue(value)
     }
 
-    /// Returns a binding for the current value of the setting.
-    ///
-    /// This method returns a `Binding` instance for the current value of the setting.
-    /// The binding can be used to bind the setting value to a user interface element.
-    ///
-    /// - Returns: A `Binding` instance for the current value of the setting.
+    /// Returns a `Binding` to the setting's current value, suitable for SwiftUI controls.
     public func valueBinding() -> Binding<ValueType> {
         return Binding {
             self.value

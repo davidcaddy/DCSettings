@@ -6,21 +6,18 @@
 
 import SwiftUI
 
-/// A property wrapper that wraps the represented value of a setting stored in a `DCSettingStore`.
+/// A property wrapper that exposes a `RawRepresentable` view of a setting whose stored value is the raw type.
 ///
-/// The `DCStoredRepresentedValue` property wrapper can be used to wrap a value that is stored in a `DCSettingStore`.
-/// It attempts to convert the raw value of the setting to its represented value when being accessed, and does the inverse when being set.
-/// This is useful when working with settings that have raw representable values such as enums or option sets.
-///
-/// When the wrapped value is accessed or modified, the value will be automatically loaded from or saved to the store using a `DCSetting` instance.
+/// Reads convert the underlying raw value back into `ValueType`; writes store the new
+/// value's `rawValue`. Useful for enum- or option-set-backed settings.
 @MainActor @propertyWrapper
 public struct DCStoredRepresentedValue<ValueType>: DynamicProperty where ValueType: RawRepresentable, ValueType.RawValue: Equatable {
 
     @StateObject private var setting: DCSetting<ValueType.RawValue>
 
-    /// The current represented value of the wrapped property.
+    /// The setting's value, converted to and from `ValueType` via its `rawValue`.
     ///
-    /// When this property is accessed or modified, the value will be automatically loaded from or saved to the store using the `DCSetting` instance.
+    /// Returns `nil` if the stored raw value cannot be converted back to `ValueType`.
     /// Assigning `nil` is ignored because the underlying setting stores a non-optional raw value.
     public var wrappedValue: ValueType? {
         get {
@@ -33,22 +30,19 @@ public struct DCStoredRepresentedValue<ValueType>: DynamicProperty where ValueTy
         }
     }
 
-    /// Initializes a new `DCStoredRepresentedValue` instance with the specified key and settings manager.
+    /// Looks up the setting with the specified key in the given settings manager and captures it.
     ///
-    /// This initializer creates a new instance of `DCStoredRepresentedValue` with the specified key and settings manager.
-    /// The key is required, while the settings manager is optional and defaults to the `.shared` singleton instance.
-    ///
-    /// If a `DCSetting` instance with the specified key already exists in the settings manager, it will be used to initialize the `StateObject` property.
-    /// Otherwise, a runtime error will occur.
-    /// The wrapper captures this setting instance when it is initialized; configure the settings manager before constructing the wrapper.
+    /// The wrapper captures the setting instance at initialization, so the manager must be
+    /// configured before the wrapper is constructed. Reconfiguring the manager later does not
+    /// rebind existing wrappers to newly-created setting objects.
     ///
     /// - Parameters:
-    ///   - key: The key used to identify the setting in the store.
-    ///   - settingsManager: An optional `DCSettingsManager` instance used to manage the setting.
-    ///   The default value is the `.shared` singleton instance.
+    ///   - key: The key used to identify the setting in the manager.
+    ///   - settingsManager: The `DCSettingsManager` used to look up the setting.
+    ///   Defaults to `.shared`.
     ///
-    /// - Warning: A value for the given key must be set in the specified settings manager before using this initializer.
-    /// If no value is found for the given key, a runtime error will occur.
+    /// - Warning: A `DCSetting<ValueType.RawValue>` for `key` must already be configured in
+    /// `settingsManager`. Otherwise this initializer traps.
     public init(_ key: DCKeyRepresentable, settingsManager: DCSettingsManager = .shared) {
         if let setting = settingsManager.setting(forKey: key) as? DCSetting<ValueType.RawValue> {
             _setting = StateObject(wrappedValue: setting)

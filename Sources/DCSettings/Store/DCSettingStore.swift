@@ -25,7 +25,7 @@ private final class UserDefaultsCache: @unchecked Sendable {
 
         let store = UserDefaults(suiteName: suiteName)
         guard let store else {
-            assertionFailure("Unable to create UserDefaults suite named '\(suiteName)'. Values for this suite will not be written to UserDefaults.standard.")
+            assertionFailure("Unable to create UserDefaults suite named '\(suiteName)'. Values for this suite will not be persisted.")
             return nil
         }
 
@@ -34,24 +34,24 @@ private final class UserDefaultsCache: @unchecked Sendable {
     }
 }
 
-/// An enumeration that represents different types of key-value stores.
+/// The backing key-value store used to persist a setting's value.
 public enum DCSettingStore: Sendable {
 
-    /// The standard `UserDefaults` key-value store.
+    /// `UserDefaults.standard`.
     case standard
 
-    /// A `UserDefaults` key-value store with the specified suite name.
+    /// A `UserDefaults` instance for the specified suite name.
     ///
     /// - Parameter suiteName: The suite name of the `UserDefaults` store to use.
     case userDefaults(suiteName: String)
 
-    /// A key-value store that uses the iCloud `NSUbiquitousKeyValueStore` key-value store.
+    /// `NSUbiquitousKeyValueStore.default`, for syncing values via iCloud.
     ///
-    /// On watchOS, this store is available in watchOS 9.0 or newer.
+    /// Available on watchOS 9.0 or newer.
     @available(watchOS 9.0, *)
     case ubiquitous
 
-    /// A custom key-value store that conforms to the `DCKeyValueStore` protocol.
+    /// A custom key-value store conforming to `DCKeyValueStore`.
     ///
     /// - Parameter backingStore: The custom key-value store to use.
     case custom(backingStore: DCKeyValueStore)

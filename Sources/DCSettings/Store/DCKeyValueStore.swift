@@ -6,9 +6,9 @@
 
 import Combine
 
-/// A protocol that defines an interface for a key-value store.
+/// An interface for a key-value store backing a `DCSettingStore`.
 ///
-/// Custom stores must be safe to pass across concurrency domains because `DCSettingStore`
+/// Conformers must be safe to pass across concurrency domains, since `DCSettingStore`
 /// is actor-neutral and `Sendable`.
 public protocol DCKeyValueStore: Sendable {
 
