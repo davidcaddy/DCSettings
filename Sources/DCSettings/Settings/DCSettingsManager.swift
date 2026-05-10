@@ -62,8 +62,12 @@ import Combine
         settingsByKey = [:]
         for group in groups {
             for setting in group.settings {
-                let store = setting.store ?? group.store
-                setting.store = store
+                if let configurableSetting = setting as? any DCGroupStoreConfigurable {
+                    configurableSetting._configureInheritedStore(group.store)
+                }
+                else if setting.store == nil {
+                    setting.store = group.store
+                }
                 setting.refresh()
                 if settingsByKey[setting.key] == nil {
                     settingsByKey[setting.key] = setting

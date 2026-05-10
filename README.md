@@ -249,6 +249,8 @@ DCSettingsManager.shared.configure {
 
 > Note: A store set on a group is inherited by every setting in that group, unless the setting overrides it.
 
+For `DCSetting`, the setting-level `store` remains the explicit override. If it is `nil`, the manager resolves the current group store during configuration without mutating the setting's override, so reconfiguring a reused setting under a different group store uses the new inherited store.
+
 ### Storage contract
 
 DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. Other `Codable` values are JSON-encoded to `Data` before storage and decoded when read back.

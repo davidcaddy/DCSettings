@@ -49,6 +49,9 @@ extension DCValueBounds: DCComparableValueBounds where ValueType: Comparable {
     var configuration: DCSettingConfiguration<ValueType>? { get }
 
     /// An optional `DCSettingStore` instance used to store the setting value.
+    ///
+    /// For `DCSetting`, this is an explicit per-setting override. When it is `nil`, the
+    /// containing group store is inherited during manager configuration.
     var store: DCSettingStore? { get set }
 
     /// Refreshes the setting value from the store.
@@ -120,6 +123,11 @@ extension DCSettable {
     }
 }
 
+@MainActor protocol DCGroupStoreConfigurable {
+
+    func _configureInheritedStore(_ store: DCSettingStore)
+}
+
 /// The default `DCSettable` implementation: a settable value of a specific type, persisted via a `DCSettingStore`.
 ///
 /// `DCSetting` provides convenience initializers for plain default values, fixed option lists,
@@ -127,8 +135,9 @@ extension DCSettable {
 ///
 /// - Important: Optional value types, such as `String?`, are not supported. Model unset, inherited,
 ///   or system-default states with a concrete default value or an explicit enum case.
-/// - Note: When `store` is `nil` at configuration time, the manager assigns the containing
-///   group's store.
+/// - Note: When `store` is `nil` at configuration time, the manager resolves the containing
+///   group's store as the inherited backing store without changing the setting's explicit
+///   store override.
 @MainActor public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
 
     /// The key used to identify the setting in the store.
@@ -156,8 +165,16 @@ extension DCSettable {
 
     /// An optional `DCSettingStore` instance used to store the setting value.
     ///
-    /// If not provided when initialized, this will be set to the store of the group in which the setting resides when configured by a manager.
+    /// If not provided when initialized, the setting inherits the store of the group in which
+    /// it resides when configured by a manager. This property remains the explicit setting
+    /// override and is not mutated by group-store inheritance.
     public var store: DCSettingStore?
+
+    private var inheritedStore: DCSettingStore?
+
+    private var effectiveStore: DCSettingStore? {
+        store ?? inheritedStore
+    }
 
     /// An optional configuration for the setting.
     public let configuration: DCSettingConfiguration<ValueType>?
@@ -350,7 +367,7 @@ extension DCSettable {
     ///
     /// `DCSettingsManager` calls this during configuration. Avoid invoking it directly.
     public func refresh() {
-        if let newValue: ValueType = store?.object(forKey: key), value != newValue, isValid(newValue) {
+        if let newValue: ValueType = effectiveStore?.object(forKey: key), value != newValue, isValid(newValue) {
             _value = newValue
             objectWillChange.send()
         }
@@ -359,7 +376,7 @@ extension DCSettable {
 
     private func save(_ value: ValueType) -> Bool {
         cancellable = nil
-        let didSave = store?.set(value, forKey: key) ?? true
+        let didSave = effectiveStore?.set(value, forKey: key) ?? true
         setUpListener()
         return didSave
     }
@@ -378,7 +395,7 @@ extension DCSettable {
     }
 
     private func setUpListener() {
-        guard let store = store else { return }
+        guard let store = effectiveStore else { return }
         cancellable = store.valuePublisher(forKey: key, as: ValueType.self)
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
@@ -389,6 +406,13 @@ extension DCSettable {
                 self._value = newValue
                 self.objectWillChange.send()
             }
+    }
+}
+
+extension DCSetting: DCGroupStoreConfigurable {
+
+    func _configureInheritedStore(_ store: DCSettingStore) {
+        inheritedStore = store
     }
 }
 

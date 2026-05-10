@@ -24,6 +24,8 @@ On platforms with UIKit or AppKit, RGB-resolvable `Color` values are stored as J
 
 ``DCSetting`` value types must be non-optional; model unset, inherited, or system-default states with a concrete default value or an explicit enum case. Values that are neither property-list compatible nor a supported RGB-resolvable `Color` or `Codable` value are rejected in debug builds with an assertion and are not persisted. Custom ``DCKeyValueStore`` implementations should be `Sendable` and accept `Data` values to support custom `Codable` setting types.
 
+Each group can provide a backing store, and each ``DCSetting`` can provide an explicit setting-level store override. When a setting's store is `nil`, the manager resolves the current group store during configuration without mutating the setting's explicit override, so reconfiguring reused setting instances under a different group store uses the new inherited store.
+
 ### Keys and validation
 
 Group keys and setting keys must be unique across all groups configured in a ``DCSettingsManager``. `DCSettingGroup("General")` uses `"General"` as both the group label and group key. Prefer ``DCSettingGroup/init(key:label:store:settings:)`` when the key is persisted, filtered, localized, or otherwise part of app behavior. `DCSettingGroup()` uses a generated key and is best reserved for groups that never need stable identity.

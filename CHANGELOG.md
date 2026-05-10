@@ -27,6 +27,7 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 - Uses native `NSUbiquitousKeyValueStore` integer storage for ubiquitous `Int` settings.
 - Fails loudly when a named `UserDefaults` suite cannot be created instead of silently falling back to `.standard`.
 - De-duplicates unchanged UserDefaults publisher values and ignores unrelated ubiquitous-store key changes.
+- Keeps `DCSetting.store` as the explicit per-setting override while re-resolving inherited group stores on each manager configuration.
 - Adds `if`/`switch`/`for` control-flow support to settings result builders.
 - Refines default settings controls, option pickers, date ranges, and platform list styles.
 - Uses numeric text entry for unbounded `Double` settings and sliders only for bounded numeric settings.

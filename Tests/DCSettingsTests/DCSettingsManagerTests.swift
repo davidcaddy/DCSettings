@@ -120,6 +120,83 @@ import Combine
         #expect(manager.string(forKey: "replacementKey") == "replacement")
     }
 
+    @Test func configureReResolvesInheritedGroupStoreForReusedSetting() {
+        let firstBackingStore = MockStore()
+        let secondBackingStore = MockStore()
+        let setting = DCSetting(key: "reusedKey", defaultValue: "initial")
+        let manager = DCSettingsManager()
+
+        manager.configure {
+            DCSettingGroup("First", store: .custom(backingStore: firstBackingStore)) {
+                setting
+            }
+        }
+
+        #expect(setting.store == nil)
+        setting.value = "first"
+
+        manager.configure {
+            DCSettingGroup("Second", store: .custom(backingStore: secondBackingStore)) {
+                setting
+            }
+        }
+
+        #expect(setting.store == nil)
+        setting.value = "second"
+
+        #expect(firstBackingStore.storage["reusedKey"] as? String == "first")
+        #expect(secondBackingStore.storage["reusedKey"] as? String == "second")
+    }
+
+    @Test func groupStoreModifierReResolvesInheritedStoreForReusedSetting() {
+        let firstBackingStore = MockStore()
+        let secondBackingStore = MockStore()
+        let setting = DCSetting(key: "modifiedGroupKey", defaultValue: "initial")
+        let group = DCSettingGroup("Group", store: .custom(backingStore: firstBackingStore)) {
+            setting
+        }
+        let manager = DCSettingsManager()
+
+        manager.configure(groups: [group])
+        #expect(setting.store == nil)
+        setting.value = "first"
+
+        manager.configure(groups: [group.store(.custom(backingStore: secondBackingStore))])
+        #expect(setting.store == nil)
+        setting.value = "second"
+
+        #expect(firstBackingStore.storage["modifiedGroupKey"] as? String == "first")
+        #expect(secondBackingStore.storage["modifiedGroupKey"] as? String == "second")
+    }
+
+    @Test func explicitSettingStoreContinuesToOverrideGroupStoreAfterReconfigure() {
+        let explicitBackingStore = MockStore()
+        let firstGroupBackingStore = MockStore()
+        let secondGroupBackingStore = MockStore()
+        let setting = DCSetting(key: "explicitStoreKey", defaultValue: "initial", store: .custom(backingStore: explicitBackingStore))
+        let manager = DCSettingsManager()
+
+        manager.configure {
+            DCSettingGroup("First", store: .custom(backingStore: firstGroupBackingStore)) {
+                setting
+            }
+        }
+
+        setting.value = "first"
+
+        manager.configure {
+            DCSettingGroup("Second", store: .custom(backingStore: secondGroupBackingStore)) {
+                setting
+            }
+        }
+
+        setting.value = "second"
+
+        #expect(explicitBackingStore.storage["explicitStoreKey"] as? String == "second")
+        #expect(firstGroupBackingStore.storage["explicitStoreKey"] == nil)
+        #expect(secondGroupBackingStore.storage["explicitStoreKey"] == nil)
+    }
+
     @Test func settingForKey() throws {
         let setting = try #require(manager.setting(forKey: "key1") as? DCSetting<String>)
 
