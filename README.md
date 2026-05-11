@@ -13,7 +13,7 @@
     </a>
 </p>
 
-Welcome to **DCSettings**, a Swift package that simplifies the configuration of user preferences with an easy-to-use result builder syntax and a drop-in SwiftUI settings UI for iOS, macOS, watchOS, and visionOS.
+Welcome to **DCSettings**, a Swift package that simplifies user preference configuration with a result builder syntax and a drop-in SwiftUI settings UI for iOS, macOS, watchOS, and visionOS.
 
 You can configure settings backed by `UserDefaults`, `NSUbiquitousKeyValueStore`, or a custom key-value store:
 
@@ -49,9 +49,7 @@ DCSettingsManager.shared.configure {
             DCSettingOption(value: 20, label: "20 pt")
         }
         DCSetting(key: "lineSpacing", defaultValue: 1.2, lowerBound: 1.0, upperBound: 1.6, step: 0.1)
-        #if !os(watchOS)
         DCSetting(key: "highlightColor", defaultValue: Color.blue)
-        #endif
     }
 }
 ```
@@ -83,13 +81,16 @@ The settings configuration and storage APIs are available on every supported pla
 
 `DCSettingsManager`, `DCSetting`, the stored-value property wrappers, and the SwiftUI settings views are main-actor isolated; configure, read, and write settings from the main actor. The lower-level `DCSettingStore` and `DCKeyValueStore` storage APIs remain actor-neutral and `Sendable`, so custom `DCKeyValueStore` implementations must also be safe to pass across concurrency domains.
 
-Configure a `DCSettingsManager` before presenting `DCSettingsView` or constructing `DCStoredValue` and `DCStoredRepresentedValue` wrappers. Calling `configure` again replaces manager lookup state, but already-created views and stored-value wrappers keep observing the setting instances they were created with.
+Configure a `DCSettingsManager` before presenting `DCSettingsView` or constructing `DCStoredValue` and `DCStoredRepresentedValue` wrappers. Calling `configure` again replaces the manager's lookup state, but views and stored-value wrappers that were already created keep observing their original setting instances.
 
 ### Migration Notes
 
-- If you previously read `configuation`, move to `configuration`.
+- Replace any reads of `configuation` with `configuration`.
 - `DCSettable` conformers must now provide `configuration`.
-- `DCSettingStore.set(_:forKey:)` now returns `Bool` to indicate whether the value was persisted.
+- `DCSettable` now includes `set(_:) -> Bool` for writes that need a success result. A default implementation is provided, but custom conformers that persist values should override it.
+- `DCSetting` preserves `store == nil` as a reusable inherited-store state. Custom `DCSettable` conformers with `store == nil` are assigned the containing group store during configuration, so reusable custom conformers should model explicit versus inherited storage themselves if that distinction matters.
+- `DCStoredValue` and `DCStoredRepresentedValue` require concrete `DCSetting` instances. Custom `DCSettable` conformers remain supported through manager accessors, bindings, publishers, and settings views.
+- `DCSettingStore.set(_:forKey:)` overloads now return `Bool` to indicate whether the value was persisted.
 - `DCKeyValueStore` now requires `Sendable`; custom stores should be thread-safe or explicitly audited.
 - `Color` no longer conforms to `Codable` publicly through DCSettings. RGB-resolvable colors are stored internally as RGBA components on platforms with UIKit or AppKit.
 - `DCSettingOption.labelView()` is internal in 1.0. Use the option's public `label` and `image` properties, or provide custom option UI through your own views.
@@ -102,7 +103,7 @@ Configure a `DCSettingsManager` before presenting `DCSettingsView` or constructi
 - Setting option values must be unique.
 - `DCSettingGroup("Label")` now uses the label as the group key. Prefer `DCSettingGroup(key:label:)` when the key is persisted, filtered, localized, or otherwise part of app behavior.
 - `DCSettingsView.Filter` now separates `.excludeGroups(_:)` and `.excludeSettings(_:)`; use `.exclude(groupKeys:settingKeys:)` to hide both.
-- The fully generic `DCSettingsView(settingsManager:filter:contentProvider:listStyle:)` initializer no longer supplies default `contentProvider` or `listStyle` arguments. Use the convenience initializers, such as `DCSettingsView()`, `DCSettingsView(filter:)`, `DCSettingsView(contentProvider:)`, or `DCSettingsView(listStyle:)`, for the default provider and platform list style.
+- The fully generic `DCSettingsView(settingsManager:filter:contentProvider:listStyle:)` initializer no longer supplies default `contentProvider` or `listStyle` arguments. Use one of the convenience initializers — `DCSettingsView()`, `DCSettingsView(filter:)`, `DCSettingsView(contentProvider:)`, or `DCSettingsView(listStyle:)` — to get the default provider and platform list style.
 - `DCDefaultViewProvider.content(for:)` now returns `EmptyView?`, which keeps the default provider as a nil-only placeholder.
 - `Text.monospacedDigitIfAvailable()` is no longer public API. Use SwiftUI's `monospacedDigit()` with an availability check in app code if needed.
 
@@ -144,7 +145,7 @@ import DCSettings
 
 Call `configure` on a `DCSettingsManager` (typically the shared singleton) from the main actor. The closure returns an array of `DCSettingGroup` instances, each containing one or more `DCSetting` instances.
 
-Configure the manager before creating settings UI or stored-value wrappers. Calling `configure` again replaces the manager's lookup state, but existing `DCSettingsView`, `DCStoredValue`, and `DCStoredRepresentedValue` instances continue to observe their original setting objects.
+Configure the manager before creating settings UI or stored-value wrappers. Calling `configure` again replaces the manager's lookup state, but any `DCSettingsView`, `DCStoredValue`, and `DCStoredRepresentedValue` instances that already exist continue to observe their original setting objects.
 
 Example configuration:
 
@@ -177,9 +178,9 @@ Each `DCSetting` has a unique key, a non-optional default value, and an optional
 
 `DCSettingConfiguration` exposes three additional knobs:
 
-- **options**: a list of `DCSettingOption` values that constrain the setting. Option values must be unique, and values outside the list are ignored. Each option has a value and optional `label` and `image`.
+- **options**: a list of `DCSettingOption` values that constrain the setting. Option values must be unique, and values outside the list are ignored. Each option has a value and an optional `label` and `image`.
 - **bounds**: a `DCValueBounds` lower/upper range for `Comparable` values. Values outside the range are ignored.
-- **step**: a positive increment hint for editing controls. Bounded `DCSetting` initializers reject non-positive and non-finite step values.
+- **step**: a positive-increment hint for editing controls. Bounded `DCSetting` initializers reject non-positive and non-finite step values.
 
 Example configuration using these options:
 
@@ -213,6 +214,8 @@ Access configured settings elsewhere with the `DCStoredValue` property wrapper:
 ```swift
 @DCStoredValue("showNotifications") var showNotifications: Bool
 ```
+
+`DCStoredValue` and `DCStoredRepresentedValue` capture concrete `DCSetting` instances. If you use a custom `DCSettable` conformer, access it through `DCSettingsManager.value(forKey:)`, `set(_:forKey:)`, `valueBinding(forKey:)`, `valuePublisher(forKey:)`, or by passing it to `DCSettingView`.
 
 You can also read settings directly through `DCSettingsManager` convenience methods:
 
@@ -249,13 +252,15 @@ DCSettingsManager.shared.configure {
 
 > Note: A store set on a group is inherited by every setting in that group, unless the setting overrides it.
 
-For `DCSetting`, the setting-level `store` remains the explicit override. If it is `nil`, the manager resolves the current group store during configuration without mutating the setting's override, so reconfiguring a reused setting under a different group store uses the new inherited store.
+A `DCSetting`'s own `store` acts as an explicit override. When it is `nil`, the manager resolves the inherited group store at configuration time without changing the setting itself, so a reused `DCSetting` placed under a different group store picks up the new inherited store.
+
+Custom `DCSettable` conformers do not get that non-mutating inherited-store behavior automatically. If a custom conformer's `store` is `nil`, `DCSettingsManager` assigns the containing group store to the conformer during configuration. Reusable custom conformers should keep their own explicit override separate from inherited storage when they need to move between groups.
 
 ### Storage contract
 
 DCSettings stores property-list compatible values (`Bool`, `Int`, `Double`, `String`, `Date`, and `Data`) directly in the selected backing store. Other `Codable` values are JSON-encoded to `Data` before storage and decoded when read back.
 
-On platforms with UIKit or AppKit, RGB-resolvable `Color` values are stored as JSON-encoded RGBA component `Data`. Dynamic, semantic, asset catalog, pattern, and other non-RGB-resolvable colors may not persist, and stored colors do not preserve named or dynamic color semantics. On watchOS, the default settings UI displays `Color` values without editing and built-in `Color` storage is not available.
+On platforms with UIKit or AppKit, including watchOS, RGB-resolvable `Color` values are stored as JSON-encoded RGBA component `Data`. Dynamic, semantic, asset catalog, pattern, and other non-RGB-resolvable colors may not persist, and stored colors do not preserve named or dynamic color semantics. On watchOS, the default settings UI displays `Color` values without editing.
 
 `DCSetting` value types must be non-optional; model unset, inherited, or system-default states with a concrete default value or an explicit enum case. Values that are neither property-list compatible nor a supported RGB-resolvable `Color` or `Codable` value are rejected in debug builds with an assertion and are not persisted.
 
@@ -330,7 +335,7 @@ Several `DCSetting` options affect how the setting renders inside a `DCSettingsV
 - `image`: the name of an asset-catalog image shown next to the label.
 - `systemImage`: the name of an SF Symbol shown next to the label.
 - `bounds`: a valid range for `Comparable` values. Numeric settings with bounds render as sliders constrained to the range.
-- `step`: the positive increment used by numeric controls. It is a UI hint only; use `options` or `bounds` for validation. Bounded initializers reject non-positive and non-finite steps, and default controls ignore invalid steps that arrive through custom configurations.
+- `step`: the positive increment used by numeric controls. It is a UI hint only — use `options` or `bounds` to validate values. Bounded initializers reject non-positive and non-finite steps, and the default controls ignore invalid step values supplied through custom configurations.
 
 ### DCSettingViewProviding
 

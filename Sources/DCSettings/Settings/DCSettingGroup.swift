@@ -114,14 +114,17 @@ extension DCSettingGroup {
 @resultBuilder
 @MainActor public struct DCSettingGroupsBuilder {
 
-    /// Builds an array of setting groups from the provided setting group instances.
+    /// Builds an empty array of setting groups.
     ///
-    /// - Parameter settings: The setting group instances to include in the array.
-    /// - Returns: An array of setting groups.
+    /// - Returns: An empty array of setting groups.
     public static func buildBlock() -> [DCSettingGroup] {
         []
     }
 
+    /// Builds an array of setting groups from the provided setting group instances.
+    ///
+    /// - Parameter settings: The setting group instances to include in the array.
+    /// - Returns: An array of setting groups.
     public static func buildBlock(_ settings: DCSettingGroup...) -> [DCSettingGroup] {
         settings
     }

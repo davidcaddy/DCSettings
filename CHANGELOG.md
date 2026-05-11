@@ -35,16 +35,19 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 
 ### Migration Notes
 
-- If you previously read `configuation`, move to `configuration`.
+- Replace any reads of `configuation` with `configuration`.
 - Custom `DCSettable` conformers must provide `configuration`.
-- `DCSettingStore.set(_:forKey:)` now returns `Bool` to indicate whether the value was persisted.
+- `DCSettable` now includes `set(_:) -> Bool` for writes that need a success result. A default implementation is provided, but custom conformers that persist values should override it.
+- `DCSetting` preserves `store == nil` as a reusable inherited-store state. Custom `DCSettable` conformers with `store == nil` are assigned the containing group store during configuration, so reusable custom conformers should model explicit versus inherited storage themselves if that distinction matters.
+- `DCStoredValue` and `DCStoredRepresentedValue` require concrete `DCSetting` instances. Custom `DCSettable` conformers remain supported through manager accessors, bindings, publishers, and settings views.
+- `DCSettingStore.set(_:forKey:)` overloads now return `Bool` to indicate whether the value was persisted.
 - `DCKeyValueStore` now requires `Sendable`; custom stores should be thread-safe or explicitly audited.
 - `Color` no longer conforms to `Codable` through DCSettings. RGB-resolvable colors are stored internally as RGBA components on platforms with UIKit or AppKit; persist a custom `Codable` token or enum for stable named themes, semantic colors, dynamic colors, or asset colors.
 - `DCSettingOption.labelView()` is now internal. Use the option's public `label` and `image` properties, or provide custom option UI through your own views.
 - `DCSettingView`, `DCSettingsView`, and `DCSettingViewProviding` are not available on tvOS in 1.0. The core settings and storage APIs still support tvOS.
 - Configure, read, and write settings through `DCSettingsManager` from the main actor.
-- Configure a `DCSettingsManager` before presenting settings UI or constructing stored-value wrappers. Reconfiguring replaces manager lookup state, but existing views and wrappers continue to observe their original setting instances.
-- `DCStoredValue`, `DCStoredRepresentedValue`, `DCSettingView`, and `DCSettingsView` now expose their main-actor isolation directly in Swift 6. If you use them from nonisolated or background contexts, hop to the main actor first.
+- Configure a `DCSettingsManager` before presenting settings UI or constructing stored-value wrappers. Reconfiguring replaces the manager's lookup state, but views and wrappers that already exist keep observing their original setting instances.
+- `DCStoredValue`, `DCStoredRepresentedValue`, `DCSettingView`, and `DCSettingsView` now expose their main-actor isolation directly in Swift 6. Hop to the main actor before using them from nonisolated or background contexts.
 - Custom `DCKeyValueStore` implementations should be concurrency-safe and accept `Data` values to support custom Codable setting types.
 - `DCSetting` value types must be non-optional. Model unset, inherited, or system-default states with a concrete default value or an explicit enum case.
 - Bounded defaults must satisfy their configured bounds.
@@ -53,7 +56,7 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 - Setting option values must be unique.
 - `DCSettingGroup("Label")` now uses the label as the group key. Prefer `DCSettingGroup(key:label:)` when the key is persisted, filtered, localized, or otherwise part of app behavior.
 - `DCSettingsView.Filter` now separates `.excludeGroups(_:)` and `.excludeSettings(_:)`; use `.exclude(groupKeys:settingKeys:)` to hide both.
-- The fully generic `DCSettingsView(settingsManager:filter:contentProvider:listStyle:)` initializer no longer provides default values for `contentProvider` or `listStyle`. Use `DCSettingsView()`, `DCSettingsView(filter:)`, `DCSettingsView(contentProvider:)`, or `DCSettingsView(listStyle:)` when you want the package defaults.
+- The fully generic `DCSettingsView(settingsManager:filter:contentProvider:listStyle:)` initializer no longer provides default values for `contentProvider` or `listStyle`. Use one of the convenience initializers — `DCSettingsView()`, `DCSettingsView(filter:)`, `DCSettingsView(contentProvider:)`, or `DCSettingsView(listStyle:)` — when you want the package defaults.
 - `DCDefaultViewProvider.content(for:)` now returns `EmptyView?`. If you used this concrete provider directly, treat it as a nil-only placeholder.
-- The package no longer exposes `Text.monospacedDigitIfAvailable()` as public API. Use SwiftUI's `monospacedDigit()` with your own availability guard if you need the same behavior in app code.
+- The package no longer exposes `Text.monospacedDigitIfAvailable()` as public API. Apply SwiftUI's `monospacedDigit()` behind your own availability guard if you need the same behavior in app code.
 - Values that are neither property-list compatible nor a supported RGB-resolvable `Color` or `Codable` value are not persisted.

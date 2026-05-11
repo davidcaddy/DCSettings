@@ -30,7 +30,8 @@ extension DCValueBounds: DCComparableValueBounds where ValueType: Comparable {
 ///
 /// Conformers expose a `value` of `ValueType: Equatable`, an identifying `key`, an optional
 /// `label`, an optional `configuration` (options/bounds/step), and the `store` used for
-/// persistence. Call `refresh()` to reload the current value from the store.
+/// persistence. Call `set(_:)` when you need to know whether a write took effect, and
+/// `refresh()` to reload the current value from the store.
 @MainActor public protocol DCSettable<ValueType>: ObservableObject where ValueType: Equatable {
 
     /// The type of value associated with the setting.
@@ -45,6 +46,12 @@ extension DCValueBounds: DCComparableValueBounds where ValueType: Comparable {
     /// The current value of the setting.
     var value: ValueType { get set }
 
+    /// Attempts to update the setting's value.
+    ///
+    /// - Parameter value: The new value to assign.
+    /// - Returns: `true` when the setting accepted the value, otherwise `false`.
+    @discardableResult func set(_ value: ValueType) -> Bool
+
     /// An optional configuration for the setting.
     var configuration: DCSettingConfiguration<ValueType>? { get }
 
@@ -52,6 +59,10 @@ extension DCValueBounds: DCComparableValueBounds where ValueType: Comparable {
     ///
     /// For `DCSetting`, this is an explicit per-setting override. When it is `nil`, the
     /// containing group store is inherited during manager configuration.
+    ///
+    /// Custom conformers with `store == nil` have the containing group store assigned during
+    /// manager configuration. If a custom conformer needs reusable inherited-store behavior,
+    /// keep explicit and inherited storage separate in that type.
     var store: DCSettingStore? { get set }
 
     /// Refreshes the setting value from the store.
@@ -59,6 +70,24 @@ extension DCValueBounds: DCComparableValueBounds where ValueType: Comparable {
 }
 
 public extension DCSettable {
+
+    /// Attempts to update the setting's value.
+    ///
+    /// The default implementation validates `value` against `configuration`, assigns it to
+    /// ``value``, and returns whether the assigned value is now visible. Conformers that persist
+    /// values should override this method when persistence failure matters.
+    @discardableResult func set(_ newValue: ValueType) -> Bool {
+        guard _isValidConfiguredValue(newValue) else {
+            return false
+        }
+
+        if value == newValue {
+            return true
+        }
+
+        value = newValue
+        return value == newValue
+    }
 
     /// An optional configuration for the setting.
     @available(*, deprecated, renamed: "configuration")
@@ -82,8 +111,7 @@ extension DCSettable {
             return false
         }
 
-        value = typedValue
-        return value == typedValue
+        return set(typedValue)
     }
 
     func _typedBinding<T>(as type: T.Type) -> Binding<T>? where T: Equatable {
@@ -138,7 +166,7 @@ extension DCSettable {
 /// - Note: When `store` is `nil` at configuration time, the manager resolves the containing
 ///   group's store as the inherited backing store without changing the setting's explicit
 ///   store override.
-@MainActor public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
+@MainActor public final class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
 
     /// The key used to identify the setting in the store.
     public let key: String
@@ -149,17 +177,15 @@ extension DCSettable {
     private var _value: ValueType
 
     /// The current value of the setting.
+    ///
+    /// Assignments that fail validation or cannot be persisted are ignored. Use
+    /// `DCSettingsManager.set(_:forKey:)` when you need a boolean result.
     public var value: ValueType {
         get {
             _value
         }
         set {
-            if _value != newValue, isValid(newValue) {
-                if save(newValue) {
-                    _value = newValue
-                    objectWillChange.send()
-                }
-            }
+            set(newValue)
         }
     }
 
@@ -183,6 +209,29 @@ extension DCSettable {
     @available(*, deprecated, renamed: "configuration")
     public var configuation: DCSettingConfiguration<ValueType>? {
         configuration
+    }
+
+    /// Attempts to update the setting's value and persist it to the effective store.
+    ///
+    /// - Parameter newValue: The new value to assign.
+    /// - Returns: `true` when the value is valid and either already current or successfully
+    /// persisted, otherwise `false`.
+    @discardableResult public func set(_ newValue: ValueType) -> Bool {
+        guard isValid(newValue) else {
+            return false
+        }
+
+        if _value == newValue {
+            return true
+        }
+
+        guard save(newValue) else {
+            return false
+        }
+
+        objectWillChange.send()
+        _value = newValue
+        return true
     }
 
     private var cancellable: AnyCancellable?
@@ -328,7 +377,7 @@ extension DCSettable {
     ///   - key: The key used to identify the setting in the store.
     ///   - label: An optional label for the setting. The default value is `nil`.
     ///   - store: An optional `DCSettingStore` instance used to store the setting value. The default value is `nil`.
-    ///   - options: An array of `DCSettingOption` instances.
+    ///   - configuredOptions: An array of `DCSettingOption` instances.
     public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, options configuredOptions: [DCSettingOption<ValueType>]) {
         if let defaultValue = configuredOptions.first(where: { $0.isDefault })?.value ?? configuredOptions.first?.value {
             self.init(key: key, value: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
@@ -368,8 +417,8 @@ extension DCSettable {
     /// `DCSettingsManager` calls this during configuration. Avoid invoking it directly.
     public func refresh() {
         if let newValue: ValueType = effectiveStore?.object(forKey: key), value != newValue, isValid(newValue) {
-            _value = newValue
             objectWillChange.send()
+            _value = newValue
         }
         setUpListener()
     }
@@ -390,7 +439,7 @@ extension DCSettable {
         return Binding {
             self.value
         } set: { newValue in
-            self.value = newValue
+            self.set(newValue)
         }
     }
 
@@ -403,8 +452,8 @@ extension DCSettable {
                     return
                 }
 
-                self._value = newValue
                 self.objectWillChange.send()
+                self._value = newValue
             }
     }
 }
@@ -432,17 +481,17 @@ extension DCSetting: DCGroupStoreConfigurable {
 @resultBuilder
 @MainActor public struct DCSettingsBuilder {
 
-    /// Constructs an array of `DCSettable` instances from the provided expressions.
+    /// Constructs an empty array of `DCSettable` instances.
     ///
-    /// This method is called by the result builder to construct the final result from the provided expressions.
-    /// The expressions must be instances of `DCSettable`.
-    ///
-    /// - Parameter settings: A variadic list of optional `DCSettable` instances.
-    /// - Returns: An array of `DCSettable` instances.
+    /// - Returns: An empty array of `DCSettable` instances.
     public static func buildBlock() -> [any DCSettable] {
         []
     }
 
+    /// Constructs an array of `DCSettable` instances from the provided expressions.
+    ///
+    /// - Parameter settings: A variadic list of optional `DCSettable` instances.
+    /// - Returns: An array of `DCSettable` instances.
     public static func buildBlock(_ settings: (any DCSettable)?...) -> [any DCSettable] {
         settings.compactMap { $0 }
     }

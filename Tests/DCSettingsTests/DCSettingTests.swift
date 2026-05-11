@@ -26,6 +26,19 @@ import Combine
         func refresh() {}
     }
 
+    private final class ValidatedSettable: DCSettable {
+        let label: String? = nil
+        let key = "validated"
+        var value = "first"
+        let configuration: DCSettingConfiguration<String>? = DCSettingConfiguration(options: [
+            DCSettingOption(value: "first"),
+            DCSettingOption(value: "second")
+        ])
+        var store: DCSettingStore?
+
+        func refresh() {}
+    }
+
     private let store: DCSettingStore
     private let backingStore: MockStore
     private let setting: DCSetting<String>
@@ -51,6 +64,28 @@ import Combine
         #expect(setting.value == "newValue")
     }
 
+    @Test func setReturnsTrueAndPersistsValue() {
+        #expect(setting.set("newValue"))
+        #expect(setting.value == "newValue")
+        #expect(backingStore.storage["testKey"] as? String == "newValue")
+    }
+
+    @Test func valueChangeNotifiesObserversBeforeMutation() {
+        var observedValue: String?
+        var cancellables: Set<AnyCancellable> = []
+
+        setting.objectWillChange
+            .sink {
+                observedValue = setting.value
+            }
+            .store(in: &cancellables)
+
+        setting.value = "newValue"
+
+        #expect(observedValue == "defaultValue")
+        #expect(setting.value == "newValue")
+    }
+
     @Test func optionSettingRejectsValuesOutsideConfiguredOptions() throws {
         let setting = try #require(DCSetting(key: "optionKey", store: store) {
             DCSettingOption(value: "first")
@@ -61,6 +96,26 @@ import Combine
 
         #expect(setting.value == "first")
         #expect(backingStore.storage["optionKey"] == nil)
+    }
+
+    @Test func setReturnsFalseForValuesOutsideConfiguredOptions() throws {
+        let setting = try #require(DCSetting(key: "optionKey", store: store) {
+            DCSettingOption(value: "first")
+            DCSettingOption(value: "second")
+        })
+
+        #expect(!setting.set("third"))
+        #expect(setting.value == "first")
+        #expect(backingStore.storage["optionKey"] == nil)
+    }
+
+    @Test func defaultSettableSetImplementationValidatesConfiguration() {
+        let setting = ValidatedSettable()
+
+        #expect(setting.set("second"))
+        #expect(setting.value == "second")
+        #expect(!setting.set("third"))
+        #expect(setting.value == "second")
     }
 
     @Test func boundedSettingRejectsValuesOutsideConfiguredBounds() {
@@ -173,6 +228,23 @@ import Combine
         setting.refresh()
 
         #expect(await waitUntil { didRefresh })
+        #expect(setting.value == "anotherValue")
+    }
+
+    @Test func refreshNotifiesObserversBeforeMutation() {
+        var observedValue: String?
+        var cancellables: Set<AnyCancellable> = []
+
+        setting.objectWillChange
+            .sink {
+                observedValue = setting.value
+            }
+            .store(in: &cancellables)
+
+        backingStore.storage["testKey"] = "anotherValue"
+        setting.refresh()
+
+        #expect(observedValue == "defaultValue")
         #expect(setting.value == "anotherValue")
     }
 

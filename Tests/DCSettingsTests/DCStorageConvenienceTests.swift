@@ -215,6 +215,19 @@ import Combine
         #expect(backingStore.setMethod(forKey: "string") == .object)
     }
 
+    @Test func settingStoreTypedSettersReturnPersistenceResult() {
+        let backingStore = MockStore()
+        let store = DCSettingStore.custom(backingStore: backingStore)
+
+        #expect(store.set(true, forKey: "bool"))
+        #expect(store.set(12, forKey: "int"))
+        #expect(store.set(1.25, forKey: "double"))
+
+        #expect(backingStore.storage["bool"] as? Bool == true)
+        #expect(backingStore.storage["int"] as? Int == 12)
+        #expect(backingStore.storage["double"] as? Double == 1.25)
+    }
+
     @Test func ubiquitousValuePublisherIgnoresUnrelatedChangedKeysNotification() async {
         guard Self.runsICloudIntegrationTests else {
             return

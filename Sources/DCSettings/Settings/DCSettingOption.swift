@@ -171,19 +171,17 @@ extension DCSettingOption {
 @resultBuilder
 public struct DCSettingOptionsBuilder {
 
-    /// Constructs an array of `DCSettingOption` instances from the provided expressions.
+    /// Constructs an empty array of `DCSettingOption` instances.
     ///
-    /// This method is called by the result builder to construct the final result from the provided expressions.
-    /// The expressions must be instances of `DCSettingOption`.
-    ///
-    /// - Parameters:
-    ///     - settings: A variadic list of `DCSettingOption` instances.
-    ///
-    /// - Returns: An array of `DCSettingOption` instances.
+    /// - Returns: An empty array of `DCSettingOption` instances.
     public static func buildBlock<ValueType>() -> [DCSettingOption<ValueType>] {
         []
     }
 
+    /// Constructs an array of `DCSettingOption` instances from the provided expressions.
+    ///
+    /// - Parameter settings: A variadic list of `DCSettingOption` instances.
+    /// - Returns: An array of `DCSettingOption` instances.
     public static func buildBlock<ValueType>(_ settings: DCSettingOption<ValueType>...) -> [DCSettingOption<ValueType>] {
         settings
     }

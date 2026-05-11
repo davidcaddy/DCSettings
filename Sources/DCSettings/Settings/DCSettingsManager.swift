@@ -32,7 +32,7 @@ import Combine
 /// let darkMode = manager.bool(forKey: "darkMode")
 /// manager.set(!darkMode, forKey: "darkMode")
 /// ```
-@MainActor public class DCSettingsManager {
+@MainActor public final class DCSettingsManager {
 
     /// A shared instance of `DCSettingsManager`.
     public static let shared = DCSettingsManager()
@@ -49,6 +49,10 @@ import Combine
     /// Calling it again replaces manager lookup state, but already-created `DCSettingsView`,
     /// `DCStoredValue`, and `DCStoredRepresentedValue` instances continue to observe their
     /// original setting objects.
+    ///
+    /// `DCSetting` instances inherit group stores without mutating their explicit `store`
+    /// override. Custom `DCSettable` conformers with `store == nil` are assigned the group store
+    /// during configuration.
     ///
     /// - Parameter settingGroups: An array of `DCSettingGroup` values representing the setting groups to be managed by the manager.
     public func configure(groups settingGroups: [DCSettingGroup]) {
@@ -110,6 +114,10 @@ import Combine
     /// Calling it again replaces manager lookup state, but already-created `DCSettingsView`,
     /// `DCStoredValue`, and `DCStoredRepresentedValue` instances continue to observe their
     /// original setting objects.
+    ///
+    /// `DCSetting` instances inherit group stores without mutating their explicit `store`
+    /// override. Custom `DCSettable` conformers with `store == nil` are assigned the group store
+    /// during configuration.
     ///
     /// - Parameter builder: A result builder that produces an array of `DCSettingGroup` values
     /// representing the setting groups to be managed by the manager.

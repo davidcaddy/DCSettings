@@ -177,8 +177,14 @@ public enum DCSettingStore: Sendable {
     /// - Parameters:
     ///   - value: The boolean value to store in the key-value store.
     ///   - key: The key with which to associate the value.
-    public func set(_ value: Bool, forKey key: String) {
-        backingStore?.set(value, forKey: key)
+    /// - Returns: `true` when the value could be stored, otherwise `false`.
+    @discardableResult public func set(_ value: Bool, forKey key: String) -> Bool {
+        guard let backingStore else {
+            return false
+        }
+
+        backingStore.set(value, forKey: key)
+        return true
     }
 
     /// Returns a boolean value associated with the specified key.
@@ -194,8 +200,14 @@ public enum DCSettingStore: Sendable {
     /// - Parameters:
     ///   - value: The integer value to store in the key-value store.
     ///   - key: The key with which to associate the value.
-    public func set(_ value: Int, forKey key: String) {
-        backingStore?.set(value, forKey: key)
+    /// - Returns: `true` when the value could be stored, otherwise `false`.
+    @discardableResult public func set(_ value: Int, forKey key: String) -> Bool {
+        guard let backingStore else {
+            return false
+        }
+
+        backingStore.set(value, forKey: key)
+        return true
     }
 
     /// Returns an integer value associated with the specified key.
@@ -211,8 +223,14 @@ public enum DCSettingStore: Sendable {
     /// - Parameters:
     ///   - value: The double-precision floating-point value to store in the key-value store.
     ///   - key: The key with which to associate the value.
-    public func set(_ value: Double, forKey key: String) {
-        backingStore?.set(value, forKey: key)
+    /// - Returns: `true` when the value could be stored, otherwise `false`.
+    @discardableResult public func set(_ value: Double, forKey key: String) -> Bool {
+        guard let backingStore else {
+            return false
+        }
+
+        backingStore.set(value, forKey: key)
+        return true
     }
 
     /// Returns a double-precision floating-point value associated with the specified key.

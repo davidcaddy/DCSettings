@@ -6,7 +6,7 @@
 
 import SwiftUI
 
-/// A property wrapper that reads and writes a `DCSetting` value through a `DCSettingsManager`.
+/// A property wrapper that reads and writes a concrete `DCSetting` value through a `DCSettingsManager`.
 ///
 /// Reads return the setting's current value; writes persist through its configured store.
 ///
@@ -29,11 +29,11 @@ public struct DCStoredValue<ValueType>: DynamicProperty where ValueType: Equatab
             setting.value
         }
         nonmutating set {
-            setting.value = newValue
+            setting.set(newValue)
         }
     }
 
-    /// Looks up the setting with the specified key in the given settings manager and captures it.
+    /// Looks up a concrete `DCSetting` with the specified key in the given settings manager and captures it.
     ///
     /// The wrapper captures the setting instance at initialization, so the manager must be
     /// configured before the wrapper is constructed. Reconfiguring the manager later does not
@@ -45,7 +45,8 @@ public struct DCStoredValue<ValueType>: DynamicProperty where ValueType: Equatab
     ///   Defaults to `.shared`.
     ///
     /// - Warning: A `DCSetting<ValueType>` for `key` must already be configured in
-    /// `settingsManager`. Otherwise this initializer traps.
+    /// `settingsManager`. Custom `DCSettable` conformers are not supported by this wrapper;
+    /// use manager accessors, bindings, or publishers for those. Otherwise this initializer traps.
     public init(_ key: DCKeyRepresentable, settingsManager: DCSettingsManager = .shared) {
         if let setting = settingsManager.setting(forKey: key) as? DCSetting<ValueType> {
             _setting = StateObject(wrappedValue: setting)
