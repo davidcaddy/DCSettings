@@ -510,6 +510,10 @@ struct DCMenuPickerView<ValueType>: View where ValueType: Equatable & Hashable {
 /// If no specific view is available for the value type, the view will be empty.
 ///
 /// Supported types are: non-optional `Bool`, `Int`,  `Double`, `String`, `Date` and `Color`.
+/// The default controls render `options` for `Int`, `Double`, and `String`, `bounds`
+/// for `Int`, `Double`, and `Date`, and `step` for `Int` controls and bounded
+/// `Double` sliders. Other configuration combinations still validate values but do
+/// not change the built-in control.
 /// Color settings are intended for RGB-resolvable user-selected colors.
 @MainActor public struct DCSettingView: View {
 

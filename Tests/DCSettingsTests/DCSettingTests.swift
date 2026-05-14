@@ -134,6 +134,17 @@ import Combine
         #expect(setting.value == "anotherValue")
     }
 
+    @Test func refreshResetsToDefaultWhenStoredValueIsRemoved() {
+        setting.value = "storedValue"
+
+        #expect(backingStore.storage["testKey"] as? String == "storedValue")
+
+        store.set(nil as String?, forKey: "testKey")
+        setting.refresh()
+
+        #expect(setting.value == "defaultValue")
+    }
+
     @Test func refreshIgnoresStoredValuesOutsideConfiguredOptions() throws {
         let setting = try #require(DCSetting(key: "optionKey", store: store) {
             DCSettingOption(value: "first")
@@ -290,6 +301,15 @@ import Combine
 
         #expect(await waitUntil { setting.value == "externalValue" })
         #expect(backingStore.setCallCount(forKey: "testKey") == 1)
+    }
+
+    @Test func externalStoreRemovalResetsToDefault() async {
+        setting.refresh()
+        setting.value = "storedValue"
+
+        store.set(nil as String?, forKey: "testKey")
+
+        #expect(await waitUntil { setting.value == "defaultValue" })
     }
 
     @Test func externalStoreUpdateIgnoresValuesOutsideConfiguredBounds() async {

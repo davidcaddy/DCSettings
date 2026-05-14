@@ -32,6 +32,8 @@ Group keys and setting keys must be unique across all groups configured in a ``D
 
 Configured options and comparable bounds are validated when a ``DCSetting`` is initialized, written, or refreshed. Option values must be unique, and values outside the configured option list or bounds are ignored. The configuration `step` value is a positive-increment hint for editing controls; bounded ``DCSetting`` initializers reject non-positive or non-finite step values. In the default settings UI, unbounded `Double` settings use numeric text entry and bounded numeric settings use sliders.
 
+The default settings UI renders `options` for `Int`, `Double`, and `String`; `bounds` for `Int`, `Double`, and `Date`; and `step` for `Int` controls and bounded `Double` sliders. Other configuration combinations still validate values, but they do not change the built-in control. Use ``DCSettingViewProviding`` when you need custom UI for those combinations.
+
 ### Migrating to 1.0
 
 DCSettings 1.0 stabilizes the public API and includes source-breaking changes from 0.3.x:

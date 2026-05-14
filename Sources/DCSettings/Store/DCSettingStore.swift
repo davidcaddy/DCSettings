@@ -8,6 +8,10 @@ import Foundation
 import Combine
 import SwiftUI
 
+let dcSettingsUbiquitousStoreDidChangeLocallyNotification = Notification.Name("DCSettingsUbiquitousStoreDidChangeLocallyNotification")
+let dcSettingsUbiquitousStoreChangedKey = "DCSettingsUbiquitousStoreChangedKey"
+let dcSettingsUbiquitousStoreChangedValue = "DCSettingsUbiquitousStoreChangedValue"
+
 private let userDefaultsCache = UserDefaultsCache()
 
 private final class UserDefaultsCache: @unchecked Sendable {
@@ -122,11 +126,13 @@ public enum DCSettingStore: Sendable {
 
         guard let value else {
             backingStore.set(nil, forKey: key)
+            publishLocalWriteIfNeeded(nil, forKey: key)
             return true
         }
 
         if isStandardType(ValueType.self) {
             setStandardValue(value, forKey: key)
+            publishLocalWriteIfNeeded(value, forKey: key)
             return true
         }
 
@@ -135,6 +141,7 @@ public enum DCSettingStore: Sendable {
                 do {
                     let data = try color.dcSettingsEncodedData()
                     backingStore.set(data, forKey: key)
+                    publishLocalWriteIfNeeded(data, forKey: key)
                     return true
                 }
                 catch {
@@ -148,6 +155,7 @@ public enum DCSettingStore: Sendable {
             do {
                 let data = try JSONEncoder().encode(codableValue)
                 backingStore.set(data, forKey: key)
+                publishLocalWriteIfNeeded(data, forKey: key)
                 return true
             }
             catch {
@@ -184,6 +192,7 @@ public enum DCSettingStore: Sendable {
         }
 
         backingStore.set(value, forKey: key)
+        publishLocalWriteIfNeeded(value, forKey: key)
         return true
     }
 
@@ -207,6 +216,7 @@ public enum DCSettingStore: Sendable {
         }
 
         backingStore.set(value, forKey: key)
+        publishLocalWriteIfNeeded(value, forKey: key)
         return true
     }
 
@@ -230,6 +240,7 @@ public enum DCSettingStore: Sendable {
         }
 
         backingStore.set(value, forKey: key)
+        publishLocalWriteIfNeeded(value, forKey: key)
         return true
     }
 
@@ -265,6 +276,21 @@ public enum DCSettingStore: Sendable {
         default:
             backingStore?.set(value, forKey: key)
         }
+    }
+
+    private func publishLocalWriteIfNeeded(_ value: Any?, forKey key: String) {
+        guard case .ubiquitous = self else {
+            return
+        }
+
+        NotificationCenter.default.post(
+            name: dcSettingsUbiquitousStoreDidChangeLocallyNotification,
+            object: nil,
+            userInfo: [
+                dcSettingsUbiquitousStoreChangedKey: key,
+                dcSettingsUbiquitousStoreChangedValue: value ?? NSNull()
+            ]
+        )
     }
 
     private func decodedValue<ValueType>(_ object: Any?, as type: ValueType.Type) -> ValueType? {

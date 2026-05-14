@@ -327,6 +327,19 @@ Use `.excludeGroups(_:)` for group keys, `.excludeSettings(_:)` for setting keys
 - `Date`: a date picker. Date editing on watchOS requires watchOS 10 or newer; earlier watchOS versions display the current date without editing.
 - `Color`: a color picker on iOS, macOS, and visionOS. On watchOS, color settings display the current color without editing. Use `Color` settings for user-selected RGB-resolvable colors; persist a custom `Codable` token or enum for stable named themes, semantic colors, dynamic colors, or asset colors.
 
+The configuration model validates supported values for every `DCSetting`, but the default UI only renders configuration for these combinations:
+
+| Value type | `options` UI | `bounds` UI | `step` UI |
+| --- | --- | --- | --- |
+| `Bool` | No | No | No |
+| `Int` | Picker/menu | Slider | Stepper or slider increment |
+| `Double` | Picker/menu | Slider | Bounded slider increment |
+| `String` | Picker/menu | No | No |
+| `Date` | No | Date picker range | No |
+| `Color` | No | No | No |
+
+Unsupported UI combinations still participate in validation. For example, a `Date` setting with options will reject values outside those options, but the built-in date picker will not render an options picker. Use `DCSettingViewProviding` for custom controls when you need UI for those combinations.
+
 ### Customization
 
 Several `DCSetting` options affect how the setting renders inside a `DCSettingsView`:

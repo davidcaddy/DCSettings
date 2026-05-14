@@ -174,6 +174,7 @@ extension DCSettable {
     /// An optional label for the setting.
     public let label: String?
 
+    private let defaultValue: ValueType
     private var _value: ValueType
 
     /// The current value of the setting.
@@ -276,12 +277,13 @@ extension DCSettable {
         return step > .zero
     }
 
-    private init(key: DCKeyRepresentable, value: ValueType, label: String?, configuration: DCSettingConfiguration<ValueType>?, store: DCSettingStore?) {
+    private init(key: DCKeyRepresentable, defaultValue: ValueType, label: String?, configuration: DCSettingConfiguration<ValueType>?, store: DCSettingStore?) {
         precondition(Self.supportsValueType, "DCSetting optional value types are not supported. Use a concrete default value or an explicit enum case instead.")
-        precondition(Self.isValid(value, configuration: configuration), "DCSetting default value must satisfy configured options and bounds.")
+        precondition(Self.isValid(defaultValue, configuration: configuration), "DCSetting default value must satisfy configured options and bounds.")
 
         self.key = key.keyValue
-        self._value = value
+        self.defaultValue = defaultValue
+        self._value = defaultValue
         self.label = label
         self.store = store
         self.configuration = configuration
@@ -297,7 +299,7 @@ extension DCSettable {
     ///   - label: An optional label for the setting. The default value is `nil`.
     ///   - store: An optional `DCSettingStore` instance used to store the setting value. The default value is `nil`.
     public convenience init(key: DCKeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = nil) {
-        self.init(key: key.keyValue, value: defaultValue, label: label, configuration: nil, store: store)
+        self.init(key: key.keyValue, defaultValue: defaultValue, label: label, configuration: nil, store: store)
     }
 
     /// Initializes a new `DCSetting` instance with the specified key, label, store, options array, and default index.
@@ -317,7 +319,7 @@ extension DCSettable {
             let configuredOptions = options.enumerated().map { index, value in
                 DCSettingOption(value: value, label: String(value), isDefault: index == defaultIndex)
             }
-            self.init(key: key, value: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
+            self.init(key: key, defaultValue: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
         }
         else {
             return nil
@@ -339,7 +341,7 @@ extension DCSettable {
     ///   This value must be greater than zero when provided. Floating-point steps must also be finite.
     public convenience init(key: DCKeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = nil, lowerBound: ValueType, upperBound: ValueType, step: ValueType? = nil) where ValueType: Numeric & Comparable {
         precondition(Self.isValidStep(step), "DCSetting step must be greater than zero and finite.")
-        self.init(key: key, value: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: nil, bounds: DCValueBounds(lowerBound: lowerBound, upperBound: upperBound), step: step), store: store)
+        self.init(key: key, defaultValue: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: nil, bounds: DCValueBounds(lowerBound: lowerBound, upperBound: upperBound), step: step), store: store)
     }
 
     /// Initializes a new `DCSetting` instance with the specified key, label, store and result builder closure.
@@ -380,7 +382,7 @@ extension DCSettable {
     ///   - configuredOptions: An array of `DCSettingOption` instances.
     public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, options configuredOptions: [DCSettingOption<ValueType>]) {
         if let defaultValue = configuredOptions.first(where: { $0.isDefault })?.value ?? configuredOptions.first?.value {
-            self.init(key: key, value: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
+            self.init(key: key, defaultValue: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
         }
         else {
             return nil
@@ -416,10 +418,17 @@ extension DCSettable {
     ///
     /// `DCSettingsManager` calls this during configuration. Avoid invoking it directly.
     public func refresh() {
-        if let newValue: ValueType = effectiveStore?.object(forKey: key), value != newValue, isValid(newValue) {
-            objectWillChange.send()
-            _value = newValue
+        guard let store = effectiveStore else {
+            return
         }
+
+        if let newValue: ValueType = store.object(forKey: key) {
+            updateValueFromStore(newValue)
+        }
+        else {
+            updateValueFromStore(defaultValue)
+        }
+
         setUpListener()
     }
 
@@ -432,6 +441,15 @@ extension DCSettable {
 
     private func isValid(_ value: ValueType) -> Bool {
         _isValidConfiguredValue(value)
+    }
+
+    private func updateValueFromStore(_ newValue: ValueType) {
+        guard _value != newValue, isValid(newValue) else {
+            return
+        }
+
+        objectWillChange.send()
+        _value = newValue
     }
 
     /// Returns a `Binding` to the setting's current value, suitable for SwiftUI controls.
@@ -448,12 +466,11 @@ extension DCSettable {
         cancellable = store.valuePublisher(forKey: key, as: ValueType.self)
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
-                guard let self, let newValue, self._value != newValue, self.isValid(newValue) else {
+                guard let self else {
                     return
                 }
 
-                self.objectWillChange.send()
-                self._value = newValue
+                self.updateValueFromStore(newValue ?? self.defaultValue)
             }
     }
 }

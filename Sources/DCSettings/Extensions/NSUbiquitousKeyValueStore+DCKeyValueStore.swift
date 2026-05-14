@@ -7,6 +7,19 @@
 import Foundation
 import Combine
 
+private func areUbiquitousKeyValueStoreObjectsEqual(_ lhs: Any?, _ rhs: Any?) -> Bool {
+    switch (lhs, rhs) {
+    case (nil, nil):
+        return true
+    case (nil, _), (_, nil):
+        return false
+    case let (lhs as NSObject, rhs as NSObject):
+        return lhs.isEqual(rhs)
+    default:
+        return false
+    }
+}
+
 @available(watchOS 9.0, *)
 extension NSUbiquitousKeyValueStore: DCKeyValueStore {
 
@@ -43,7 +56,26 @@ extension NSUbiquitousKeyValueStore: DCKeyValueStore {
                 return changedKeys.contains(key)
             }
             .map { _ in self.object(forKey: key) }
+        let localWritePublisher = NotificationCenter.default.publisher(for: dcSettingsUbiquitousStoreDidChangeLocallyNotification)
+            .filter { notification in
+                notification.userInfo?[dcSettingsUbiquitousStoreChangedKey] as? String == key
+            }
+            .map { notification -> Any? in
+                guard let value = notification.userInfo?[dcSettingsUbiquitousStoreChangedValue] else {
+                    return self.object(forKey: key)
+                }
+
+                if value is NSNull {
+                    return nil
+                }
+
+                return value
+            }
         let initialValuePublisher = Just(self.object(forKey: key))
-        return initialValuePublisher.merge(with: notificationPublisher).eraseToAnyPublisher()
+        return initialValuePublisher
+            .merge(with: notificationPublisher)
+            .merge(with: localWritePublisher)
+            .removeDuplicates(by: areUbiquitousKeyValueStoreObjectsEqual)
+            .eraseToAnyPublisher()
     }
 }

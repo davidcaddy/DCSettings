@@ -26,7 +26,8 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 - Supports RGB-resolvable Color setting values on platforms with UIKit or AppKit by storing RGBA components.
 - Uses native `NSUbiquitousKeyValueStore` integer storage for ubiquitous `Int` settings.
 - Fails loudly when a named `UserDefaults` suite cannot be created instead of silently falling back to `.standard`.
-- De-duplicates unchanged UserDefaults publisher values and ignores unrelated ubiquitous-store key changes.
+- Resets live `DCSetting` instances to their configured default value when the backing store value is removed.
+- De-duplicates unchanged UserDefaults and ubiquitous-store publisher values, ignores unrelated ubiquitous-store key changes, and propagates same-process ubiquitous writes to other live settings.
 - Keeps `DCSetting.store` as the explicit per-setting override while re-resolving inherited group stores on each manager configuration.
 - Adds `if`/`switch`/`for` control-flow support to settings result builders.
 - Refines default settings controls, option pickers, date ranges, and platform list styles.
@@ -45,6 +46,7 @@ DCSettings 1.0 stabilizes the public API after the beta period.
 - `Color` no longer conforms to `Codable` through DCSettings. RGB-resolvable colors are stored internally as RGBA components on platforms with UIKit or AppKit; persist a custom `Codable` token or enum for stable named themes, semantic colors, dynamic colors, or asset colors.
 - `DCSettingOption.labelView()` is now internal. Use the option's public `label` and `image` properties, or provide custom option UI through your own views.
 - `DCSettingView`, `DCSettingsView`, and `DCSettingViewProviding` are not available on tvOS in 1.0. The core settings and storage APIs still support tvOS.
+- The default settings UI renders `options` for `Int`, `Double`, and `String`; `bounds` for `Int`, `Double`, and `Date`; and `step` for `Int` controls and bounded `Double` sliders. Other configuration combinations still validate values, but they need custom UI if users should edit them directly.
 - Configure, read, and write settings through `DCSettingsManager` from the main actor.
 - Configure a `DCSettingsManager` before presenting settings UI or constructing stored-value wrappers. Reconfiguring replaces the manager's lookup state, but views and wrappers that already exist keep observing their original setting instances.
 - `DCStoredValue`, `DCStoredRepresentedValue`, `DCSettingView`, and `DCSettingsView` now expose their main-actor isolation directly in Swift 6. Hop to the main actor before using them from nonisolated or background contexts.

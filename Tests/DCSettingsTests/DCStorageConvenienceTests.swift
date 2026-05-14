@@ -285,6 +285,31 @@ import Combine
         store.set(42, forKey: key)
     }
 
+    @Test func ubiquitousStorePublishesLocalWritesToOtherLiveSettings() async {
+        #if os(watchOS)
+            if #unavailable(watchOS 9.0) {
+                return
+            }
+        #endif
+
+        let backingStore = NSUbiquitousKeyValueStore.default
+        let key = "DCStorageConvenienceTests.\(UUID().uuidString).localWrite"
+
+        backingStore.removeObject(forKey: key)
+        defer {
+            backingStore.removeObject(forKey: key)
+        }
+
+        let firstSetting = DCSetting(key: key, defaultValue: "default", store: .ubiquitous)
+        let secondSetting = DCSetting(key: key, defaultValue: "default", store: .ubiquitous)
+
+        firstSetting.refresh()
+        secondSetting.refresh()
+        firstSetting.value = "updated"
+
+        #expect(await waitUntil { secondSetting.value == "updated" })
+    }
+
     private func setGeneric<ValueType>(_ value: ValueType, forKey key: String, in store: DCSettingStore) -> Bool {
         store.set(value, forKey: key)
     }
