@@ -90,7 +90,7 @@ Configure a `DCSettingsManager` before presenting `DCSettingsView` or constructi
 - `DCSettable` now includes `set(_:) -> Bool` for writes that need a success result. A default implementation is provided, but custom conformers that persist values should override it.
 - `DCSetting` preserves `store == nil` as a reusable inherited-store state. Custom `DCSettable` conformers with `store == nil` are assigned the containing group store during configuration, so reusable custom conformers should model explicit versus inherited storage themselves if that distinction matters.
 - `DCStoredValue` and `DCStoredRepresentedValue` require concrete `DCSetting` instances. Custom `DCSettable` conformers remain supported through manager accessors, bindings, publishers, and settings views.
-- `DCSettingStore.set(_:forKey:)` overloads now return `Bool` to indicate whether the value was persisted.
+- `DCSettingStore.set(_:forKey:)` overloads now return `Bool` to indicate whether DCSettings accepted and submitted the value. They do not guarantee durable persistence because backing stores do not report write failures; custom store failures are assumed successful once the backing-store setter returns.
 - `DCKeyValueStore` now requires `Sendable`; custom stores should be thread-safe or explicitly audited.
 - `Color` no longer conforms to `Codable` publicly through DCSettings. RGB-resolvable colors are stored internally as RGBA components on platforms with UIKit or AppKit.
 - `DCSettingOption.labelView()` is internal in 1.0. Use the option's public `label` and `image` properties, or provide custom option UI through your own views.
@@ -121,11 +121,13 @@ DCSettingsView(filter: .excludeSettings(["showNotifications"]))
 DCSettingsView(filter: .exclude(groupKeys: ["general"], settingKeys: ["showNotifications"]))
 ```
 
-If you set values directly through `DCSettingStore`, decide whether to handle persistence failure:
+If you set values directly through `DCSettingStore`, decide whether to handle rejected writes:
 
 ```swift
 let didSave = DCSettingStore.standard.set(value, forKey: "settingKey")
 ```
+
+A `true` result means DCSettings accepted the value, encoded it if needed, and submitted it to an available backing store. It does not guarantee durable persistence because the backing-store APIs do not report write failures.
 
 Custom `DCSettable` conformers need the correctly spelled configuration property:
 
@@ -176,9 +178,11 @@ Each `DCSetting` has a unique key, a non-optional default value, and an optional
 
 > Note: `DCSetting` supports non-optional values for `Bool`, `Int`, `Double`, `String`, `Date`, and `Color` (SwiftUI) by default. `Color` storage is available for RGB-resolvable colors on platforms with UIKit or AppKit. Custom non-optional `Codable` types are also supported.
 
+> Note: Custom `Codable` value types can be stored and validated, but the default settings UI only renders controls for `Bool`, `Int`, `Double`, `String`, `Date`, and `Color`. Use `DCSettingViewProviding` when users should edit custom value types inside `DCSettingsView`.
+
 `DCSettingConfiguration` exposes three additional knobs:
 
-- **options**: a list of `DCSettingOption` values that constrain the setting. Option values must be unique, and values outside the list are ignored. Each option has a value and an optional `label` and `image`.
+- **options**: a list of `DCSettingOption` values that constrain the setting. Option values must be unique, and values outside the list are ignored. Each option has a value and optional `label`, `image`, or `systemImage` metadata.
 - **bounds**: a `DCValueBounds` lower/upper range for `Comparable` values. Values outside the range are ignored.
 - **step**: a positive-increment hint for editing controls. Bounded `DCSetting` initializers reject non-positive and non-finite step values.
 
@@ -264,6 +268,8 @@ On platforms with UIKit or AppKit, including watchOS, RGB-resolvable `Color` val
 
 `DCSetting` value types must be non-optional; model unset, inherited, or system-default states with a concrete default value or an explicit enum case. Values that are neither property-list compatible nor a supported RGB-resolvable `Color` or `Codable` value are rejected in debug builds with an assertion and are not persisted.
 
+`DCSettingStore.set(_:forKey:)` returns `true` when DCSettings accepts a value, encodes it if needed, and submits it to an available backing store. It returns `false` when there is no backing store, the value is unsupported, or encoding fails. It cannot observe durable-write failures; custom `DCKeyValueStore` writes are assumed successful once the backing-store setter returns.
+
 Custom `DCKeyValueStore` implementations should accept `Data` values to support custom `Codable` setting types. They must also be `Sendable`; use internal synchronization or another concurrency-safe design when storing mutable state.
 
 **DCSettings** also supports `NSUbiquitousKeyValueStore`, which stores values in iCloud so settings can be shared across a user's devices:
@@ -342,13 +348,13 @@ Unsupported UI combinations still participate in validation. For example, a `Dat
 
 ### Customization
 
-Several `DCSetting` options affect how the setting renders inside a `DCSettingsView`:
+Several setting and option properties affect how values render inside a `DCSettingsView`:
 
-- `label`: a human-readable name shown next to the control.
-- `image`: the name of an asset-catalog image shown next to the label.
-- `systemImage`: the name of an SF Symbol shown next to the label.
-- `bounds`: a valid range for `Comparable` values. Numeric settings with bounds render as sliders constrained to the range.
-- `step`: the positive increment used by numeric controls. It is a UI hint only — use `options` or `bounds` to validate values. Bounded initializers reject non-positive and non-finite steps, and the default controls ignore invalid step values supplied through custom configurations.
+- `DCSetting.label`: a human-readable name shown next to the control.
+- `DCSettingOption.image`: the name of an asset-catalog image shown next to an option label.
+- `DCSettingOption.systemImage`: the name of an SF Symbol shown next to an option label.
+- `DCSettingConfiguration.bounds`: a valid range for `Comparable` values. Numeric settings with bounds render as sliders constrained to the range.
+- `DCSettingConfiguration.step`: the positive increment used by numeric controls. It is a UI hint only — use `options` or `bounds` to validate values. Bounded initializers reject non-positive and non-finite steps, and the default controls ignore invalid step values supplied through custom configurations.
 
 ### DCSettingViewProviding
 

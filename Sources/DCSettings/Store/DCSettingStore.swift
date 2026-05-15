@@ -39,6 +39,11 @@ private final class UserDefaultsCache: @unchecked Sendable {
 }
 
 /// The backing key-value store used to persist a setting's value.
+///
+/// `set` methods return whether DCSettings accepted the value, encoded it if needed,
+/// found a backing store, and submitted the write. Backing stores follow
+/// `DCKeyValueStore`, which does not report durable-write failures, so custom store
+/// write failures are assumed successful once the backing-store setter returns.
 public enum DCSettingStore: Sendable {
 
     /// `UserDefaults.standard`.
@@ -118,7 +123,9 @@ public enum DCSettingStore: Sendable {
     /// - Parameters:
     ///   - value: The value to store in the key-value store.
     ///   - key: The key with which to associate the value.
-    /// - Returns: `true` when the value could be stored, otherwise `false`.
+    /// - Returns: `true` when the value was accepted, encoded if needed, and submitted
+    /// to a backing store, otherwise `false`. This does not guarantee durable persistence
+    /// because backing-store setters do not report write failures.
     @discardableResult public func set<ValueType>(_ value: ValueType?, forKey key: String) -> Bool {
         guard let backingStore else {
             return false
@@ -185,7 +192,9 @@ public enum DCSettingStore: Sendable {
     /// - Parameters:
     ///   - value: The boolean value to store in the key-value store.
     ///   - key: The key with which to associate the value.
-    /// - Returns: `true` when the value could be stored, otherwise `false`.
+    /// - Returns: `true` when the write was submitted to a backing store, otherwise
+    /// `false`. This does not guarantee durable persistence because backing-store setters
+    /// do not report write failures.
     @discardableResult public func set(_ value: Bool, forKey key: String) -> Bool {
         guard let backingStore else {
             return false
@@ -209,7 +218,9 @@ public enum DCSettingStore: Sendable {
     /// - Parameters:
     ///   - value: The integer value to store in the key-value store.
     ///   - key: The key with which to associate the value.
-    /// - Returns: `true` when the value could be stored, otherwise `false`.
+    /// - Returns: `true` when the write was submitted to a backing store, otherwise
+    /// `false`. This does not guarantee durable persistence because backing-store setters
+    /// do not report write failures.
     @discardableResult public func set(_ value: Int, forKey key: String) -> Bool {
         guard let backingStore else {
             return false
@@ -233,7 +244,9 @@ public enum DCSettingStore: Sendable {
     /// - Parameters:
     ///   - value: The double-precision floating-point value to store in the key-value store.
     ///   - key: The key with which to associate the value.
-    /// - Returns: `true` when the value could be stored, otherwise `false`.
+    /// - Returns: `true` when the write was submitted to a backing store, otherwise
+    /// `false`. This does not guarantee durable persistence because backing-store setters
+    /// do not report write failures.
     @discardableResult public func set(_ value: Double, forKey key: String) -> Bool {
         guard let backingStore else {
             return false

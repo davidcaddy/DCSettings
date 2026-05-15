@@ -179,7 +179,7 @@ extension DCSettable {
 
     /// The current value of the setting.
     ///
-    /// Assignments that fail validation or cannot be persisted are ignored. Use
+    /// Assignments that fail validation or cannot be submitted to storage are ignored. Use
     /// `DCSettingsManager.set(_:forKey:)` when you need a boolean result.
     public var value: ValueType {
         get {
@@ -215,8 +215,9 @@ extension DCSettable {
     /// Attempts to update the setting's value and persist it to the effective store.
     ///
     /// - Parameter newValue: The new value to assign.
-    /// - Returns: `true` when the value is valid and either already current or successfully
-    /// persisted, otherwise `false`.
+    /// - Returns: `true` when the value is valid and either already current or accepted
+    /// and submitted to the backing store, otherwise `false`. Backing-store setters do not
+    /// report durable-write failures, so custom store failures cannot be detected here.
     @discardableResult public func set(_ newValue: ValueType) -> Bool {
         guard isValid(newValue) else {
             return false

@@ -24,6 +24,8 @@ On platforms with UIKit or AppKit, including watchOS, RGB-resolvable `Color` val
 
 ``DCSetting`` value types must be non-optional; model unset, inherited, or system-default states with a concrete default value or an explicit enum case. Values that are neither property-list compatible nor a supported RGB-resolvable `Color` or `Codable` value are rejected in debug builds with an assertion and are not persisted. Custom ``DCKeyValueStore`` implementations should be `Sendable` and accept `Data` values to support custom `Codable` setting types.
 
+``DCSettingStore/set(_:forKey:)`` returns `true` when DCSettings accepts a value, encodes it if needed, and submits it to an available backing store. It does not guarantee durable persistence because ``DCKeyValueStore`` setters follow `UserDefaults` and `NSUbiquitousKeyValueStore` by not reporting write failures. Custom backing-store failures are therefore assumed successful once the setter returns.
+
 Each group can provide a backing store, and each ``DCSetting`` can provide a per-setting override. When a setting's store is `nil`, the manager resolves the inherited group store at configuration time without changing the setting itself, so a reused setting placed under a different group store picks up the new inherited store. Custom ``DCSettable`` conformers do not get that non-mutating inherited-store behavior automatically; if a custom conformer's `store` is `nil`, ``DCSettingsManager`` assigns the containing group store to the conformer during configuration.
 
 ### Keys and validation
@@ -32,7 +34,7 @@ Group keys and setting keys must be unique across all groups configured in a ``D
 
 Configured options and comparable bounds are validated when a ``DCSetting`` is initialized, written, or refreshed. Option values must be unique, and values outside the configured option list or bounds are ignored. The configuration `step` value is a positive-increment hint for editing controls; bounded ``DCSetting`` initializers reject non-positive or non-finite step values. In the default settings UI, unbounded `Double` settings use numeric text entry and bounded numeric settings use sliders.
 
-The default settings UI renders `options` for `Int`, `Double`, and `String`; `bounds` for `Int`, `Double`, and `Date`; and `step` for `Int` controls and bounded `Double` sliders. Other configuration combinations still validate values, but they do not change the built-in control. Use ``DCSettingViewProviding`` when you need custom UI for those combinations.
+The default settings UI renders controls for `Bool`, `Int`, `Double`, `String`, `Date`, and `Color`. It renders `options` for `Int`, `Double`, and `String`; `bounds` for `Int`, `Double`, and `Date`; and `step` for `Int` controls and bounded `Double` sliders. Other configuration combinations and custom value types still validate values, but the built-in UI does not render controls for them. Use ``DCSettingViewProviding`` when you need custom UI for those combinations.
 
 ### Migrating to 1.0
 
@@ -43,7 +45,7 @@ DCSettings 1.0 stabilizes the public API and includes source-breaking changes fr
 - ``DCSettable/set(_:)`` returns `Bool` for writes that need a success result. A default implementation is provided, but custom conformers that persist values should override it.
 - ``DCSetting`` preserves `store == nil` as a reusable inherited-store state. Custom ``DCSettable`` conformers with `store == nil` are assigned the containing group store during configuration, so reusable custom conformers should model explicit versus inherited storage themselves if that distinction matters.
 - ``DCStoredValue`` and ``DCStoredRepresentedValue`` require concrete ``DCSetting`` instances. Custom ``DCSettable`` conformers remain supported through manager accessors, bindings, publishers, and settings views.
-- `DCSettingStore.set(_:forKey:)` overloads return `Bool`; check the return value when persistence failure matters.
+- `DCSettingStore.set(_:forKey:)` overloads return `Bool` when DCSettings accepts and submits a write. This does not guarantee durable persistence; custom ``DCKeyValueStore`` failures are assumed successful once the backing-store setter returns.
 - ``DCKeyValueStore`` now requires `Sendable`; custom stores should be thread-safe or explicitly audited.
 - ``DCSetting`` value types must be non-optional, and bounded defaults must satisfy configured options and bounds.
 - Setting option values must be unique.

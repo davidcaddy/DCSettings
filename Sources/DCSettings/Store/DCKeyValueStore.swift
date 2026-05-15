@@ -10,6 +10,10 @@ import Combine
 ///
 /// Conformers must be safe to pass across concurrency domains, since `DCSettingStore`
 /// is actor-neutral and `Sendable`.
+///
+/// Store setters follow `UserDefaults` and `NSUbiquitousKeyValueStore` by not reporting
+/// durable-write failures. `DCSettingStore` treats a setter returning normally as an
+/// accepted write.
 public protocol DCKeyValueStore: Sendable {
 
     /// Returns a publisher that emits the value for the given key whenever it changes.
