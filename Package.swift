@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,11 +6,11 @@ import PackageDescription
 let package = Package(
     name: "DCSettings",
     platforms: [
-        .iOS(.v13),
-        .watchOS(.v6),
-        .tvOS(.v13),
-        .macOS(.v10_15),
-        .visionOS(.v1)
+        .iOS(.v14),
+        .watchOS(.v7),
+        .tvOS(.v14),
+        .macOS(.v11),
+        .visionOS("2.0")
     ],
     products: [
         .library(
@@ -22,9 +22,13 @@ let package = Package(
     targets: [
         .target(
             name: "DCSettings",
-            dependencies: []),
+            dependencies: [],
+            resources: [
+                .process("PrivacyInfo.xcprivacy")
+            ]),
         .testTarget(
             name: "DCSettingsTests",
             dependencies: ["DCSettings"]),
-    ]
+    ],
+    swiftLanguageModes: [.v6]
 )

@@ -6,40 +6,35 @@
 
 import SwiftUI
 
-/// A protocol that defines the requirements for a type that provides custom views for settings.
+#if !os(tvOS)
+
+/// Supplies custom SwiftUI views for individual settings inside a `DCSettingsView`.
 ///
-/// The `DCSettingViewProviding` protocol defines the requirements for a type that provides custom views for settings.
-/// The protocol includes a `content` method that takes a `DCSettable` instance as an argument
-/// and returns an optional view representing the user interface for changing the setting.
-public protocol DCSettingViewProviding {
-    
-    /// The type of view returned by the `content` method.
+/// Conform to this protocol and implement `content(for:)` to override the default control
+/// for selected settings. Return `nil` for settings that should fall back to the default view.
+@MainActor public protocol DCSettingViewProviding {
+
+    /// The type of view returned by `content(for:)`.
     associatedtype Content: View
-    
-    /// Returns a view representing the user interface for changing the specified setting.
+
+    /// Returns a custom view for the given setting, or `nil` to use the default control.
     ///
-    /// This method takes a `DCSettable` instance as an argument and returns an optional view representing the user interface for managing the setting.
-    /// If no custom view is available for the specified setting, this method should return `nil`.
-    ///
-    /// - Parameter setting: A `DCSettable` instance representing the setting to be managed.
-    /// - Returns: An optional view representing the user interface for managing the specified setting.
+    /// - Parameter setting: The setting to render.
     func content(for setting: any DCSettable) -> Content?
 }
 
-/// A type that provides no custom views for settings.
+/// A `DCSettingViewProviding` that never supplies a custom view.
 ///
-/// `DCDefaultViewProvider` is a concrete implementation of the `DCSettingViewProviding` protocol that provides no custom views for settings.
-/// This type can be used as a placeholder when no custom views are needed.
+/// Use this when you only want the package's default controls for every setting.
 public struct DCDefaultViewProvider: DCSettingViewProviding {
-    
+
     /// Creates a new `DCDefaultViewProvider` instance.
     public init() {}
-    
-    /// Returns a view representing the user interface for changing the specified setting.
-    ///
-    /// This default implementation of the `content` method always returns `nil`, indicating that no custom view is available for the specified setting.
-    ///
-    /// - Parameter setting: A `DCSettable` instance representing the setting to be changed.
-    /// - Returns: An optional view representing the user interface for changing the specified setting. The default implementation always returns `nil`.
-    @ViewBuilder public func content(for setting: any DCSettable) -> (some View)? {}
+
+    /// Always returns `nil`, so every setting uses its default control.
+    public func content(for setting: any DCSettable) -> EmptyView? {
+        return nil
+    }
 }
+
+#endif

@@ -10,7 +10,7 @@ import Foundation
 ///
 /// Conforming types must implement the `keyValue` property to provide a string representation of the instance.
 public protocol DCKeyRepresentable {
-    
+
     /// A string representation of the instance.
     var keyValue: String { get }
 }

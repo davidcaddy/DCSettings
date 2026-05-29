@@ -12,17 +12,47 @@ import Foundation
 ///
 /// The struct includes an optional array of `DCSettingOption` instances,
 /// an optional `DCValueBounds` instance representing the range of valid values for the setting,
-/// and an optional step value that specifies the increment or decrement between valid values.
+/// and an optional step value that specifies the editing increment for controls.
+/// Default controls ignore step values that are not positive and finite.
 ///
 /// - Note: The value type must conform to the `Equatable` protocol.
 public struct DCSettingConfiguration<ValueType>: Equatable where ValueType: Equatable {
-    
-    /// An optional array of `DCSettingOption` instances representing the available options for the setting.
+
+    /// An optional array of `DCSettingOption` instances representing the available unique options for the setting.
     public let options: [DCSettingOption<ValueType>]?
-    
+
     /// An optional `DCValueBounds` instance representing the range of valid values for the setting.
     public let bounds: DCValueBounds<ValueType>?
-    
-    /// An optional step value that specifies the increment or decrement between valid values.
+
+    /// An optional positive step value that specifies the editing increment for controls.
     public let step: ValueType?
+
+    /// Creates a new setting configuration with optional value options, bounds, and step value.
+    ///
+    /// - Parameters:
+    ///   - options: An optional array of setting options representing unique valid values for the setting.
+    ///   - bounds: Optional lower and upper bounds representing valid values for the setting.
+    ///   - step: An optional positive increment used by controls that edit the setting.
+    public init(options: [DCSettingOption<ValueType>]? = nil, bounds: DCValueBounds<ValueType>? = nil, step: ValueType? = nil) {
+        precondition(!Self.hasDuplicateOptionValues(options), "DCSettingConfiguration option values must be unique.")
+
+        self.options = options
+        self.bounds = bounds
+        self.step = step
+    }
+
+    static func hasDuplicateOptionValues(_ options: [DCSettingOption<ValueType>]?) -> Bool {
+        guard let options else {
+            return false
+        }
+
+        for index in options.indices {
+            let remainingOptions = options[options.index(after: index)...]
+            if remainingOptions.contains(where: { $0.value == options[index].value }) {
+                return true
+            }
+        }
+
+        return false
+    }
 }

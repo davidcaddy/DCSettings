@@ -6,40 +6,79 @@
 
 import Foundation
 import Combine
+import SwiftUI
 
-/// An enumeration that represents different types of key-value stores.
-public enum DCSettingStore {
-    
-    /// The standard `UserDeafults` key-value store.
+let dcSettingsUbiquitousStoreDidChangeLocallyNotification = Notification.Name("DCSettingsUbiquitousStoreDidChangeLocallyNotification")
+let dcSettingsUbiquitousStoreChangedKey = "DCSettingsUbiquitousStoreChangedKey"
+let dcSettingsUbiquitousStoreChangedValue = "DCSettingsUbiquitousStoreChangedValue"
+
+private let userDefaultsCache = UserDefaultsCache()
+
+private final class UserDefaultsCache: @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var stores: [String: UserDefaults] = [:]
+
+    func userDefaults(suiteName: String) -> UserDefaults? {
+        lock.lock()
+        defer { lock.unlock() }
+
+        if let store = stores[suiteName] {
+            return store
+        }
+
+        let store = UserDefaults(suiteName: suiteName)
+        guard let store else {
+            assertionFailure("Unable to create UserDefaults suite named '\(suiteName)'. Values for this suite will not be persisted.")
+            return nil
+        }
+
+        stores[suiteName] = store
+        return store
+    }
+}
+
+/// The backing key-value store used to persist a setting's value.
+///
+/// `set` methods return whether DCSettings accepted the value, encoded it if needed,
+/// found a backing store, and submitted the write. Backing stores follow
+/// `DCKeyValueStore`, which does not report durable-write failures, so custom store
+/// write failures are assumed successful once the backing-store setter returns.
+public enum DCSettingStore: Sendable {
+
+    /// `UserDefaults.standard`.
     case standard
-    
-    /// A `UserDeafults` key-value store with the specified suite name.
+
+    /// A `UserDefaults` instance for the specified suite name.
     ///
-    /// - Parameter suiteName: The suite name of the `UserDeafults` store to use.
+    /// - Parameter suiteName: The suite name of the `UserDefaults` store to use.
     case userDefaults(suiteName: String)
-    
-    /// A key-value store that uses the iCloud  `NSUbiquitousKeyValueStore` key-value store.
+
+    /// `NSUbiquitousKeyValueStore.default`, for syncing values via iCloud.
+    ///
+    /// Available on watchOS 9.0 or newer.
+    @available(watchOS 9.0, *)
     case ubiquitous
-    
-    /// A custom key-value store that conforms to the `DCKeyValueStore` protocol.
+
+    /// A custom key-value store conforming to `DCKeyValueStore`.
     ///
     /// - Parameter backingStore: The custom key-value store to use.
     case custom(backingStore: DCKeyValueStore)
-    
-    private var backingStore: DCKeyValueStore {
+
+    private var backingStore: DCKeyValueStore? {
         switch self {
         case .standard:
             return UserDefaults.standard
         case .userDefaults(let suiteName):
-            return UserDefaults.init(suiteName: suiteName) ?? .standard
+            return userDefaultsCache.userDefaults(suiteName: suiteName)
         case .ubiquitous:
             #if os(watchOS)
                 if #available(watchOS 9.0, *) {
                     return NSUbiquitousKeyValueStore.default
                 }
-                else {
-                    fatalError("[DCSettingStore] 'NSUbiquitousKeyValueStore' is only available in watchOS 9.0 or newer")
-                }
+
+                assertionFailure("DCSettingStore.ubiquitous requires watchOS 9.0 or newer.")
+                return nil
             #else
                 return NSUbiquitousKeyValueStore.default
             #endif
@@ -47,110 +86,242 @@ public enum DCSettingStore {
             return backingStore
         }
     }
-    
+
     /// Returns a publisher that emits the value for the given key whenever it changes.
     ///
     /// - Parameter key: The key for the value to observe.
     /// - Returns: A publisher that emits the value for the given key whenever it changes.
     public func valuePublisher(forKey key: String) -> AnyPublisher<Any?, Never> {
+        guard let backingStore else {
+            return Just(nil).eraseToAnyPublisher()
+        }
+
         return backingStore.valuePublisher(forKey: key)
     }
-    
+
+    /// Returns a publisher that emits the typed value for the given key whenever it changes.
+    ///
+    /// - Parameters:
+    ///   - key: The key for the value to observe.
+    ///   - type: The expected value type.
+    /// - Returns: A publisher that emits decoded typed values for the given key whenever it changes.
+    public func valuePublisher<ValueType>(forKey key: String, as type: ValueType.Type) -> AnyPublisher<ValueType?, Never> {
+        return valuePublisher(forKey: key)
+            .map { object in
+                decodedValue(object, as: type)
+            }
+            .eraseToAnyPublisher()
+    }
+
     /// Sets the value of the specified key in the key-value store.
+    ///
+    /// Standard property-list compatible values are stored directly. On platforms
+    /// with UIKit or AppKit, RGB-resolvable `Color` values are stored as
+    /// JSON-encoded RGBA component `Data`. Other `Codable` values are also stored
+    /// as JSON-encoded `Data`.
     ///
     /// - Parameters:
     ///   - value: The value to store in the key-value store.
     ///   - key: The key with which to associate the value.
-    public func set<ValueType>(_ value: ValueType?, forKey key: String) {
+    /// - Returns: `true` when the value was accepted, encoded if needed, and submitted
+    /// to a backing store, otherwise `false`. This does not guarantee durable persistence
+    /// because backing-store setters do not report write failures.
+    @discardableResult public func set<ValueType>(_ value: ValueType?, forKey key: String) -> Bool {
+        guard let backingStore else {
+            return false
+        }
+
+        guard let value else {
+            backingStore.set(nil, forKey: key)
+            publishLocalWriteIfNeeded(nil, forKey: key)
+            return true
+        }
+
         if isStandardType(ValueType.self) {
-            backingStore.set(value, forKey: key)
+            setStandardValue(value, forKey: key)
+            publishLocalWriteIfNeeded(value, forKey: key)
+            return true
         }
-        else if let encodableValue = value as? Encodable, let data = try? JSONEncoder().encode(encodableValue) {
-            backingStore.set(data, forKey: key)
+
+        #if canImport(UIKit) || canImport(AppKit)
+            if let color = value as? Color {
+                do {
+                    let data = try color.dcSettingsEncodedData()
+                    backingStore.set(data, forKey: key)
+                    publishLocalWriteIfNeeded(data, forKey: key)
+                    return true
+                }
+                catch {
+                    assertionFailure("[DCSettingStore] Failed to encode color for key '\(key)': \(error)")
+                    return false
+                }
+            }
+        #endif
+
+        if let codableValue = value as? Codable {
+            do {
+                let data = try JSONEncoder().encode(codableValue)
+                backingStore.set(data, forKey: key)
+                publishLocalWriteIfNeeded(data, forKey: key)
+                return true
+            }
+            catch {
+                assertionFailure("[DCSettingStore] Failed to encode value for key '\(key)': \(error)")
+                return false
+            }
         }
+
+        #if canImport(UIKit) || canImport(AppKit)
+            assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible, RGB-resolvable Color, or Codable.")
+        #else
+            assertionFailure("[DCSettingStore] Unsupported value for key '\(key)'. Values must be property-list compatible or Codable.")
+        #endif
+        return false
     }
-    
+
     /// Returns the value associated with the specified key.
     ///
     /// - Parameter key: A key in the key-value store.
     /// - Returns: The value associated with the specified key, or `nil` if the key does not exist.
     public func object<ValueType>(forKey key: String) -> ValueType? {
-        if case .custom = self {
-            return backingStore.object(forKey: key) as? ValueType
-        }
-        
-        let object = backingStore.object(forKey: key)
-        if isStandardType(ValueType.self) {
-            return backingStore.object(forKey: key) as? ValueType
-        }
-        else if let data = object as? Data, let decodableType = ValueType.self as? Decodable.Type {
-            let value = try? JSONDecoder().decode(decodableType, from: data)
-            return value as? ValueType
-        }
-        return nil
+        return decodedValue(backingStore?.object(forKey: key), as: ValueType.self)
     }
-    
+
     /// Sets a boolean value for the specified key in the key-value store.
     ///
     /// - Parameters:
     ///   - value: The boolean value to store in the key-value store.
     ///   - key: The key with which to associate the value.
-    public func set(_ value: Bool, forKey key: String) {
+    /// - Returns: `true` when the write was submitted to a backing store, otherwise
+    /// `false`. This does not guarantee durable persistence because backing-store setters
+    /// do not report write failures.
+    @discardableResult public func set(_ value: Bool, forKey key: String) -> Bool {
+        guard let backingStore else {
+            return false
+        }
+
         backingStore.set(value, forKey: key)
+        publishLocalWriteIfNeeded(value, forKey: key)
+        return true
     }
-    
+
     /// Returns a boolean value associated with the specified key.
     ///
     /// - Parameter key: A key in the key-value store.
     /// - Returns: The boolean value associated with the specified key, or `false` if the key does not exist or its value is not a boolean.
     public func bool(forKey key: String) -> Bool {
-        return backingStore.bool(forKey: key)
+        return backingStore?.bool(forKey: key) ?? false
     }
-    
+
     /// Sets an integer value for the specified key in the key-value store.
     ///
     /// - Parameters:
     ///   - value: The integer value to store in the key-value store.
     ///   - key: The key with which to associate the value.
-    public func set(_ value: Int, forKey key: String) {
+    /// - Returns: `true` when the write was submitted to a backing store, otherwise
+    /// `false`. This does not guarantee durable persistence because backing-store setters
+    /// do not report write failures.
+    @discardableResult public func set(_ value: Int, forKey key: String) -> Bool {
+        guard let backingStore else {
+            return false
+        }
+
         backingStore.set(value, forKey: key)
+        publishLocalWriteIfNeeded(value, forKey: key)
+        return true
     }
-    
+
     /// Returns an integer value associated with the specified key.
     ///
     /// - Parameter key: A key in the key-value store.
     /// - Returns: The integer value associated with the specified key, or `0` if the key does not exist or its value is not an integer.
     public func integer(forKey key: String) -> Int {
-        return backingStore.integer(forKey: key)
+        return backingStore?.integer(forKey: key) ?? 0
     }
-    
+
     /// Sets a double-precision floating-point value for the specified key in the key-value store.
     ///
     /// - Parameters:
     ///   - value: The double-precision floating-point value to store in the key-value store.
     ///   - key: The key with which to associate the value.
-    public func set(_ value: Double, forKey key: String) {
+    /// - Returns: `true` when the write was submitted to a backing store, otherwise
+    /// `false`. This does not guarantee durable persistence because backing-store setters
+    /// do not report write failures.
+    @discardableResult public func set(_ value: Double, forKey key: String) -> Bool {
+        guard let backingStore else {
+            return false
+        }
+
         backingStore.set(value, forKey: key)
+        publishLocalWriteIfNeeded(value, forKey: key)
+        return true
     }
-    
+
     /// Returns a double-precision floating-point value associated with the specified key.
     ///
     /// - Parameter key:  A key in the key-value store.
     /// - Returns: The double-precision floating-point value associated with the specified key,
     /// or `0.0` if the key does not exist or its value is not a double-precision floating-point number.
     public func double(forKey key: String) -> Double {
-        return backingStore.double(forKey: key)
+        return backingStore?.double(forKey: key) ?? 0.0
     }
-    
+
     /// Returns a string associated with the specified key.
     ///
     /// - Parameter key: A key in the key-value store.
     /// - Returns: The string associated with the specified key, or `nil` if the key does not exist or its value is not a string.
     public func string(forKey key: String) -> String? {
-        return backingStore.string(forKey: key)
+        return backingStore?.string(forKey: key)
     }
-    
+
     private func isStandardType<T>(_ type: T.Type) -> Bool {
         return type == Bool.self || type == Int.self || type == Double.self || type == String.self || type == Date.self || type == Data.self
+    }
+
+    private func setStandardValue<ValueType>(_ value: ValueType, forKey key: String) {
+        switch value {
+        case let value as Bool:
+            backingStore?.set(value, forKey: key)
+        case let value as Int:
+            backingStore?.set(value, forKey: key)
+        case let value as Double:
+            backingStore?.set(value, forKey: key)
+        default:
+            backingStore?.set(value, forKey: key)
+        }
+    }
+
+    private func publishLocalWriteIfNeeded(_ value: Any?, forKey key: String) {
+        guard case .ubiquitous = self else {
+            return
+        }
+
+        NotificationCenter.default.post(
+            name: dcSettingsUbiquitousStoreDidChangeLocallyNotification,
+            object: nil,
+            userInfo: [
+                dcSettingsUbiquitousStoreChangedKey: key,
+                dcSettingsUbiquitousStoreChangedValue: value ?? NSNull()
+            ]
+        )
+    }
+
+    private func decodedValue<ValueType>(_ object: Any?, as type: ValueType.Type) -> ValueType? {
+        if let value = object as? ValueType {
+            return value
+        }
+
+        #if canImport(UIKit) || canImport(AppKit)
+            if ValueType.self == Color.self, let data = object as? Data, let color = try? Color(dcSettingsData: data) {
+                return color as? ValueType
+            }
+        #endif
+
+        if let data = object as? Data, let decodableType = ValueType.self as? Decodable.Type {
+            let value = try? JSONDecoder().decode(decodableType, from: data)
+            return value as? ValueType
+        }
+
+        return nil
     }
 }

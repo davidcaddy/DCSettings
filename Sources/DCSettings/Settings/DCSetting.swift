@@ -7,93 +7,289 @@
 import Combine
 import SwiftUI
 
-/// A protocol that represents a settable value with a specific type.
+private protocol DCOptionalValue {}
+
+extension Optional: DCOptionalValue {}
+
+private protocol DCComparableValueBounds {
+    func contains(_ value: Any) -> Bool
+}
+
+extension DCValueBounds: DCComparableValueBounds where ValueType: Comparable {
+
+    func contains(_ value: Any) -> Bool {
+        guard let typedValue = value as? ValueType else {
+            return false
+        }
+
+        return lowerBound <= typedValue && typedValue <= upperBound
+    }
+}
+
+/// A type-erased view of a settable value backed by a `DCSettingStore`.
 ///
-/// The `DCSettable` protocol defines the requirements for a type that represents a settable value with a specific type.
-/// The value type must conform to the `Equatable` protocol.
-///
-/// The protocol includes properties for the label and key of the setting, as well as the current value and configuration of the setting.
-/// It also includes a property for the `DCSettingStore` instance used to store the setting value.
-///
-/// The protocol also includes a `refresh` method that can be used to refresh the setting value from the store.
-public protocol DCSettable<ValueType>: ObservableObject where ValueType: Equatable {
-    
+/// Conformers expose a `value` of `ValueType: Equatable`, an identifying `key`, an optional
+/// `label`, an optional `configuration` (options/bounds/step), and the `store` used for
+/// persistence. Call `set(_:)` when you need to know whether a write took effect, and
+/// `refresh()` to reload the current value from the store.
+@MainActor public protocol DCSettable<ValueType>: ObservableObject where ValueType: Equatable {
+
     /// The type of value associated with the setting.
     associatedtype ValueType
-    
+
     /// An optional label for the setting.
     var label: String? { get }
-    
+
     /// The key used to identify the setting in the store.
     var key: String { get }
-    
+
     /// The current value of the setting.
     var value: ValueType { get set }
-    
+
+    /// Attempts to update the setting's value.
+    ///
+    /// - Parameter value: The new value to assign.
+    /// - Returns: `true` when the setting accepted the value, otherwise `false`.
+    @discardableResult func set(_ value: ValueType) -> Bool
+
     /// An optional configuration for the setting.
-    var configuation: DCSettingConfiguration<ValueType>? { get }
-    
+    var configuration: DCSettingConfiguration<ValueType>? { get }
+
     /// An optional `DCSettingStore` instance used to store the setting value.
+    ///
+    /// For `DCSetting`, this is an explicit per-setting override. When it is `nil`, the
+    /// containing group store is inherited during manager configuration.
+    ///
+    /// Custom conformers with `store == nil` have the containing group store assigned during
+    /// manager configuration. If a custom conformer needs reusable inherited-store behavior,
+    /// keep explicit and inherited storage separate in that type.
     var store: DCSettingStore? { get set }
-    
+
     /// Refreshes the setting value from the store.
     func refresh()
 }
 
-/// A class that represents a settable value with a specific type.
+public extension DCSettable {
+
+    /// Attempts to update the setting's value.
+    ///
+    /// The default implementation validates `value` against `configuration`, assigns it to
+    /// ``value``, and returns whether the assigned value is now visible. Conformers that persist
+    /// values should override this method when persistence failure matters.
+    @discardableResult func set(_ newValue: ValueType) -> Bool {
+        guard _isValidConfiguredValue(newValue) else {
+            return false
+        }
+
+        if value == newValue {
+            return true
+        }
+
+        value = newValue
+        return value == newValue
+    }
+
+    /// An optional configuration for the setting.
+    @available(*, deprecated, renamed: "configuration")
+    var configuation: DCSettingConfiguration<ValueType>? {
+        configuration
+    }
+}
+
+extension DCSettable {
+
+    func _typedValue<T>(as type: T.Type) -> T? where T: Equatable {
+        value as? T
+    }
+
+    func _typedConfiguration<T>(as type: T.Type) -> DCSettingConfiguration<T>? where T: Equatable {
+        configuration as? DCSettingConfiguration<T>
+    }
+
+    @discardableResult func _setTypedValue<T>(_ newValue: T) -> Bool where T: Equatable {
+        guard let typedValue = newValue as? ValueType, _isValidConfiguredValue(typedValue) else {
+            return false
+        }
+
+        return set(typedValue)
+    }
+
+    func _typedBinding<T>(as type: T.Type) -> Binding<T>? where T: Equatable {
+        guard let currentValue = value as? T else {
+            return nil
+        }
+
+        return Binding {
+            self.value as? T ?? currentValue
+        } set: { newValue in
+            self._setTypedValue(newValue)
+        }
+    }
+
+    func _typedPublisher<T>(as type: T.Type) -> AnyPublisher<T, Never>? where T: Equatable {
+        guard let currentValue = value as? T else {
+            return nil
+        }
+
+        return Just(currentValue)
+            .merge(with: _objectWillChangePublisher().compactMap { [weak self] in
+                self?.value as? T
+            })
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    func _objectWillChangePublisher() -> AnyPublisher<Void, Never> {
+        objectWillChange
+            .receive(on: RunLoop.main)
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
+
+    func _isValidConfiguredValue(_ value: ValueType) -> Bool {
+        DCSetting<ValueType>.isValid(value, configuration: configuration)
+    }
+}
+
+@MainActor protocol DCGroupStoreConfigurable {
+
+    func _configureInheritedStore(_ store: DCSettingStore)
+}
+
+/// The default `DCSettable` implementation: a settable value of a specific type, persisted via a `DCSettingStore`.
 ///
-/// The `DCSetting` class is a concrete implementation of the `DCSettable` protocol that represents a settable value with a specific type.
-/// The value type must conform to the `Equatable` protocol.
+/// `DCSetting` provides convenience initializers for plain default values, fixed option lists,
+/// numeric bounds, and result-builder option DSLs.
 ///
-/// The class includes properties for the label and key of the setting, as well as the current value and configuration of the setting.
-///
-/// It also includes a property for the `DCSettingStore` instance used to store the setting value.
-///
-/// The class also includes several convenience initializers that can be used to create new instances of `DCSetting` with different configurations.
-///
-/// - Note: If the store is not set when the setting is configured by a manager instance, the store of the group in which the setting resides will be used.
-public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
-    
+/// - Important: Optional value types, such as `String?`, are not supported. Model unset, inherited,
+///   or system-default states with a concrete default value or an explicit enum case.
+/// - Note: When `store` is `nil` at configuration time, the manager resolves the containing
+///   group's store as the inherited backing store without changing the setting's explicit
+///   store override.
+@MainActor public final class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
+
     /// The key used to identify the setting in the store.
     public let key: String
-    
+
     /// An optional label for the setting.
     public let label: String?
-    
+
+    private let defaultValue: ValueType
     private var _value: ValueType
-    
+
     /// The current value of the setting.
+    ///
+    /// Assignments that fail validation or cannot be submitted to storage are ignored. Use
+    /// `DCSettingsManager.set(_:forKey:)` when you need a boolean result.
     public var value: ValueType {
         get {
             _value
         }
         set {
-            if _value != newValue {
-                _value = newValue
-                objectWillChange.send()
-                save()
-            }
+            set(newValue)
         }
     }
-    
+
     /// An optional `DCSettingStore` instance used to store the setting value.
     ///
-    /// If not provided when initialized, this will be set to the store of the group in which the setting resides when configured by a manager.
+    /// If not provided when initialized, the setting inherits the store of the group in which
+    /// it resides when configured by a manager. This property remains the explicit setting
+    /// override and is not mutated by group-store inheritance.
     public var store: DCSettingStore?
-    
+
+    private var inheritedStore: DCSettingStore?
+
+    private var effectiveStore: DCSettingStore? {
+        store ?? inheritedStore
+    }
+
     /// An optional configuration for the setting.
-    public let configuation: DCSettingConfiguration<ValueType>?
-    
+    public let configuration: DCSettingConfiguration<ValueType>?
+
+    /// An optional configuration for the setting.
+    @available(*, deprecated, renamed: "configuration")
+    public var configuation: DCSettingConfiguration<ValueType>? {
+        configuration
+    }
+
+    /// Attempts to update the setting's value and persist it to the effective store.
+    ///
+    /// - Parameter newValue: The new value to assign.
+    /// - Returns: `true` when the value is valid and either already current or accepted
+    /// and submitted to the backing store, otherwise `false`. Backing-store setters do not
+    /// report durable-write failures, so custom store failures cannot be detected here.
+    @discardableResult public func set(_ newValue: ValueType) -> Bool {
+        guard isValid(newValue) else {
+            return false
+        }
+
+        if _value == newValue {
+            return true
+        }
+
+        guard save(newValue) else {
+            return false
+        }
+
+        objectWillChange.send()
+        _value = newValue
+        return true
+    }
+
     private var cancellable: AnyCancellable?
-    
-    private init(key: DCKeyRepresentable, value: ValueType, label: String?, configuation: DCSettingConfiguration<ValueType>?, store: DCSettingStore?) {
+
+    static var supportsValueType: Bool {
+        !(ValueType.self is DCOptionalValue.Type)
+    }
+
+    fileprivate static func isValid(_ value: ValueType, configuration: DCSettingConfiguration<ValueType>?) -> Bool {
+        guard let configuration else {
+            return true
+        }
+
+        if let options = configuration.options, !options.contains(where: { $0.value == value }) {
+            return false
+        }
+
+        if let bounds = configuration.bounds as? any DCComparableValueBounds, !bounds.contains(value) {
+            return false
+        }
+
+        return true
+    }
+
+    static func isValidStep(_ step: ValueType?) -> Bool where ValueType: Numeric & Comparable {
+        guard let step else {
+            return true
+        }
+
+        if let step = step as? Double {
+            return step > 0.0 && step.isFinite
+        }
+
+        if let step = step as? Float {
+            return step > 0.0 && step.isFinite
+        }
+
+        if let step = step as? CGFloat {
+            return step > 0.0 && step.isFinite
+        }
+
+        return step > .zero
+    }
+
+    private init(key: DCKeyRepresentable, defaultValue: ValueType, label: String?, configuration: DCSettingConfiguration<ValueType>?, store: DCSettingStore?) {
+        precondition(Self.supportsValueType, "DCSetting optional value types are not supported. Use a concrete default value or an explicit enum case instead.")
+        precondition(Self.isValid(defaultValue, configuration: configuration), "DCSetting default value must satisfy configured options and bounds.")
+
         self.key = key.keyValue
-        self._value = value
+        self.defaultValue = defaultValue
+        self._value = defaultValue
         self.label = label
         self.store = store
-        self.configuation = configuation
+        self.configuration = configuration
     }
-    
+
     /// Initializes a new `DCSetting` instance with the specified key, default value, label, and store.
     ///
     /// If a store is not provided, the store of the group in which the setting resides will be used once configured.
@@ -104,7 +300,7 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     ///   - label: An optional label for the setting. The default value is `nil`.
     ///   - store: An optional `DCSettingStore` instance used to store the setting value. The default value is `nil`.
     public convenience init(key: DCKeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = nil) {
-        self.init(key: key.keyValue, value: defaultValue, label: label, configuation: nil, store: store)
+        self.init(key: key.keyValue, defaultValue: defaultValue, label: label, configuration: nil, store: store)
     }
 
     /// Initializes a new `DCSetting` instance with the specified key, label, store, options array, and default index.
@@ -121,8 +317,10 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     ///   - defaultIndex: The index of the default option in the options array.
     public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, options: [ValueType], defaultIndex: Int) where ValueType: LosslessStringConvertible {
         if let defaultValue = options.get(defaultIndex) {
-            let configuredOptions = options.map { DCSettingOption(value: $0, label: String($0)) }
-            self.init(key: key, value: defaultValue, label: label, configuation: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
+            let configuredOptions = options.enumerated().map { index, value in
+                DCSettingOption(value: value, label: String(value), isDefault: index == defaultIndex)
+            }
+            self.init(key: key, defaultValue: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
         }
         else {
             return nil
@@ -140,18 +338,20 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     ///   - store: An optional `DCSettingStore` instance used to store the setting value. The default value is `.standard`.
     ///   - lowerBound: The lower bound of the range of valid values for the setting.
     ///   - upperBound: The upper bound of the range of valid values for the setting.
-    ///   - step: An optional step value that specifies the increment or decrement between valid values. The default value is `nil`.
-    public convenience init(key: DCKeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = nil, lowerBound: ValueType, upperBound: ValueType, step: ValueType? = nil) where ValueType: Numeric {
-        self.init(key: key, value: defaultValue, label: label, configuation: DCSettingConfiguration<ValueType>(options: nil, bounds: DCValueBounds(lowerBound: lowerBound, upperBound: upperBound), step: step), store: store)
+    ///   - step: An optional positive step value that controls the editing increment. The default value is `nil`.
+    ///   This value must be greater than zero when provided. Floating-point steps must also be finite.
+    public convenience init(key: DCKeyRepresentable, defaultValue: ValueType, label: String? = nil, store: DCSettingStore? = nil, lowerBound: ValueType, upperBound: ValueType, step: ValueType? = nil) where ValueType: Numeric & Comparable {
+        precondition(Self.isValidStep(step), "DCSetting step must be greater than zero and finite.")
+        self.init(key: key, defaultValue: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: nil, bounds: DCValueBounds(lowerBound: lowerBound, upperBound: upperBound), step: step), store: store)
     }
-    
+
     /// Initializes a new `DCSetting` instance with the specified key, label, store and result builder closure.
     ///
     /// This convenience initializer creates a new instance of `DCSetting` with an array of options constructed using a result builder closure.
     ///
     /// If no options are provided in the result builder closure, this initializer will return `nil`.
     ///
-    /// If no default option in the result builder has be set as the default, the first option will be used as default.
+    /// If no default option in the result builder has been set as the default, the first option will be used as default.
     /// If multiple options are set as default in the result builder, the first default option will be used as default.
     ///
     /// If a store is not provided, the store of the group in which the setting resides will be used once configured.
@@ -161,17 +361,17 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     ///   - label: An optional label for the setting. The default value is `nil`.
     ///   - store: An optional `DCSettingStore` instance used to store the setting value. The default value is `nil`.
     ///   - builder: A result builder closure that constructs an array of `DCSettingOption` instances.
-    public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, @DCSettingOptionsBuilder _ builder: () -> [DCSettingOption<ValueType>]) {
+    public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, @DCSettingOptionsBuilder _ builder: @MainActor () -> [DCSettingOption<ValueType>]) {
         self.init(key: key, label: label, store: store, options: builder())
     }
-    
+
     /// Initializes a new `DCSetting` instance with the specified key, label, store and options.
     ///
     /// This convenience initializer creates a new instance of `DCSetting` with an array of options.
     ///
     /// If the option array is empty, this initializer will return `nil`.
     ///
-    /// If no default option in the array has be set as the default, the first option will be used as default.
+    /// If no default option in the array has been set as the default, the first option will be used as default.
     /// If multiple options are set as default in the array, the first default option will be used as default.
     ///
     /// If a store is not provided, the store of the group in which the setting resides will be used once configured.
@@ -180,16 +380,16 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
     ///   - key: The key used to identify the setting in the store.
     ///   - label: An optional label for the setting. The default value is `nil`.
     ///   - store: An optional `DCSettingStore` instance used to store the setting value. The default value is `nil`.
-    ///   - options: An array of `DCSettingOption` instances.
+    ///   - configuredOptions: An array of `DCSettingOption` instances.
     public convenience init?(key: DCKeyRepresentable, label: String? = nil, store: DCSettingStore? = nil, options configuredOptions: [DCSettingOption<ValueType>]) {
         if let defaultValue = configuredOptions.first(where: { $0.isDefault })?.value ?? configuredOptions.first?.value {
-            self.init(key: key, value: defaultValue, label: label, configuation: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
+            self.init(key: key, defaultValue: defaultValue, label: label, configuration: DCSettingConfiguration<ValueType>(options: configuredOptions, bounds: nil, step: nil), store: store)
         }
         else {
             return nil
         }
     }
-    
+
     /// Initializes a new `DCSetting` instance with the specified key and options provider.
     ///
     /// - Parameters:
@@ -214,50 +414,72 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
             return nil
         }
     }
-    
-    /// Refreshes the setting value from the store.
+
+    /// Reloads the setting's value from its store and starts observing further changes.
     ///
-    /// This method refreshes the current value of the setting from the store.
-    /// If a new value is found in the store and is different from the current value, the current value will be updated.
-    ///
-    /// This is called during the initial configuatrion of the setting by the managing `DCSettingsManager` instance.
-    /// Calling this directly on a setting should be avoided.
+    /// `DCSettingsManager` calls this during configuration. Avoid invoking it directly.
     public func refresh() {
-        if let newValue: ValueType = store?.object(forKey: key), value != newValue {
-            _value = newValue
+        guard let store = effectiveStore else {
+            return
         }
+
+        if let newValue: ValueType = store.object(forKey: key) {
+            updateValueFromStore(newValue)
+        }
+        else {
+            updateValueFromStore(defaultValue)
+        }
+
         setUpListener()
     }
-    
-    private func save() {
+
+    private func save(_ value: ValueType) -> Bool {
         cancellable = nil
-        store?.set(value, forKey: key)
+        let didSave = effectiveStore?.set(value, forKey: key) ?? true
         setUpListener()
+        return didSave
     }
-    
-    /// Returns a binding for the current value of the setting.
-    ///
-    /// This method returns a `Binding` instance for the current value of the setting.
-    /// The binding can be used to bind the setting value to a user interface element.
-    ///
-    /// - Returns: A `Binding` instance for the current value of the setting.
+
+    private func isValid(_ value: ValueType) -> Bool {
+        _isValidConfiguredValue(value)
+    }
+
+    private func updateValueFromStore(_ newValue: ValueType) {
+        guard _value != newValue, isValid(newValue) else {
+            return
+        }
+
+        objectWillChange.send()
+        _value = newValue
+    }
+
+    /// Returns a `Binding` to the setting's current value, suitable for SwiftUI controls.
     public func valueBinding() -> Binding<ValueType> {
         return Binding {
             self.value
         } set: { newValue in
-            self.value = newValue
+            self.set(newValue)
         }
     }
-    
+
     private func setUpListener() {
-        guard let store = store else { return }
-        cancellable = store.valuePublisher(forKey: key)
+        guard let store = effectiveStore else { return }
+        cancellable = store.valuePublisher(forKey: key, as: ValueType.self)
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
-                if let newTypedValue = newValue as? ValueType, self?.value != newTypedValue {
-                    self?.value = newTypedValue
+                guard let self else {
+                    return
                 }
+
+                self.updateValueFromStore(newValue ?? self.defaultValue)
             }
+    }
+}
+
+extension DCSetting: DCGroupStoreConfigurable {
+
+    func _configureInheritedStore(_ store: DCSettingStore) {
+        inheritedStore = store
     }
 }
 
@@ -275,16 +497,44 @@ public class DCSetting<ValueType>: DCSettable where ValueType: Equatable {
 /// }
 /// ```
 @resultBuilder
-public struct DCSettingsBuilder {
-    
-    /// Constructs an array of `DCSettable` instances from the provided expressions.
+@MainActor public struct DCSettingsBuilder {
+
+    /// Constructs an empty array of `DCSettable` instances.
     ///
-    /// This method is called by the result builder to construct the final result from the provided expressions.
-    /// The expressions must be instances of `DCSettable`.
+    /// - Returns: An empty array of `DCSettable` instances.
+    public static func buildBlock() -> [any DCSettable] {
+        []
+    }
+
+    /// Constructs an array of `DCSettable` instances from the provided expressions.
     ///
     /// - Parameter settings: A variadic list of optional `DCSettable` instances.
     /// - Returns: An array of `DCSettable` instances.
     public static func buildBlock(_ settings: (any DCSettable)?...) -> [any DCSettable] {
         settings.compactMap { $0 }
+    }
+
+    public static func buildExpression(_ setting: (any DCSettable)?) -> [any DCSettable] {
+        setting.map { [$0] } ?? []
+    }
+
+    public static func buildBlock(_ components: [any DCSettable]...) -> [any DCSettable] {
+        components.flatMap { $0 }
+    }
+
+    public static func buildOptional(_ component: [any DCSettable]?) -> [any DCSettable] {
+        component ?? []
+    }
+
+    public static func buildEither(first component: [any DCSettable]) -> [any DCSettable] {
+        component
+    }
+
+    public static func buildEither(second component: [any DCSettable]) -> [any DCSettable] {
+        component
+    }
+
+    public static func buildArray(_ components: [[any DCSettable]]) -> [any DCSettable] {
+        components.flatMap { $0 }
     }
 }

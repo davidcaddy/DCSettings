@@ -14,25 +14,25 @@ import Foundation
 /// You can create a `DCSettingGroup` using one of its initializers or by using the `@DCSettingsBuilder` result builder to build an array of settings.
 ///
 /// - Note: The `DCSettingGroup` conforms to the `Identifiable` protocol and uses its key as its `id`.
-public struct DCSettingGroup: Identifiable {
-    
+@MainActor public struct DCSettingGroup: @MainActor Identifiable {
+
     /// The key for the setting group.
     public let key: String
-    
+
     /// The label for the setting group.
     public let label: String?
-    
+
     /// The store for the setting group.
     public let store: DCSettingStore
-    
+
     /// The array of settings in the setting group.
     public let settings: [any DCSettable]
-    
+
     /// The identifier for the setting group.
     public var id: String {
         return key
     }
-    
+
     /// Creates a new setting group with the specified key, label, store, and settings.
     ///
     /// - Parameters:
@@ -46,19 +46,19 @@ public struct DCSettingGroup: Identifiable {
         self.store = store
         self.settings = settings
     }
-    
+
     /// Creates a new setting group with the specified label, store, and settings.
     ///
-    /// A new `UUID` will be used as the group's key.
+    /// If a label is provided, the label is also used as the group's key. If no label is provided, a new `UUID` will be used as the group's key.
     ///
     /// - Parameters:
     ///   - label: The label for the setting group. Defaults to `nil`.
     ///   - store: The store for the setting group. Defaults to `.standard`.
     ///   - settings: An array of settings to include in the setting group.
     public init(_ label: String? = nil, store: DCSettingStore = .standard, settings: [any DCSettable]) {
-        self.init(key: nil, label: label, store: store, settings: settings)
+        self.init(key: label, label: label, store: store, settings: settings)
     }
-    
+
     /// Creates a new setting group with the specified key, label, store, and settings.
     ///
     /// - Parameters:
@@ -66,25 +66,25 @@ public struct DCSettingGroup: Identifiable {
     ///   - label: The label for the setting group. Defaults to `nil`.
     ///   - store: The store for the setting group. Defaults to `.standard`.
     ///   - builder: A closure that builds an array of settings using the `@DCSettingsBuilder` result builder.
-    public init(key: DCKeyRepresentable?, label: String? = nil, store: DCSettingStore = .standard, @DCSettingsBuilder _ builder: () -> [any DCSettable]) {
+    public init(key: DCKeyRepresentable?, label: String? = nil, store: DCSettingStore = .standard, @DCSettingsBuilder _ builder: @MainActor () -> [any DCSettable]) {
         self.init(key: key, label: label, store: store, settings: builder())
     }
-    
+
     /// Creates a new setting group with the specified label, store, and settings.
     ///
-    /// A new `UUID` will be used as the group's key.
+    /// If a label is provided, the label is also used as the group's key. If no label is provided, a new `UUID` will be used as the group's key.
     ///
     /// - Parameters:
     ///   - label: The label for the setting group. Defaults to `nil`.
     ///   - store: The store for the setting group. Defaults to `.standard`.
     ///   - builder: A closure that builds an array of settings using the `@DCSettingsBuilder` result builder.
-    public init(_ label: String? = nil, store: DCSettingStore = .standard, @DCSettingsBuilder _ builder: () -> [any DCSettable]) {
-        self.init(key: nil, label: label, store: store, settings: builder())
+    public init(_ label: String? = nil, store: DCSettingStore = .standard, @DCSettingsBuilder _ builder: @MainActor () -> [any DCSettable]) {
+        self.init(key: label, label: label, store: store, settings: builder())
     }
 }
 
 extension DCSettingGroup {
-    
+
     /// Returns a copy of the setting group with the specified store.
     ///
     /// - Parameter store: The new store for the setting group.
@@ -102,23 +102,54 @@ extension DCSettingGroup {
 ///
 /// ```swift
 /// let groups = DCSettingGroupsBuilder.buildBlock(
-///     DCSettingGroup("General") {
+///     DCSettingGroup(key: "general", label: "General") {
 ///         DCSetting(key: "darkMode", defaultValue: false)
 ///     },
-///     DCSettingGroup("Appearance") {
+///     DCSettingGroup(key: "appearance", label: "Appearance") {
 ///         DCSetting(key: "fontSize", defaultValue: 14)
 ///         DCSetting(key: "fontFamily", defaultValue: "Helvetica")
 ///     }
 /// )
 /// ```
 @resultBuilder
-public struct DCSettingGroupsBuilder {
-    
+@MainActor public struct DCSettingGroupsBuilder {
+
+    /// Builds an empty array of setting groups.
+    ///
+    /// - Returns: An empty array of setting groups.
+    public static func buildBlock() -> [DCSettingGroup] {
+        []
+    }
+
     /// Builds an array of setting groups from the provided setting group instances.
     ///
     /// - Parameter settings: The setting group instances to include in the array.
     /// - Returns: An array of setting groups.
     public static func buildBlock(_ settings: DCSettingGroup...) -> [DCSettingGroup] {
         settings
+    }
+
+    public static func buildExpression(_ group: DCSettingGroup?) -> [DCSettingGroup] {
+        group.map { [$0] } ?? []
+    }
+
+    public static func buildBlock(_ components: [DCSettingGroup]...) -> [DCSettingGroup] {
+        components.flatMap { $0 }
+    }
+
+    public static func buildOptional(_ component: [DCSettingGroup]?) -> [DCSettingGroup] {
+        component ?? []
+    }
+
+    public static func buildEither(first component: [DCSettingGroup]) -> [DCSettingGroup] {
+        component
+    }
+
+    public static func buildEither(second component: [DCSettingGroup]) -> [DCSettingGroup] {
+        component
+    }
+
+    public static func buildArray(_ components: [[DCSettingGroup]]) -> [DCSettingGroup] {
+        components.flatMap { $0 }
     }
 }
